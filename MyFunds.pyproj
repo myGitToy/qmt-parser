@@ -23,6 +23,12 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="data_windows.py" />
+    <Compile Include="MSAP.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MSAP1.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="pip_update.py">
       <SubType>Code</SubType>
     </Compile>
