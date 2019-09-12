@@ -4,6 +4,16 @@ from datetime import datetime
 import numpy as np
 import pandas as pd
 import tushare as ts
+import logging
+#设置日志级别
+logging.basicConfig(filename='debug.log', level=logging.DEBUG)
+#显示所有列
+pd.set_option('display.max_columns', None)
+#显示所有行
+pd.set_option('display.max_rows', None)
+#设置value的显示长度为100，默认为50
+pd.set_option('max_colwidth',100)
+
 #指定日期间交易列表（有过交易的所有证券代码列表，如果买入卖出，股票空仓，也会在列表内）
 daily_code_list=[]
 '''
@@ -221,6 +231,8 @@ def get_net_asset_V2(start_date='2018-01-01'):
     #print('卖出矩阵')
     #   2.1.1 每日交易记录表=每日买入矩阵-每日卖出矩阵
     df_trade_log=df_trade_log_buy-df_trade_log_sell
+    #logging.debug(df_trade_log[df_trade_log['date']>='2019/8/15'])
+    logging.debug(df_trade_log)
     #print('买卖记录矩阵')
     #print(df_trade_log)
     df_open_position=df_trade_log.fillna(0)
@@ -458,4 +470,4 @@ df_date['日期'] = pd.to_datetime(df_date['日期'])
 print(df_date)
 '''
 #######################
-#0912 now is master
+
