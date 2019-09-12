@@ -23,6 +23,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="data_windows.py" />
+    <Compile Include="pip_update.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="MyFunds.py" />
   </ItemGroup>
   <ItemGroup>
