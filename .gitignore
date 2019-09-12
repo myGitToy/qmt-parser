@@ -341,4 +341,7 @@ healthchecksdb
 
 #本地文件 证券代码类CSV格式文件
 data/
-data/30min/
+test/
+test2/
+test.txt
+MyFunds.py
