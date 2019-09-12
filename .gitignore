@@ -341,6 +341,3 @@ healthchecksdb
 
 #本地文件 证券代码类CSV格式文件
 data/
-test/
-test2/
-test.txt
