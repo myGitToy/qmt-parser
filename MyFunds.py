@@ -54,12 +54,17 @@ def get_sh_data(start_date='2018-01-01'):
 
 
 def get_transactions_info():
+    #2019/9/23 通过临时增加过滤融券购回和融券回购的方式来修正错误
     #读取交割单信息
     trade_log='.\\trade\\2018_fund.csv'
     #df=pd.read_csv(trade_log,dtype={'证券代码': np.str,'交收日期':np.str,'成交数量':np.int,'发生金额':np.float},encoding='gb18030')
     df=pd.read_csv(trade_log,dtype={'证券代码': np.str,'交收日期':np.str,'成交数量':np.int,'发生金额':np.float})
     #交易日期时间序列化
     df['交收日期'] = pd.to_datetime(df['交收日期'],format='%Y%m%d') 
+    #过滤融券购回和融券回购
+    df=df[(df['操作']!="融券购回") & (df['操作']!="融券回购") ] 
+    #输出交割单信息
+    #logging.debug(df[['证券名称','操作','成交数量','成交金额','交收日期']])
     return df
 
 def get_close_data(start_date='2018-01-01',code_list=[]):
@@ -214,7 +219,7 @@ def get_net_asset_V2(start_date='2018-01-01'):
     #将临时表中的证券代码分组，转换成新表中的列，形成以交易日期为索引，每个代码自成一列，显示每个交易日每个代码成交的数量
 
     #df_transac_list=df_transac_list.pivot(index='交收日期', columns='证券代码', values='成交数量')
-
+    
 
     
     df_transac_list_buy=df_transactions_buy.pivot( columns='证券代码', values='成交数量')
