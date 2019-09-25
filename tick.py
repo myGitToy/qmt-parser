@@ -4,7 +4,7 @@
     所有股票的历史分笔数据处理
     主要完成事件匹配和事件数据输出，为QAR分析提供csv格式的raw_data
     引用规范：请使用下列语句
-        import ags_event as event
+        from tick import tick as tk
 基本框架：
     match   QAR事件和人名匹配，主要用于被ags.mysql_import_data调用
     export_ags_event_summary    导出月度（指定日期间）QAR事件率汇总表（每人一行，行数等同于飞行员人数）
