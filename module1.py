@@ -1,3 +1,3 @@
 from tick import tick
-tk=tick('510300','2019-09-24')
+tk=tick('512880','2019-09-26')
 
