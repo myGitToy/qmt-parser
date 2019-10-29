@@ -25,6 +25,12 @@
     <Compile Include="module1.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="module2.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="analyse.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="tick.py">
       <SubType>Code</SubType>
     </Compile>
@@ -46,6 +52,9 @@
   <ItemGroup>
     <Content Include="readme.txt" />
     <Content Include="更新日志.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="VB\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
