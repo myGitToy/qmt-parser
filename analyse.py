@@ -86,9 +86,9 @@ class Technical_Analysis():
         """
         初始化
         输入：
-            code 证券代码；
-            start：开始日期
-            end：结束日期
+            code 证券代码 e.g. 510300
+            start：开始日期 e.g. 2019-10-01
+            end：结束日期        
         返回：
         """
         self.code=code
@@ -110,16 +110,16 @@ class CDP(Technical_Analysis):
             #计算整个矩阵
             df = super(CDP,self).get_data()
             #CDP = (最高價 + 最低價 + 2*收盤價) /4
-            df['CDP'] = (df['high'].shift(1)+df['low'].shift(1)+2*df['close'].shift(1)) / 4
+            df['CDP'] = (df['high'].shift(1)+df['low'].shift(1)+2*df['close'].shift(1)) / 4 
             #最高值(AH)、(NH)、近低值(NL)及最低值(AL)
             #最高值AH = CDP + (最高價 - 最低價)
-            df['AH']=df['CDP'] + (df['high'].shift(1) - df['low'].shift(1))
+            df['AH']=round(df['CDP'] + (df['high'].shift(1) - df['low'].shift(1)) , 3)
             #近高值NH = 2*CDP - 最低價
-            df['NH']=2 * df['CDP'] - df['low'].shift(1)
+            df['NH']=round(2 * df['CDP'] - df['low'].shift(1) , 3)
             #近低值NL = 2*CDP - 最高價
-            df['NL']=2 * df['CDP'] - df['high'].shift(1)
+            df['NL']=round(2 * df['CDP'] - df['high'].shift(1) , 3)
             #最低值AL = CDP - (最高價 - 最低價)
-            df['AL']= df['CDP'] - (df['high'].shift(1)-df['low'].shift(1))
+            df['AL']= round(df['CDP'] - (df['high'].shift(1)-df['low'].shift(1))  , 3)
             #输出
             print(df)
         else:
@@ -157,12 +157,12 @@ if __name__=="__main__":
     a.network_connection()
     print("连接状态：%s" % a.network_OK)
     #计算CDP
-    cdp_list=['510300','512880','512580','512760']
-
+    cdp_list=['510300','512880','512290','512760']
+            
     for i in cdp_list:
         x = CDP(code=i,start = "2019-10-01")
         x.network_OK=a.network_OK
-        df=x.cal_CDP(idx_tomorrow=True)
+        df=x.cal_CDP(idx_tomorrow=False)
         print(df)
 
 
