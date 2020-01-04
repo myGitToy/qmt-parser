@@ -66,7 +66,7 @@ class Technical_Analysis():
         elif True:
             #网络连接正常
             pro = ts.pro_api(self._token)
-            df = ts.get_k_data(code = self.code,end = self.end,start = self.start)
+            df = ts.get_k_data(code = self.code,end = self.end,start = self.start,ktype=self.ktype)
             #print(df)
             return df
         elif False:
@@ -82,7 +82,7 @@ class Technical_Analysis():
         #print(df)
         pass
 
-    def __init__(self,code=None,start=None,end=None):
+    def __init__(self,code=None,start=None,end=None,ktype="D"):
         """
         初始化
         输入：
@@ -94,6 +94,7 @@ class Technical_Analysis():
         self.code=code
         self.start=start
         self.end=end
+        self.ktype=ktype
 
 class CDP(Technical_Analysis):
     """CDP类，继承自TA"""
@@ -120,7 +121,7 @@ class CDP(Technical_Analysis):
             df['NL']=round(2 * df['CDP'] - df['high'].shift(1) , 3)
             #最低值AL = CDP - (最高價 - 最低價)
             df['AL']= round(df['CDP'] - (df['high'].shift(1)-df['low'].shift(1))  , 3)
-            #输出
+            #输出             
             print(df)
         else:
             #只获取当天的
@@ -149,7 +150,29 @@ class CDP(Technical_Analysis):
         #df2 = ts.get_today_ticks('510300')
         #print(df2.head(100))
 
-                
+class ATR(Technical_Analysis):
+    """ATR类，继承自TA
+    用于海龟模型
+    """
+    def cal_ATR(self):
+        """计算ATR"""
+        df = super(ATR,self).get_data()
+        df['close_1']=df['close'].shift(1)
+        #使用max函数会报错，目前措施是新建列，为上一天的收盘价，和当天的数据做对齐，随后进行计算和比较  max(df['high'],df['close'].shift(1)
+        #另外第一列数据对齐后会出现NA用上述方法执行后比对不会出错
+        df['TR']=df[['high','close_1']].max(axis=1)-df[['low','close_1']].min(axis=1)
+        df['ATR']=df['TR'].rolling(20).mean()
+        print(df[['date','close','ATR']])
+
+    def cal_ATR_list(self,day=date):
+        """计算每日ATR列表
+        输入：
+            day 需要计算的日期，通常指最后一个交易日或者当天 e.g. 2020/1/4
+    
+        返回：
+        """
+        pass
+
 
 if __name__=="__main__":
     a = CDP(start = '2019-10-01')
@@ -160,10 +183,15 @@ if __name__=="__main__":
     cdp_list=['510300','512880','512290','512760']
             
     for i in cdp_list:
-        x = CDP(code=i,start = "2019-10-01")
+        x = CDP(code = i,start = "2019-10-01")
         x.network_OK=a.network_OK
-        df=x.cal_CDP(idx_tomorrow=False)
+        df=x.cal_CDP(idx_tomorrow=True)
         print(df)
+    
+    #计算ATR
+    atr = ATR(code = '512880',start = '2019-10-01',ktype="D")
+    atr.network_OK=a.network_OK
+    atr.cal_ATR()
 
 
 

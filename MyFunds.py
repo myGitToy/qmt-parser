@@ -183,6 +183,7 @@ def get_net_asset_V2(start_date='2018-01-01'):
     df_transactions_buy=df_transactions[(df_transactions['交收日期']>=start_date) & (df_transactions['操作']=='证券买入') ] [['交收日期','证券代码','成交数量']]
     df_transactions_sell=df_transactions[(df_transactions['交收日期']>=start_date) & (df_transactions['操作']=='证券卖出')] [['交收日期','证券代码','成交数量']]
     #
+
     #df_transactions_sell['成交数量'] = df_transactions_sell.index
     #买卖汇总
     df_transactions_buy=df_transactions_buy.groupby(['交收日期','证券代码']).sum()
