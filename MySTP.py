@@ -92,6 +92,20 @@ class STP():
         #df[df['操作'] == '证券卖出']
 
 
+    def get_daily_units(self , trade_log = None , code = None , start =  None ):
+        """
+        获取每日股票账户持股余额 包含ATR R风险值 均线 最高价 止损 止盈等信息 基本上包含需要的全部信息
+        输入： 
+            trade_log 交割单信息 不选择则默认读取指定目录，或者也可以接受dateframe格式的矩阵
+            code 证券代码 只可以接受代码，不接受代码组 默认输出全部代码
+            start 开始日期 筛选指定日期以后的数据 默认输出全部
+        """
+        #从get_transactions_info中提取交割单信息
+        df_trans = self.get_transactions_info(trade_log = trade_log , start = start )
+        #筛选证券代码
+        if code != None:
+            df_trans = df_trans[( df_trans['证券代码'] == code )]
+        print(df_trans)
 
 
 
@@ -279,8 +293,11 @@ class STP():
 if __name__=="__main__":
     #本地运行
     #初始化设置
-    stp=STP(code_list=['510300','510500','159949','512760','512880','512290','512580','512980','600460'],start='2019-10-01',account_amount=1340000,account_risk=0.25)
+    stp=STP(code_list=['510300','510500','159949','512760','512880','512290','512580','512980','600460','000651','601318'],start='2019-10-01',account_amount=1000000,account_risk=0.25)
     df = stp.daily_unit(code_list =stp.code_list , start = stp.start)
+    #测试 每日账户持股清单输出
+    stp.get_daily_units(code='512290',start='2020-01-21')
+    
     #指定证券代码和日期筛选
     df2=df[(df['code']=='512760') & (df['date']=='2019-12-03')]
     #下面的代码和上面等同，效果一样

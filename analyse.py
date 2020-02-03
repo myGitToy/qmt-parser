@@ -177,7 +177,6 @@ class ATR(Technical_Analysis):
         #小时线30小时均线价格
         df['MAHR_30'] = df['close'].rolling(MAHR_30).mean()
         #print(df[['date','close','ATR']])
-        #print(df)
         return df
         
 
@@ -190,16 +189,18 @@ class ATR(Technical_Analysis):
         返回：
             [日期 证券代码 收盘价 TR ATR MA HIGH]
         """
-        df_main=pd.DataFrame(columns=['date','code','close','TR','ATR'])
+        df_main=pd.DataFrame(columns=['date','code','close','TR','ATR','MAHR_100_HIGH','MAHR_20','MAHR_30'])
         for code in code_list:
             #循环截取所有列表中的数据
             atr = ATR(code =code,start =start,ktype=ktype)
             atr.network_OK = True
-            df=atr.cal_ATR()[['date','close','TR','ATR']]
+            df=atr.cal_ATR()[['date','close','TR','ATR','MAHR_100_HIGH','MAHR_20','MAHR_30']]
             df['code'] = code
             #日期转换为datetime64[ns] 否则会在merge操作中因为两列属性不同和无法完成合并操作
             df['date'] = pd.to_datetime(df['date'])
             df_main = pd.concat([df_main, df],sort=False)
+        #保存数据
+        df_main.to_csv('.\\trade\\ATR.csv', encoding = 'utf_8_sig')
         return df_main    
 
 
@@ -209,7 +210,7 @@ if __name__=="__main__":
     a.network_connection()
     print("连接状态：%s" % a.network_OK)
     #计算CDP
-    cdp_list=['159949','512760','510500','512290']
+    cdp_list=['510300','510500','159949','512760','512880','512290','512580','512980','600460','000651','601318']
             
     for i in cdp_list:
         x = CDP(code = i,start = "2019-10-01")
@@ -223,7 +224,8 @@ if __name__=="__main__":
     atr.cal_ATR()
 
     #计算ATR列表
-    atr.cal_daily_ATR_list(code_list=cdp_list,start='2019-11-01',ktype='D')
+    df=atr.cal_daily_ATR_list(code_list=cdp_list,start='2019-11-01',ktype='D')
+    print(df)
 
 
 
