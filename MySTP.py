@@ -70,10 +70,23 @@ class STP():
         #交割单信息汇总
         df = df[(df['操作']!="证券买入") | (df['操作']!="证券卖出") ] 
         #temp = df[(df['操作']!="证券卖出") ]
-        #temp['成交数量'] = - temp['成交数量']
+        #temp['成交数量'] = temp['成交数量'] * -1
         #df.loc[temp,'成交数量']= temp['成交数量']
-        df.loc['成交数量'] = -df[(df['操作']!="证券卖出") ]['成交数量'] 
+        #print(temp)
+        #df.loc['成交数量'] = -df[(df['操作']!="证券卖出") ]['成交数量'] 
+
+        print(df.loc[df['操作'] == "证券卖出",].groupby(['证券代码']).成交数量.sum())
+        
+        #买卖拆分
+        df_buy =  df[(df['操作']!="证券买入") ].groupby(['证券代码']).sum()
+        df_sell =  df[(df['操作']!="证券卖出") ].groupby(['证券代码']).sum()
+        #主数组 新建列
+        df_main = pd.DataFrame(columns=['证券代码','成交数量','成交金额','发生金额','手续费'])
+
+        print(df_buy)
+        print(df_sell)
         print(df)
+        print(12)
         #df_buy = df[(df['操作']!="证券买入") ]
         
         #df[df['操作'] == '证券卖出']
