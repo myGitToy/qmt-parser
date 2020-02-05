@@ -44,8 +44,8 @@ class STP():
         self.code_list=code_list
         self.start=start
         self.end=end
-        self.account_amount=account_amount
-        self.account_risk=account_risk
+        self.account_amount = account_amount
+        self.account_risk = account_risk
     
     def transactions_process(self,df_trans=None):
         """
@@ -106,6 +106,26 @@ class STP():
         if code != None:
             df_trans = df_trans[( df_trans['证券代码'] == code )]
         print(df_trans)
+        #获取交割单的最早日期
+        oldest_day = df_trans.head(1).iloc[ 0,  df_trans.columns.get_loc('交收日期') ]
+        oldest_day = oldest_day - timedelta(days = 60)
+        #更新交割单中交易股票的列表
+        df_code_list = df_trans.copy()    
+        code_list = df_code_list['证券代码'].values.tolist()
+        #合并同类项
+        code_list = list(set(code_list))
+        #通过获取的交割单中的证券列表，批量获取ATR信息，生成ATR表格
+        atr = ATR(start = start ,ktype="D" )
+        atr.network_OK = True
+        df_atr = atr.cal_daily_ATR_list(code_list = code_list , start = start , ktype = 'D',  to_csv = False )
+        print(df_atr)
+        for code in code_list:
+            #循环读取
+            pass
+
+
+        #测试pivot数据
+        #df_trans.pivot()
 
 
 
@@ -260,9 +280,11 @@ class STP():
         1. 进行ATP初始化，输入股票列表等参数
         2. df = stp.daily_unit()
         3. 打印dataframe
+
+        【TODO】这里的计算过程可能会移植到
         """
         #计算头寸占比
-        atr_daily = ATR.cal_daily_ATR_list(self , code_list = code_list , start = start)
+        atr_daily = ATR.cal_daily_ATR_list(self , code_list = code_list , start = start , to_csv=True)
         atr_daily.network_OK = True
         #丢弃NA值
         #df_main=atr_daily.dropna()     #会有提示信息https://stackoverflow.com/questions/20625582/how-to-deal-with-settingwithcopywarning-in-pandas
@@ -292,17 +314,18 @@ class STP():
         return df_main
 if __name__=="__main__":
     #本地运行
-    #初始化设置
+    #初始化设置 这里输入的证券列表属于自选股范畴，没有纳入交割单中的代码
     stp=STP(code_list=['510300','510500','159949','512760','512880','512290','512580','512980','600460','000651','601318'],start='2019-10-01',account_amount=1000000,account_risk=0.25)
     df = stp.daily_unit(code_list =stp.code_list , start = stp.start)
     #测试 每日账户持股清单输出
-    stp.get_daily_units(code='512290',start='2020-01-21')
+    #stp.get_daily_units(code='512290',start='2020-01-21') #带筛选的
+    stp.get_daily_units(start='2019-01-21') #不带筛选，输出全部
+
     
     #指定证券代码和日期筛选
     df2=df[(df['code']=='512760') & (df['date']=='2019-12-03')]
     #下面的代码和上面等同，效果一样
-    df2 = df[(df.code == '512780') & (df.date >= '2019-12-20')]
-    print( df2 )  
+    df2 = df[(df.code == '512780') & (df.date >= '2019-12-20')] 
     #输出最后一天
     ## 注：这里输出的规则按照日期进行排序，按照列表code_list中包含的数据量进行截取。如果有股票当天未交易，则会输出前一天的某一个值，带来不确定性
     df_last = df.sort_values(by='date')       
