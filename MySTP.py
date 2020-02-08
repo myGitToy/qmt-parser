@@ -41,13 +41,13 @@ class STP():
             account_risk:单仓位风险 总资金的百分比里 e.g 0.25 意味着0.25%的100万，也就是2500元单仓位单波动损失
         返回：
         """
-        self.code_list=code_list
-        self.start=start
-        self.end=end
+        self.code_list = code_list
+        self.start = start
+        self.end = end
         self.account_amount = account_amount
         self.account_risk = account_risk
     
-    def transactions_process(self,df_trans=None):
+    def transactions_process(self,df_trans = None):
         """
         处理交割单买卖信息
         
@@ -83,10 +83,10 @@ class STP():
         #主数组 新建列
         df_main = pd.DataFrame(columns=['证券代码','成交数量','成交金额','发生金额','手续费'])
 
-        print(df_buy)
-        print(df_sell)
-        print(df)
-        print(12)
+        #print(df_buy)
+        #print(df_sell)
+        #print(df)
+        #print(12)
         #df_buy = df[(df['操作']!="证券买入") ]
         
         #df[df['操作'] == '证券卖出']
@@ -118,7 +118,7 @@ class STP():
         atr = ATR(start = start ,ktype="D" )
         atr.network_OK = True
         df_atr = atr.cal_daily_ATR_list(code_list = code_list , start = start , ktype = 'D',  to_csv = False )
-        print(df_atr)
+        #print(df_atr)
         for code in code_list:
             #循环读取
             pass
@@ -209,7 +209,7 @@ class STP():
         df_board['剩余头寸'] = 1
         #临时 提取生物医药
         df_board = df_board[(df_board['证券名称'] == '生物医药' ) ]
-        print(df_board)
+        #print(df_board)
         #提取所有卖出操作，然后进行计算
 
         for index, row_sell in df_sell.iterrows():
@@ -328,12 +328,13 @@ if __name__=="__main__":
     df2 = df[(df.code == '512780') & (df.date >= '2019-12-20')] 
     #输出最后一天
     ## 注：这里输出的规则按照日期进行排序，按照列表code_list中包含的数据量进行截取。如果有股票当天未交易，则会输出前一天的某一个值，带来不确定性
-    df_last = df.sort_values(by='date')       
+    df_last = df.sort_values(by='date')    
+    
     #print(df_last)
-    print(df_last.tail(len(stp.code_list))) 
+    print('最后交易日为： %s'  % (df_last.tail(len(stp.code_list)))) 
 
     #读取交割单
     #df_trans = stp.daily_board()
 
-    #每日头寸汇总
+    #每日头寸汇总 还在测试中 未完成最终代码编写工作
     stp.get_remaining_unit()

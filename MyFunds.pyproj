@@ -34,6 +34,12 @@
     <Compile Include="module3.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="MyCashFlowTest.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MyPivot.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="MyMenu.py">
       <SubType>Code</SubType>
     </Compile>
