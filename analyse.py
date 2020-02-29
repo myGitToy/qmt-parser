@@ -152,26 +152,57 @@ class CDP(Technical_Analysis):
 
 class ATR(Technical_Analysis):
     """ATR类，继承自TA
-    用于海龟模型
+    用于海龟模型 ATR模块涉及到计算TR ATR MA HIGH等内容，提供下游环境进行模型计算
     """
-    def cal_ATR(self):
-        """计算ATR"""
+    def cal_ATR(self , MA_ATR = 20 , MAHR_100_HIGH = 25, MAHR_20 = 5 ,MAHR_30 = 8):
+        """计算ATR
+        输入：
+            ATR_MA ATR的计算周期 默认20天移动平均线
+            MAHR_100_HIGH 小时线100小时最高价格 对应到日线为25天线最高价格 正常情况下无需更改
+            MAHR_20: 小时线20小时均线价格 对应到日线为5天线 正常情况下无需更改
+            MAHR_30: 小时线30小时均线价格 对应到日线为7.5天，近似成8天线 正常情况下无需更改
+        输出：除正常日线数据外，还输出TR ATR MAHR_100_HIGH MAHR_20 MAHR_30
+        """
         df = super(ATR,self).get_data()
-        df['close_1']=df['close'].shift(1)
+        df['close_1'] = df['close'].shift(1)
         #使用max函数会报错，目前措施是新建列，为上一天的收盘价，和当天的数据做对齐，随后进行计算和比较  max(df['high'],df['close'].shift(1)
         #另外第一列数据对齐后会出现NA用上述方法执行后比对不会出错
-        df['TR']=df[['high','close_1']].max(axis=1)-df[['low','close_1']].min(axis=1)
-        df['ATR']=df['TR'].rolling(20).mean()
-        print(df[['date','close','ATR']])
+        df['TR'] = df[['high','close_1']].max(axis=1) - df[['low','close_1']].min(axis=1)
+        #ATR移动平均线计算
+        df['ATR'] = df['TR'].rolling(MA_ATR).mean()
+        #小时线100小时最高收盘价计算
+        df['MAHR_100_HIGH'] = df['high'].rolling(MAHR_100_HIGH).max()
+        #小时线20小时均线价格计算
+        df['MAHR_20'] = df['close'].rolling(MAHR_20).mean()
+        #小时线30小时均线价格
+        df['MAHR_30'] = df['close'].rolling(MAHR_30).mean()
+        #print(df[['date','close','ATR']])
+        return df
+        
 
-    def cal_ATR_list(self,day=date):
+    def cal_daily_ATR_list(self , code_list = None , start = None , day = None , ktype = 'D' , to_csv = False):
         """计算每日ATR列表
         输入：
-            day 需要计算的日期，通常指最后一个交易日或者当天 e.g. 2020/1/4
+            day 需要计算的日期，通常指最后一个交易日或者当天 e.g. 2020-01-03
+            code_list 需要计算的列表 
     
         返回：
+            [日期 证券代码 收盘价 TR ATR MA HIGH]
         """
-        pass
+        df_main=pd.DataFrame(columns=['date','code','close','TR','ATR','MAHR_100_HIGH','MAHR_20','MAHR_30'])
+        for code in code_list:
+            #循环截取所有列表中的数据
+            atr = ATR(code = code , start = start , ktype = ktype)
+            atr.network_OK = True
+            df = atr.cal_ATR()[['date','close','TR','ATR','MAHR_100_HIGH','MAHR_20','MAHR_30']]
+            df['code'] = code
+            #日期转换为datetime64[ns] 否则会在merge操作中因为两列属性不同和无法完成合并操作
+            df['date'] = pd.to_datetime(df['date'])
+            df_main = pd.concat([df_main, df],sort = False)
+        #保存数据
+        if to_csv == True:
+            df_main.to_csv('.\\trade\\ATR.csv', encoding = 'utf_8_sig')
+        return df_main    
 
 
 if __name__=="__main__":
@@ -180,7 +211,7 @@ if __name__=="__main__":
     a.network_connection()
     print("连接状态：%s" % a.network_OK)
     #计算CDP
-    cdp_list=['510300','512880','512290','512760']
+    cdp_list=['510300','510500','159949','512760','512880','512290','512580','512980','600460','000651','601318']
             
     for i in cdp_list:
         x = CDP(code = i,start = "2019-10-01")
@@ -192,6 +223,10 @@ if __name__=="__main__":
     atr = ATR(code = '512880',start = '2019-10-01',ktype="D")
     atr.network_OK=a.network_OK
     atr.cal_ATR()
+
+    #计算ATR列表
+    df=atr.cal_daily_ATR_list(code_list=cdp_list,start='2019-11-01',ktype='D',to_csv = True)
+    print(df)
 
 
 

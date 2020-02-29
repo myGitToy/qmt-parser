@@ -31,6 +31,24 @@
     <Compile Include="analyse.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="module3.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MyCashFlowTest.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MyPivot.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MyMenu.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MyPyqt5.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="MySTP.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="tick.py">
       <SubType>Code</SubType>
     </Compile>
@@ -45,12 +63,18 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="MyFunds.py" />
+    <Compile Include="Window1.py">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="CondaEnv|CondaEnv|Anaconda3" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="readme.txt" />
+    <Content Include="Window1.xaml">
+      <SubType>Designer</SubType>
+    </Content>
     <Content Include="更新日志.txt" />
   </ItemGroup>
   <ItemGroup>

@@ -74,13 +74,13 @@ def get_close_data(start_date='2018-01-01',code_list=[]):
     #定义交易日信息，index
     idx_date=get_trade_date(start_date=start_date)
     #创建空的表单
-    df=pd.DataFrame(index=idx_date.values.tolist(),columns=code_list)
+    df = pd.DataFrame(index = idx_date.values.tolist() , columns = code_list)
     for code in code_list:
         df_code=pd.read_csv('%s\\%s.csv' % (address,code))[['date','close']]
         #日期筛选 
-        df_code=df_code[(df_code['date']>=start_date)]
+        df_code=df_code[(df_code['date'] >= start_date)]
         #重命名列
-        df_code=df_code.rename(columns={'close':code})
+        df_code=df_code.rename(columns = {'close' : code})
         #重置索引
         df_code=df_code.set_index('date')
         #填充数据
@@ -92,8 +92,8 @@ def get_net_asset_value_NA(start_date='2018-01-01'):
     ####停用####
     net_asset=get_net_asset(start_date)
     #print(net_asset)
-    close_data=get_close_data(start_date,daily_code_list)
-    df=net_asset*close_data
+    close_data = get_close_data(start_date , daily_code_list)
+    df=net_asset * close_data
     print(df)
     return 
 
@@ -102,22 +102,22 @@ def get_net_asset(start_date='2018-01-01'):
     #每日基金持仓股数
     #1：读取基础信息
     #   1.1 读取交易日信息
-    idx_date=get_trade_date(start_date=start_date)
+    idx_date = get_trade_date(start_date=start_date)
     #   1.2 读取交割单信息
-    df_transactions=get_transactions_info()
+    df_transactions = get_transactions_info()
     #   1.3 筛选交割单信息，挑出符合的内容（按日期/交易性质）
     #df_transactions=df_transactions[(df_transactions['交收日期']>=start_date) & ((df_transactions['操作']=='证券卖出') | (df_transactions['操作']=='证券买入'))] 
     #   1.4 进行交易拆分和汇总
         #注1：原先交易是合并的，但后续查询交割单发现卖出交易中股数为正，系统认为是买入，所以需要修正
         #注2：原系统无法处理一天内分两笔买卖同一证券代码，因此需要进行汇总处理
     #买卖拆分
-    df_transactions_buy=df_transactions[(df_transactions['交收日期']>=start_date) & (df_transactions['操作']=='证券买入') ] [['交收日期','证券代码','成交数量']]
-    df_transactions_sell=df_transactions[(df_transactions['交收日期']>=start_date) & (df_transactions['操作']=='证券卖出')] [['交收日期','证券代码','成交数量']]
+    df_transactions_buy = df_transactions[(df_transactions['交收日期'] >= start_date) & (df_transactions['操作'] == '证券买入') ] [['交收日期','证券代码','成交数量']]
+    df_transactions_sell = df_transactions[(df_transactions['交收日期'] >= start_date) & (df_transactions['操作'] == '证券卖出')] [['交收日期','证券代码','成交数量']]
     #
     #df_transactions_sell['成交数量'] = df_transactions_sell.index
     #买卖汇总
-    df_transactions_buy=df_transactions_buy.groupby(['交收日期','证券代码']).sum()
-    df_transactions_sell=df_transactions_sell.groupby(['交收日期','证券代码']).sum()
+    df_transactions_buy = df_transactions_buy.groupby(['交收日期','证券代码']).sum()
+    df_transactions_sell = df_transactions_sell.groupby(['交收日期','证券代码']).sum()
     #print(df_transactions_sell)
     #df_transactions_sell=df_transactions_sell.reset_index(level='交收日期',inplace=True)
     #df_transactions_sell['证券代码'] = df_transactions_sell.index.get_level_values('证券代码')
@@ -206,14 +206,14 @@ def get_net_asset_V2(start_date='2018-01-01'):
     #2:创建交易记录df
     #   2.1 创建空记录
     #       行：交易日期;列：所有交易的代码列表    
-    df_trade_log=pd.DataFrame(index=idx_date.values.tolist(),columns=code_list)
-    df_trade_log_buy=pd.DataFrame(index=idx_date.values.tolist(),columns=code_list)
-    df_trade_log_sell=pd.DataFrame(index=idx_date.values.tolist(),columns=code_list)
+    df_trade_log = pd.DataFrame(index = idx_date.values.tolist() , columns = code_list)
+    df_trade_log_buy = pd.DataFrame(index = idx_date.values.tolist() , columns = code_list)
+    df_trade_log_sell = pd.DataFrame(index = idx_date.values.tolist() , columns = code_list)
     #   2.2 将筛选后的交割单转换成2.1中空记录表的形式
     #将交割单中的部分内容导入临时表单中
-    df_transac_list=df_transactions[['交收日期','证券代码','成交数量']]
-    df_transac_list_buy=df_transactions_buy[['证券代码','成交数量']]
-    df_transac_list_sell=df_transactions_sell[['证券代码','成交数量']]
+    df_transac_list = df_transactions[['交收日期','证券代码','成交数量']]
+    df_transac_list_buy = df_transactions_buy[['证券代码','成交数量']]
+    df_transac_list_sell = df_transactions_sell[['证券代码','成交数量']]
 
     #强制类型转换（可做可不做）
     #df_transac_list[['交收日期','证券代码','成交数量']]=df_transactions[['交收日期','证券代码','成交数量']].astype(str)
@@ -229,28 +229,28 @@ def get_net_asset_V2(start_date='2018-01-01'):
     #3：创建每日持仓表单
     #   3.1 将交易记录表单标准化（nan数据置0）
     #df_trade_log=df_trade_log.combine_first(df_transac_list)
-    df_trade_log_buy=df_trade_log_buy.combine_first(df_transac_list_buy).fillna(0)
+    df_trade_log_buy = df_trade_log_buy.combine_first(df_transac_list_buy).fillna(0)
     #买入矩阵
     #print('买入矩阵')
     #print(df_trade_log_buy)
-    df_trade_log_sell=df_trade_log_sell.combine_first(df_transac_list_sell).fillna(0)
+    df_trade_log_sell = df_trade_log_sell.combine_first(df_transac_list_sell).fillna(0)
     #print('卖出矩阵')
     #   2.1.1 每日交易记录表=每日买入矩阵-每日卖出矩阵
-    df_trade_log=df_trade_log_buy-df_trade_log_sell
+    df_trade_log = df_trade_log_buy - df_trade_log_sell
     #logging.debug(df_trade_log[df_trade_log['date']>='2019/8/15'])
     logging.debug(df_trade_log)
     #print('买卖记录矩阵')
     #print(df_trade_log)
-    df_open_position=df_trade_log.fillna(0)
+    df_open_position = df_trade_log.fillna(0)
     #   3.2 进行数据累加计算（汇总）
-    df_open_position=df_open_position.expanding(min_periods=1).sum()
+    df_open_position = df_open_position.expanding(min_periods=1).sum()
     #保存每日持仓股票数额数据
-    df_open_position.to_csv('.\\trade\\df_open_position.csv', encoding='utf_8_sig')
+    df_open_position.to_csv('.\\trade\\df_open_position.csv', encoding = 'utf_8_sig')
     #4：计算每日持仓价值
     #   4.1 得到收盘价矩阵
-    close_date=get_close_data(start_date=start_date,code_list=code_list)
+    close_date = get_close_data(start_date = start_date , code_list = code_list)
     #   4.2 矩阵相乘 得到持仓价值
-    asset_value=df_open_position*close_date
+    asset_value = df_open_position * close_date
     #   4.3 持仓价值汇总
     asset_value['持仓金额'] = asset_value.apply(lambda x: x.sum(), axis=1)
     #sum_asset_value=
