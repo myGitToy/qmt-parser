@@ -22,16 +22,7 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="module1.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="module2.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="analyse.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="module3.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="MyCashFlowTest.py">
@@ -49,6 +40,9 @@
     <Compile Include="MySTP.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="MyTestMoudle.py" />
+    <Compile Include="My历史分笔.py" />
+    <Compile Include="My实时分笔.py" />
     <Compile Include="tick.py">
       <SubType>Code</SubType>
     </Compile>
