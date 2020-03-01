@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
-
+#使用python多进程爬取全国航班数据与可视化【附代码与excel数据（包含经纬度坐标）】
+#https://zhuanlan.zhihu.com/p/36499154
+#使用python 2.7版本
 
 import requests
 from bs4 import BeautifulSoup

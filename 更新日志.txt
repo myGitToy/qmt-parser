@@ -21,6 +21,8 @@
 2019/10/29
 1. 完成了基于技术分析的类规划，TA为父类，其他如CDP进行继承，网络链接测试，代码获取等基础信息由父类进行处理
 2. 完成技术分析：CDP的代码编写工作
+3. import tushare.stock.indictor as ti 20种常用技术指标计算
+4. import tushare.stock.trendline  as ti 更多种类的技术指标计算，含CDP 更新日期更一些
 
 2019/10/3
 [TODO]pyqt设置：https://blog.csdn.net/weixin_41145119/article/details/88889509

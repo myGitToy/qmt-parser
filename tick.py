@@ -17,10 +17,18 @@ TODO LIST：
 """
 import tushare as ts
 import pandas as pd
+import tushare.stock.indictor as ti
+
 class tick(object):
     def __init__(self,code,date):
         df = ts.get_tick_data(code,date,src='tt')
         print(df)
     pass
+
+if __name__:
+    t=tick('512760','2020-02-27')
+    df_raw = ts.get_hist_data('512760')
+    df=ti.ma(df_raw )
+    print(df)
 
 
