@@ -28,7 +28,7 @@ class tick(object):
 if __name__:
     t=tick('512760','2020-02-27')
     df_raw = ts.get_hist_data('512760')
-    df=ti.ma(df_raw )
+    df=ti.boll(df_raw )
     print(df)
 
 
