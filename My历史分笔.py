@@ -40,8 +40,9 @@ re['资金流入'] = re['amount'].cumsum()
 re['资金流入'] = re['资金流入'] / 1000000
 re['资金流入'].plot()
 #设置标题
-plt.tick_params(axis='both',which='major',labelsize=14)
-
-#Y轴最大值设定
-#plt.ylim(-300000000, 300000000)
+plt.rcParams['font.sans-serif']=['SimHei'] #用来正常显示中文
+plt.rcParams['axes.unicode_minus']=False #用来正常显示负号
+plt.xlabel('时间')
+plt.ylabel('资金流向（百万元人民币）')
+plt.title('%s %s 资金流向表' % (day,code))
 plt.show()

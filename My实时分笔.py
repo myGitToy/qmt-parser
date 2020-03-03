@@ -25,4 +25,10 @@ if df.empty != True:
     df['资金流入'] = df['资金流入'] / 1000000
     print(df)
     df['资金流入'].plot()
+    #设置标题
+    plt.rcParams['font.sans-serif']=['SimHei'] #用来正常显示中文
+    plt.rcParams['axes.unicode_minus']=False #用来正常显示负号
+    plt.xlabel('时间')
+    plt.ylabel('资金流向（百万元人民币）')
+    plt.title('%s 当日实时资金流向表' % (code))
     plt.show()
