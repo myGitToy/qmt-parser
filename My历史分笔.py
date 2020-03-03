@@ -12,8 +12,8 @@ import numpy as np
 """
 #df = ts.get_realtime_quotes('159949') #当日实时买盘 卖盘挂单 支持ETF
 #print(df[['b1_v','b1_p','a1_v','a1_p']])
-day='2020-02-27'
-code='512880'
+day='2020-03-03'
+code='000652'
 df = ts.get_tick_data(code,date=day,src='tt')   #历史分笔交易  支持ETF 基本上为每隔三秒左右生成的合并数据，
 #保存原始数据至指定文件
 #df.to_csv('.\\data\\%s_tick_data_%s.csv' % (code,day), encoding = 'utf_8_sig')
@@ -36,5 +36,12 @@ re = re[re['price'] !=0]
 #保存时间序列至指定文件
 #re.to_csv('.\\data\\%s_tick_data_%s_1min.csv' % (code,day), encoding = 'utf_8_sig')
 re['资金流入'] = re['amount'].cumsum()
+#统一各股资金流向的坐标轴，统一按照1个million来计算，也就是对应的1e7
+re['资金流入'] = re['资金流入'] / 1000000
 re['资金流入'].plot()
+#设置标题
+plt.tick_params(axis='both',which='major',labelsize=14)
+
+#Y轴最大值设定
+#plt.ylim(-300000000, 300000000)
 plt.show()
