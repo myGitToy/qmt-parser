@@ -57,6 +57,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="MyFunds.py" />
+    <Compile Include="ts_pro_test.py">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="CondaEnv|CondaEnv|Anaconda3" />
