@@ -76,7 +76,7 @@ def get_close_data(start_date='2018-01-01',code_list=[]):
     #创建空的表单
     df = pd.DataFrame(index = idx_date.values.tolist() , columns = code_list)
     for code in code_list:
-        df_code=pd.read_csv('%s\\%s.csv' % (address,code))[['date','close']]
+        df_code=pd.read_csv('%s\\%s.csv' % (address,code.zfill(6)))[['date','close']]
         #日期筛选 
         df_code=df_code[(df_code['date'] >= start_date)]
         #重命名列

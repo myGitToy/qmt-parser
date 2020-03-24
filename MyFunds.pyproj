@@ -41,6 +41,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="MyTestMoudle.py" />
+    <Compile Include="MyTSOS.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="My历史分笔.py" />
     <Compile Include="My实时分笔.py" />
     <Compile Include="tick.py">

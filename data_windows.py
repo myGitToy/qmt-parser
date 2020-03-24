@@ -183,8 +183,9 @@ def update_today_all():
     【行情不含基金和ETF】
     结果保存在/data/today_all.csv
     '''
+    #修正乱码
     df=ts.get_today_all()
-    df.to_csv('.\\data\\today_all.csv')
+    df.to_csv('.\\data\\today_all.csv', encoding = 'utf_8_sig')
     
 def load_today_all():
     '''
