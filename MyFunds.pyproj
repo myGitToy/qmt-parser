@@ -12,6 +12,7 @@
     <Name>MyFunds</Name>
     <RootNamespace>MyFunds</RootNamespace>
     <InterpreterId>CondaEnv|CondaEnv|Anaconda3</InterpreterId>
+    <TestFramework>Pytest</TestFramework>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -23,6 +24,9 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="analyse.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="module1.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="MyCashFlowTest.py">

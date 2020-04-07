@@ -2,6 +2,8 @@
 import os
 import pandas as pd
 import tushare as ts
+import numpy as np
+from MyTSOS import get_ETF_list
 
 
 def update_day():
@@ -147,14 +149,88 @@ def update_min(code_list='',min=''):
 def update_day(code_list=''):
     '''
     [更新日线数据]######
+    函数说明 乔晖 2020/4/6
+    测试正常后改函数将转移到TSOS中
+    原函数仅涉及保存，不进行新老文件的合并操作，因此重构
+    '''
+    ####步骤一：读取现有数据
+    for code in code_list:
+        #数据补零
+        code=code.zfill(6)
+        try:
+            df_old=pd.read_csv('.\\data\\day\\%s.csv' % (code))
+            if df_old.empty == True:
+                success = False
+            else:
+                success = True       
+        except IOError:
+            #没有找到文件
+            #print('error')
+            success=False
+        else:
+            #读取成功
+            pass
+        if success:
+            #读取成功，进行合并操作
+            #处理旧数据
+            df_old.set_index(['date'], inplace = True , drop = True)  
+            #删除重复项【重要提示：由于未知原因，使用drop_duplicates依旧会出现重复，所以此处采用对索引进行判断，如果索引相同，则表示有重复】
+            if df_old.index.is_unique == False:
+                df_old = df_old[~df_old.index.duplicated(keep='first')]
+                print('原始数据有重复项，去重')
+            #数据补零
+            df_old['code'] = df_old['code'].astype(str)
+            df_old['code'] = df_old['code'].str.zfill(6)
+            df_old = df_old[['open','close','high','low','volume','code']]
+            #df_old=df_old[:-5] #测试环节用，删除部分最新数据以调试新老df的合并情况
+            #旧数据量
+            old_count = df_old.shape[0]
+            #获取新数据
+            df_new = ts.get_k_data(code, ktype = 'D')
+            df_new.set_index(['date'], inplace = True)  
+            df_new = df_new[['open','close','high','low','volume','code']]
+            ###两个dataframe合并【按照日期进行关键词校对 注：日期date为索引】
+            df=pd.concat([df_old, df_new],sort=True)
+            #检查去重
+            df.drop_duplicates(keep='first', inplace=True)
+            #删除重复项【重要提示：由于未知原因，使用drop_duplicates依旧会出现重复，所以此处采用对索引进行判断，如果索引相同，则表示有重复】
+            if df.index.is_unique == False:
+                df = df[~df.index.duplicated(keep='first')]     #这里还有一个效率的问题，理论上旧数据不做去重，合并后再去重，但为了明确获取新老数据量的差别，因此做两次去重，降低一些效率
+                #print('合并后有重复项，去重')
+            #按照索引[日期]进行排序，升序
+            df = df.sort_index(ascending = True)
+            df = df[['open','close','high','low','volume','code']]
+            #df = df[~df.index.duplicated(keep='first')]
+            #总数据量
+            all_count=df.shape[0]
+            print('日线：%s读取完毕，新增数据量：%s条' % (code,all_count-old_count))
+            if all_count-old_count != 0:
+                #保存数据
+                df.to_csv('.\\data\\day\\%s.csv' % (code))
+        else:
+            #读取失败，说明目录无文件，直接写入
+            #获取新数据并保存
+            df_current = ts.get_k_data('%s' % (code), ktype='D' )
+            if df_current.empty == False:
+                df_current.set_index(['date'], inplace = True)  
+                df_current.to_csv('.\\data\\day\\%s.csv' % (code))
+                print('日线：新增代码%s，数据量：%s条' % (code,df_current.shape[0]))
+            else:
+                print('日线：代码%s 无数据' % (code))
+
+
+
+    '''
+    [更新日线数据]######
     函数说明 乔晖 2018/8/6
     具体步骤如下：
     1.从[get_k_data]中读取新数据并保存
     to_csv
-    '''        
+           
     for code in code_list:
         df=ts.get_k_data(code)    
         df.to_csv('.\\data\\day\\%s.csv' % (code))
+    ''' 
      
             
 def get_allcode():
@@ -224,7 +300,7 @@ def get_allcode():
     #print(stock_info.shape[0])
     #print(stock_info)
     for i in stock_info.index:
-        i=i.zfill(5)
+        i=i.zfill(6)
         allcode.append(i)
         #print(i)
     return allcode
@@ -241,17 +317,32 @@ def update_all():
     ETF特指以下基金列表['512880','510050','510180','510230','510300','510500','510880','510900','159901','159902','159915','159919','159920','159934','159937','159938','159949','159952','512980','512800','512880','512660','512680','512290','512580','512760','513500']
     '''
     #512710未上市
-EFT_LIST=['512880','510050','510180','510230','510300','510500','510880','510900','159901','159902','159915','159919','159920','159934','159937','159938','159949','159952','512980','512800','512880','512660','512680','512290','512580','512760','513500']
+#ETF_LIST=['512880','510050','510180','510230','510300','510500','510880','510900','159901','159902','159915','159919','159920','159934','159937','159938','159949','159952','512980','512800','512880','512660','512680','512290','512580','512760','513500']
+#ETF_LIST=['501060','501070']
 #更新今日行情列表
-update_today_all()
+#update_today_all()
 #加载今日行情列表
 code=load_today_all()
+
 #优先更新ETF
-update_day(EFT_LIST)
-update_day(['sh'])
-update_min(EFT_LIST,'60')
-update_min(EFT_LIST,'30')
-update_min(EFT_LIST,'5')
+
+#eft=get_ETF_list()
+#print(eft)
+#update_day(eft)
+#update_min(eft,'60')
+#update_min(eft,'30')
+#update_min(eft,'5')
+#print('ETF处理完毕！')
+
+ETF_LIST=get_ETF_list()
+update_day(code)
+update_day(ETF_LIST)
+print('日线处理完毕！')
+
+#update_day(['sh'])
+update_min(ETF_LIST,'60')
+update_min(ETF_LIST,'30')
+update_min(ETF_LIST,'5')
 print('ETF处理完毕！')
 #更新5分钟数据
 update_min(code,'5')
