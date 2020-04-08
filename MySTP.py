@@ -315,7 +315,7 @@ class STP():
 if __name__=="__main__":
     #本地运行
     #初始化设置 这里输入的证券列表属于自选股范畴，没有纳入交割单中的代码
-    stp=STP(code_list=['510300','510500','159949','512760','512880','512290','512580','512980','600460','000651','601318','512720','159995','515050','600089'],start='2019-10-01',account_amount=1250000,account_risk=0.25)
+    stp=STP(code_list=['510300','510500','159949','512760','512880','512290','512580','512980','600460','000651','601318','512720','159995','515050','600089','159920','510900'],start='2019-10-01',account_amount=1250000,account_risk=0.25)
     df = stp.daily_unit(code_list =stp.code_list , start = stp.start)
     #测试 每日账户持股清单输出
     #stp.get_daily_units(code='512290',start='2020-01-21') #带筛选的
@@ -328,7 +328,7 @@ if __name__=="__main__":
     df2 = df[(df.code == '512780') & (df.date >= '2019-12-20')] 
     #输出最后一天
     ## 注：这里输出的规则按照日期进行排序，按照列表code_list中包含的数据量进行截取。如果有股票当天未交易，则会输出前一天的某一个值，带来不确定性
-    df_last = df.sort_values(by='date')    
+    df_last = df.sort_values(by='date')
     
     #print(df_last)
     print('最后交易日为： %s'  % (df_last.tail(len(stp.code_list)))) 

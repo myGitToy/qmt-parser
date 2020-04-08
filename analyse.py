@@ -91,7 +91,10 @@ class Technical_Analysis():
             end：结束日期        
         返回：
         """
-        self.code=code
+        if code != None:
+            #数据补0
+            code = code.zfill(6)
+        self.code = code
         self.start=start
         self.end=end
         self.ktype=ktype
