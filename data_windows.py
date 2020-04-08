@@ -186,6 +186,7 @@ def load_today_all():
     [加载当日实时数据]######
     函数说明 乔晖 2018/4/25
     从硬盘中获取当日交易的数据，数据由update_today_all提供更新
+    这一版计划也要重写的
     【行情不含基金和ETF】
     读取目录在/data/today_all.csv
     '''
@@ -205,8 +206,9 @@ def load_today_all():
             trade=0
         #print("%s交易价格为%s" % (idx,trade))
         if trade==0:
-            #未交易，不写入代码列表
-            print('%s未交易%s' % (idx,trade))
+            #未交易，不写入代码列表 【2020/4/8修正 由于文件已经能够识别正确，因此未交易的数据也写入列表内】
+            #print('%s未交易%s 但依旧写入' % (idx,trade))
+            allcode.append(idx)
         else:
             allcode.append(idx)
     return allcode
@@ -255,6 +257,7 @@ code=load_today_all()
 ETF_LIST = get_ETF_list()
 update = Data_Update()
 update.update_day(ETF_LIST)
+print('ETF处理完成')
 update.update_day(code)
 print('日线处理完毕！')
 
