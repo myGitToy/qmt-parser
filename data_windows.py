@@ -88,6 +88,7 @@ def update_day():
 
 def update_min(code_list='',min=''):
     '''
+    【此函数已停止使用】
     [更新XX分钟数据]######
     函数说明 乔晖 2018/4/23
     具体步骤如下：
@@ -98,6 +99,8 @@ def update_min(code_list='',min=''):
     5.写入原有文件
     
     '''
+    print("此函数已停止使用")
+    return False
     ####步骤二：读取现有数据
     for code in code_list:
         try:
@@ -238,9 +241,9 @@ def update_all():
     '''
     #512710未上市
 #ETF_LIST=['512880','510050','510180','510230','510300','510500','510880','510900','159901','159902','159915','159919','159920','159934','159937','159938','159949','159952','512980','512800','512880','512660','512680','512290','512580','512760','513500']
-#ETF_LIST=['501060','501070']
+#ETF_LIST=['501060','501070','601798']
 #更新今日行情列表
-#update_today_all()
+update_today_all()
 #加载今日行情列表
 code=load_today_all()
 
@@ -256,16 +259,19 @@ code=load_today_all()
 
 ETF_LIST = get_ETF_list()
 update = Data_Update()
-update.update_day(ETF_LIST,filter_last=1)
-print('ETF处理完成')
-update.update_day(code)
+
+update.update_day(ETF_LIST , filter_last = 1)
+update.update_min(ETF_LIST , min = 5 , filter_last = 10)
+update.update_min(ETF_LIST , min = 30 , filter_last = 10)
+update.update_min(ETF_LIST , min = 60 , filter_last = 10)
+print('ETF处理完毕！')
+
+update.update_day(code,filter_last=1)
 print('日线处理完毕！')
 
 #update_day(['sh'])
-update_min(ETF_LIST,'60')
-update_min(ETF_LIST,'30')
-update_min(ETF_LIST,'5')
-print('ETF处理完毕！')
+
+
 #更新5分钟数据
 update_min(code,'5')
 print('5分钟处理完毕！')
