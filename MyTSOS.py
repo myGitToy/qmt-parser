@@ -184,16 +184,16 @@ class Data_Update(TSOS):
                     df_current.to_csv('.\\data\\%smin\\%s.csv' % (min,code))
                     print('%s分钟线：新增代码%s，数据量：%s条' % (min,code,df_current.shape[0]))
                 else:
-                    print('日线：代码%s 无数据' % (code))
+                    print('代码%s 无数据' % (code))
 
 
-def get_ETF_list(file_path = None):
-    #设置ETF路径
-    if file_path == None:
-        file_path='.\\data\\ETF.csv'    
-    #df=pd.read_csv(trade_log,dtype={'证券代码': np.str,'交收日期':np.str,'成交数量':np.int,'发生金额':np.float},encoding='gb18030')
-    df=pd.read_csv(file_path,dtype={'证券代码': np.str,'名称':np.str})
-    return(df['证券代码'].tolist())
+    def get_ETF_list(file_path = None):
+        #设置ETF路径
+        if file_path == None:
+            file_path='.\\data\\ETF.csv'    
+        #df=pd.read_csv(trade_log,dtype={'证券代码': np.str,'交收日期':np.str,'成交数量':np.int,'发生金额':np.float},encoding='gb18030')
+        df=pd.read_csv(file_path,dtype={'证券代码': np.str,'名称':np.str})
+        return(df['证券代码'].tolist())
     #输出交割单信息
 
 #get_ETF_list()
