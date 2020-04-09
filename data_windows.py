@@ -256,7 +256,7 @@ code=load_today_all()
 
 ETF_LIST = get_ETF_list()
 update = Data_Update()
-update.update_day(ETF_LIST)
+update.update_day(ETF_LIST,filter_last=1)
 print('ETF处理完成')
 update.update_day(code)
 print('日线处理完毕！')

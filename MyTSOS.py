@@ -24,12 +24,15 @@ class Data_Update(TSOS):
     def __init__(self):
         pass
 
-    def update_day(self  ,code_list=''):
+    def update_day(self , code_list='' , filter_last = 0):
         '''
         [更新日线数据]######
+        code_list: 需要更新的证券代码列表
+        filter_last：需要过滤的数据量，如果出现当天交易日进行过了更新，则当日的数据不准确，需要去除旧数据中最后几条数据，因此可以接受参数输入
         函数说明 乔晖 2020/4/8
         修正一系列已知问题，基本无错误，移植至TSOS->Data_Update列中
         原函数仅涉及保存，不进行新老文件的合并操作，因此重构
+        code_list
         '''
         ####步骤一：读取现有数据
         for code in code_list:
@@ -60,7 +63,9 @@ class Data_Update(TSOS):
                 df_old['code'] = df_old['code'].astype(str)
                 df_old['code'] = df_old['code'].str.zfill(6)
                 df_old = df_old[['open','close','high','low','volume','code']]
-                #df_old=df_old[:-5] #测试环节用，删除部分最新数据以调试新老df的合并情况
+                #过滤旧数据中最后几条
+                if filter_last != 0:                    
+                    df_old=df_old[:-filter_last] #测试环节用，删除部分最新数据以调试新老df的合并情况
                 #旧数据量
                 old_count = df_old.shape[0]
                 #获取新数据
