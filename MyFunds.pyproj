@@ -67,18 +67,12 @@
     <Compile Include="ts_pro_test.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Window1.py">
-      <SubType>Code</SubType>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="CondaEnv|CondaEnv|Anaconda3" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="readme.txt" />
-    <Content Include="Window1.xaml">
-      <SubType>Designer</SubType>
-    </Content>
     <Content Include="更新日志.txt" />
   </ItemGroup>
   <ItemGroup>

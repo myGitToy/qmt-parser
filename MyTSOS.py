@@ -18,6 +18,50 @@ import os
 class TSOS():
         """文档类操作的主类，包含日志读写，文档读写，数据更新等"""
         pass
+class Data_Load(TSOS):
+    """数据加载类，继承自TSOS"""
+    def __init__(self):
+        pass
+    def load_data(self , code = None , start = None , end = None , ktype = "D"):
+        """
+        从本地硬盘加载数据
+        code: 证券代码
+        start: 开始时间 可为空 默认全部读取
+        end： 结束日期，可为空 默认为数据最后一天
+        ktype： D/5/15/30/60 默认为日线
+        
+        """
+        #证券代码不能为空
+        if code == None: 
+            print('证券代码输入无效，请检查') 
+            return None
+        code = code.zfill(6)
+        #K线类型处理
+        if ktype == "D":
+            #日线数据
+            file_path=(".\\data\\day\\%s.csv" % (code))
+        elif ktype in ('5','15','30','60'):
+            #K线数据（文本类型）
+            file_path=(".\\data\\%smin\\%s.csv" % (ktype,code))
+        elif ktype in (5,15,30,60):
+            #K线数据（数字类型）
+            file_path=(".\\data\\%dmin\\%s.csv" % (ktype,code))
+        else:
+            print("K线类型输入无效，请检查")
+            return None
+        #文件读取
+        try:
+            df = pd.read_csv(file_path)
+        except IOError:
+            print("无可用文件，请检查！")
+            return None
+        df['date'] = pd.to_datetime(df['date']  )
+        df.set_index(['date'], inplace = True , drop = True)  
+        return df[start : end]   #太厉害了，直接接受参数 而且日期参数随便写 2020-04-01 2020/4/1都可以
+
+
+
+
 
 class Data_Update(TSOS):
     """数据更新类，继承自TSOS"""
@@ -100,7 +144,7 @@ class Data_Update(TSOS):
                 else:
                     print('日线：代码%s 无数据' % (code))
 
-    def update_min(self , code_list='' , min=60 , filter_last = 0):
+    def update_min(self , code_list ='' , min=60 , filter_last = 0):
         '''
         [更新XX分钟数据]######
         函数说明 乔晖 2020/4/9
@@ -187,12 +231,12 @@ class Data_Update(TSOS):
                     print('代码%s 无数据' % (code))
 
 
-    def get_ETF_list(file_path = None):
+    def get_ETF_list(self , file_path = None):
         #设置ETF路径
         if file_path == None:
-            file_path='.\\data\\ETF.csv'    
+            file_path = '.\\data\\ETF.csv'    
         #df=pd.read_csv(trade_log,dtype={'证券代码': np.str,'交收日期':np.str,'成交数量':np.int,'发生金额':np.float},encoding='gb18030')
-        df=pd.read_csv(file_path,dtype={'证券代码': np.str,'名称':np.str})
+        df=pd.read_csv(file_path , dtype = { '证券代码' : np.str , '名称' : np.str })
         return(df['证券代码'].tolist())
     #输出交割单信息
 

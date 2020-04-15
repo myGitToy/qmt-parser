@@ -242,7 +242,7 @@ def update_all():
 
 
 #更新今日行情列表
-update_today_all()
+#update_today_all()
 #加载今日行情列表
 code=load_today_all()
 
@@ -251,12 +251,14 @@ update = Data_Update()
 ETF_LIST = update.get_ETF_list()
 
 
+
 #优先更新列表 用完请注释掉
 #update.update_min( ETF_LIST , min = 15 )
 #update.update_min( code , min = 15 )
 
 #优先列表更新
-
+#update.update_day( code , filter_last = 0 )
+#update.update_min( code , min = 5 )
 
 
 #ETF数据更新
