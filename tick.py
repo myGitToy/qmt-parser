@@ -18,7 +18,7 @@ TODO LIST：
 import tushare as ts
 import pandas as pd
 import tushare.stock.indictor as ti
-
+import fund
 class tick(object):
     def __init__(self,code,date):
         df = ts.get_tick_data(code,date,src='tt')
@@ -30,5 +30,7 @@ if __name__:
     df_raw = ts.get_hist_data('512760')
     df=ti.boll(df_raw )
     print(df)
+    print(fund.init_value)
+    
 
 
