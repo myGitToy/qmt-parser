@@ -417,6 +417,7 @@ def get_fund_value(start_date='2018-01-01'):
     print(fund_value[['账面现金','总资产','基金申赎','份额确认','基金份额','基金净值']])
 
     fund_value.to_csv('.\\trade\\fund_value.csv', encoding='utf_8_sig')
+    fund_value[['持仓金额','账面现金','基金申赎','总资产','份额确认','基金份额','基金净值']].to_csv('.\\trade\\fund_value_simple.csv', encoding='utf_8_sig')
     #   2.2 表单整合，将现金流量表和持仓表格整合进入
     #   2.3 填充基础信息
     '''
