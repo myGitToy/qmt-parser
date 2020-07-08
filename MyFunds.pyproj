@@ -26,6 +26,9 @@
     <Compile Include="analyse.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="apt\apt_test.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="apt\os\data_load.py">
       <SubType>Code</SubType>
     </Compile>
@@ -36,9 +39,20 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="apt\os\__init__.py" />
+    <Compile Include="apt\testA\B.py" />
+    <Compile Include="apt\testA\A.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="apt\testA\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="apt\testB\A.py" />
+    <Compile Include="apt\testB\B.py" />
+    <Compile Include="apt\testB\__init__.py" />
     <Compile Include="apt\__init__.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="apt_test.py" />
     <Compile Include="fund\class1.py">
       <SubType>Code</SubType>
     </Compile>
@@ -95,6 +109,8 @@
     <Content Include="更新日志.txt" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="apt\testB\" />
+    <Folder Include="apt\testA\" />
     <Folder Include="apt\os\" />
     <Folder Include="fund\" />
     <Folder Include="apt\" />

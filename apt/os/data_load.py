@@ -13,6 +13,7 @@ class Data_Load(TSOS):
     调用时请添加引用：from apt.os.data_load import Data_Load
     """
     def __init__(self):
+        print('THIS IS IN APT.OS')
         pass
     def load_data(self , code : str , start = None , end = None , ktype = "D"):
         """

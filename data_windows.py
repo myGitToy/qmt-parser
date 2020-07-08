@@ -3,7 +3,9 @@ import os
 import pandas as pd
 import tushare as ts
 import numpy as np
-from MyTSOS import Data_Update
+#from MyTSOS import Data_Update
+from apt.os.data_load import Data_Load
+from apt.os.data_update import Data_Update
 
 
 def update_day():

@@ -39,7 +39,10 @@ if __name__:
     b = Data_Update()
 
     df2 = b.update_day(['600000','600638'])
-    #print(df2)
+    txt = 600000
+    print("停止单已触发，代码：{ self.txt }")
+    df3 = ts.get_hist_data(code = '159949' , start = '2020-07-03' , ktype = "60")
+    print(df3)
 
     
     
