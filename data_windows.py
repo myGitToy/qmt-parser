@@ -2,6 +2,8 @@
 import os
 import pandas as pd
 import tushare as ts
+import numpy as np
+from MyTSOS import Data_Update
 
 
 def update_day():
@@ -241,28 +243,58 @@ def update_all():
     ETF特指以下基金列表['512880','510050','510180','510230','510300','510500','510880','510900','159901','159902','159915','159919','159920','159934','159937','159938','159949','159952','512980','512800','512880','512660','512680','512290','512580','512760','513500']
     '''
     #512710未上市
-EFT_LIST=['512880','510050','510180','510230','510300','510500','510880','510900','159901','159902','159915','159919','159920','159934','159937','159938','159949','159952','512980','512800','512880','512660','512680','512290','512580','512760','513500']
+ETF_Trade=['512880','510050','510180','510230','510300','510500','510880','510900','159901','159902','159915','159919','159920','159934','159937','159938','159949','159952','512980','512800','512880','512660','512680','512290','512580','512760','513500','300033','600570']
+#ETF_LIST=['501060','501070','601798']
+
+
 #更新今日行情列表
-update_today_all()
+#update_today_all()
 #加载今日行情列表
 code=load_today_all()
-"""
-#优先更新ETF
-update_day(EFT_LIST)
-update_day(['sh'])
-update_min(EFT_LIST,'60')
-update_min(EFT_LIST,'30')
-update_min(EFT_LIST,'5')
+
+#从文件中获取ETF列表
+update = Data_Update()
+ETF_LIST = update.get_ETF_list()
+
+
+
+#优先更新列表 用完请注释掉
+update.update_day( ETF_Trade , filter_last = 0 )
+#update.update_min( ETF_LIST , min = 15 )
+#update.update_min( code , min = 15 )
+
+#优先列表更新
+#update.update_day( code , filter_last = 0 )
+#update.update_min( code , min = 5 )
+
+
+#ETF数据更新
+update.update_day( ETF_LIST )
+update.update_min( ETF_LIST , min = 5 )
+update.update_min( ETF_LIST , min = 15 )
+update.update_min( ETF_LIST , min = 30 )
+update.update_min( ETF_LIST , min = 60 )
 print('ETF处理完毕！')
+
+#一般证券列表数据更新
+update.update_day( code , filter_last = 0 )
+update.update_min( code , min = 5 )
+update.update_min( code , min = 15 )
+update.update_min( code , min = 30 )
+update.update_min( code , min = 60)
+print('处理完毕！')
+
+#update_day(['sh'])
+
+
 #更新5分钟数据
-update_min(code,'5')
-print('5分钟处理完毕！')
+#update_min(code,'5')
+#print('5分钟处理完毕！')
 
 #更新30分钟数据
-update_min(code,'30')
-print('30分钟处理完毕！')
+#update_min(code,'30')
+#print('30分钟处理完毕！')
 
 #更新60分钟数据
-update_min(code,'60')
-print('60分钟处理完毕！')
-"""
+#update_min(code,'60')
+#print('60分钟处理完毕！')
