@@ -3,7 +3,7 @@ import os
 import pandas as pd
 import tushare as ts
 import numpy as np
-from MyTSOS import Data_Update
+from apt.os.data_update import Data_Update
 
 
 def update_day():
@@ -214,7 +214,8 @@ def load_today_all():
         #print("%s交易价格为%s" % (idx,trade))
         if trade==0:
             #未交易，不写入代码列表
-            print('%s未交易%s' % (idx,trade))
+            #print('%s未交易%s' % (idx,trade))
+            allcode.append(idx)
         else:
             allcode.append(idx)
     return allcode
