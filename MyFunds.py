@@ -359,8 +359,9 @@ def get_fund_value(start_date='2018-01-01'):
     fund_value.insert(col_len+1, '基金份额',np.nan)
     fund_value.insert(col_len+2, '基金净值',np.nan)
     #数据初始化
-    fund_value.ix[0, '基金净值']=1
-    fund_value.ix[0, '基金份额']=0
+    fund_value.loc[fund_value.index[0], '基金净值']=1
+    fund_value.loc[fund_value.index[0], '基金份额']=0
+    print("初始化净值%s" % (fund_value.loc[fund_value.index[0], '基金净值']))
     fund_value=fund_value.fillna(0)
     #   2.2 逐行扫描进行份额和基金净值计算（目前技术条件只能采取历遍而非矩阵操作）
     #由于性能考虑，需要跳过首行进行处理，因此list写入序列进行迭代
@@ -382,24 +383,24 @@ def get_fund_value(start_date='2018-01-01'):
         #净值A=当日基金份额B/当日基金总资产C
         #份额确认D=当日申购金额E/前一日基金净值A.-1
         #基金份额B=前一日基金份额B.-1+当日基金确认份额D （本规则下当日申购资金直接确认，可当日进行买入交易，为T+0操作）        
-        if fund_value.ix[i, '基金申赎']==0:
+        if fund_value.loc[i, '基金申赎']==0:
             #无申赎
             
-            fund_value.ix[i, '份额确认']=0
-            fund_value.ix[i, '基金份额']=pre_shares
-            if fund_value.ix[i, '总资产']==0:
-                fund_value.ix[i, '基金净值']=1
+            fund_value.loc[i, '份额确认']=0
+            fund_value.loc[i, '基金份额']=pre_shares
+            if fund_value.loc[i, '总资产']==0:
+                fund_value.loc[i, '基金净值']=1
             else:
-                fund_value.ix[i, '基金净值']=fund_value.ix[i, '总资产']/fund_value.ix[i, '基金份额']
+                fund_value.loc[i, '基金净值']=fund_value.loc[i, '总资产']/fund_value.loc[i, '基金份额']
         else:
             #有申购，总资产不可能为0，因此不需要进一步判断
-            fund_value.ix[i, '份额确认']=fund_value.ix[i, '基金申赎']/pre_values
-            fund_value.ix[i, '基金份额']=fund_value.ix[i, '份额确认']+pre_shares
-            fund_value.ix[i, '基金净值']=fund_value.ix[i, '总资产']/fund_value.ix[i, '基金份额']
+            fund_value.loc[i, '份额确认']=fund_value.loc[i, '基金申赎']/pre_values
+            fund_value.loc[i, '基金份额']=fund_value.loc[i, '份额确认']+pre_shares
+            fund_value.loc[i, '基金净值']=fund_value.loc[i, '总资产']/fund_value.loc[i, '基金份额']
             
         #写入今日信息，变成下一个循环的昨日信息
-        pre_shares=fund_value.ix[i, '基金份额']
-        pre_values=fund_value.ix[i, '基金净值']
+        pre_shares=fund_value.loc[i, '基金份额']
+        pre_values=fund_value.loc[i, '基金净值']
         #print(pre_values)
 
         
