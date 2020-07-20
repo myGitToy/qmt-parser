@@ -196,6 +196,7 @@ class ATR(Technical_Analysis):
         for code in code_list:
             #循环截取所有列表中的数据
             atr = ATR(code = code , start = start , ktype = ktype)
+            print(code)
             atr.network_OK = True
             df = atr.cal_ATR()[['date','close','TR','ATR','MAHR_100_HIGH','MAHR_20','MAHR_30']]
             df['code'] = code
