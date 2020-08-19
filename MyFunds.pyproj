@@ -53,6 +53,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="apt_test.py" />
+    <Compile Include="demo\demo_get_k_data.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="fund\class1.py">
       <SubType>Code</SubType>
     </Compile>
@@ -114,6 +117,7 @@
     <Folder Include="apt\os\" />
     <Folder Include="fund\" />
     <Folder Include="apt\" />
+    <Folder Include="demo\" />
     <Folder Include="VB\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
