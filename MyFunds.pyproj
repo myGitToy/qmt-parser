@@ -39,6 +39,7 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="apt\os\__init__.py" />
+    <Compile Include="apt\qsp\__init__.py" />
     <Compile Include="apt\testA\B.py" />
     <Compile Include="apt\testA\A.py">
       <SubType>Code</SubType>
@@ -112,6 +113,7 @@
     <Content Include="更新日志.txt" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="apt\qsp\" />
     <Folder Include="apt\testB\" />
     <Folder Include="apt\testA\" />
     <Folder Include="apt\os\" />
