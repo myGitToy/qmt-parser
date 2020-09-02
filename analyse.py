@@ -36,13 +36,13 @@ pd.set_option('max_colwidth',100)
 class Technical_Analysis():
     """技术分析主类，下设各种技术分析指标，每个指标一个类"""
     #关于network_OK的说明：默认需要调用network_connection才能返回正确的结果，如果之前调用过，再使用network_OK可节约ping，增加效率
-    network_OK=None
+    network_OK = None
     #tushare社区的token
     _token = "55297f16c0119146589e059db315ba28a9412e89ec9f91e538e655b2"
     def network_connection(self,testing_url = None):
         """检查网络连接情况，可自定义网址，默认ping 百度；连通返回True 断开返回False"""
         print("CHECKING NETWORK CONNECTION......")
-        url=testing_url
+        url = testing_url
         try:
             if url is None:
                 exit_code = os.system("ping www.baidu.com")
@@ -66,7 +66,7 @@ class Technical_Analysis():
         elif True:
             #网络连接正常
             pro = ts.pro_api(self._token)
-            df = ts.get_k_data(code = self.code,end = self.end,start = self.start,ktype=self.ktype)
+            df = ts.get_k_data(code = self.code , end = self.end,start = self.start , ktype = self.ktype)
             #print(df)
             return df
         elif False:
@@ -82,7 +82,7 @@ class Technical_Analysis():
         #print(df)
         pass
 
-    def __init__(self,code=None,start=None,end=None,ktype="D"):
+    def __init__(self,code = None , start = None , end = None , ktype = "D"):
         """
         初始化
         输入：
@@ -95,9 +95,9 @@ class Technical_Analysis():
             #数据补0
             code = code.zfill(6)
         self.code = code
-        self.start=start
-        self.end=end
-        self.ktype=ktype
+        self.start = start
+        self.end = end
+        self.ktype = ktype
 
 class CDP(Technical_Analysis):
     """CDP类，继承自TA"""
@@ -107,23 +107,23 @@ class CDP(Technical_Analysis):
         #调用父类进行初始化
         super(CDP,self).__init__()
     """
-    def cal_CDP(self,idx_tomorrow=False):
+    def cal_CDP(self,idx_tomorrow = False):
         """计算CDP"""
         #默认CDP计算使用的是前一天的数据，但如果idx_tomorrow=True，则输出预测第二个交易日的数据，且只输出一行
         if idx_tomorrow is False:
             #计算整个矩阵
             df = super(CDP,self).get_data()
             #CDP = (最高價 + 最低價 + 2*收盤價) /4
-            df['CDP'] = (df['high'].shift(1)+df['low'].shift(1)+2*df['close'].shift(1)) / 4 
+            df['CDP'] = (df['high'].shift(1) + df['low'].shift(1) + 2*df['close'].shift(1)) / 4 
             #最高值(AH)、(NH)、近低值(NL)及最低值(AL)
             #最高值AH = CDP + (最高價 - 最低價)
-            df['AH']=round(df['CDP'] + (df['high'].shift(1) - df['low'].shift(1)) , 3)
+            df['AH'] = round(df['CDP'] + (df['high'].shift(1) - df['low'].shift(1)) , 3)
             #近高值NH = 2*CDP - 最低價
-            df['NH']=round(2 * df['CDP'] - df['low'].shift(1) , 3)
+            df['NH'] = round(2 * df['CDP'] - df['low'].shift(1) , 3)
             #近低值NL = 2*CDP - 最高價
-            df['NL']=round(2 * df['CDP'] - df['high'].shift(1) , 3)
+            df['NL'] = round(2 * df['CDP'] - df['high'].shift(1) , 3)
             #最低值AL = CDP - (最高價 - 最低價)
-            df['AL']= round(df['CDP'] - (df['high'].shift(1)-df['low'].shift(1))  , 3)
+            df['AL'] = round(df['CDP'] - (df['high'].shift(1) - df['low'].shift(1))  , 3)
             #输出             
             print(df)
         else:
