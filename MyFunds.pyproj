@@ -39,6 +39,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="apt\os\__init__.py" />
+    <Compile Include="apt\qsp\k.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="apt\qsp\__init__.py" />
     <Compile Include="apt\testA\B.py" />
     <Compile Include="apt\testA\A.py">
