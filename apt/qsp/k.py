@@ -10,7 +10,7 @@ from datetime import datetime
 class k:
     def __init__(self):
         pass
-    def k_new_high_count(self , code : str , start = None , end = None , ktype = "D" , MA_HIGH_PERIOD = 100 , auto_update = True):
+    def k_new_high_count(self , code : str , start = None , end = None , ktype = "60" , MA_HIGH_PERIOD = 100 , auto_update = True):
         """
         【计算K线中指定周期新高的次数】
         常规使用小时线上100小时新高（ktype = 60 , MA_HIGH_PERIOD = 100）

@@ -66,6 +66,7 @@ class Technical_Analysis():
         elif True:
             #网络连接正常
             pro = ts.pro_api(self._token)
+            #####【BUG report】这里的时间格式只能接受为YYYY-MM-DD
             df = ts.get_k_data(code = self.code , end = self.end , start = self.start , ktype = self.ktype)
             #print(df)
             return df

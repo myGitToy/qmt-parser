@@ -56,6 +56,9 @@
     <Compile Include="apt\__init__.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="demo\demo_atr_test.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="demo\demo_get_k_data.py">
       <SubType>Code</SubType>
     </Compile>
