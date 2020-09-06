@@ -29,10 +29,17 @@ class k:
         last_index = df.last_valid_index().strftime( '%Y-%m-%d')
         last_end = datetime.strptime(end, '%Y-%m-%d').strftime( '%Y-%m-%d')
         if (auto_update == True) & (last_index != last_end):
-            #自动更新至最新数据（小时数据）
+            #证券代码转换成列表格式
             lst=[]
             lst.append(code)
-            update.update_min(self , code_list = lst , min = ktype)
+            if ktype =='D':
+                #自动更新至最新数据（日线数据）
+                ########################################################################################
+                #日线数据更新存在一些问题，删除最新的日期后，无法完成自动更新
+                update.update_day(self , code_list = lst )
+            else:
+                #自动更新至最新数据（小时数据）
+                update.update_min(self , code_list = lst , min = ktype)
             #读取最新数据
             df = dl.load_data(self , code = code , start = start , end = end , ktype = ktype)
 
@@ -43,6 +50,9 @@ class k:
         #累计回滚新高
         df = df.fillna(0)
         df['new_high_count'] = df['new_high'].rolling(MA_HIGH_PERIOD).sum()
+        #数据错误风险提示
+        if df.shape[0] <= MA_HIGH_PERIOD:
+            print('数据输入可能存在错误，条目数小于rolling，请检查')
         #if df['MAHR_100_HIGH'] == df.copy()['high']:
         #    df['new_high_count'] = 1
         return df
