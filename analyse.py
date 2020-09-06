@@ -66,7 +66,7 @@ class Technical_Analysis():
         elif True:
             #网络连接正常
             pro = ts.pro_api(self._token)
-            df = ts.get_k_data(code = self.code , end = self.end,start = self.start , ktype = self.ktype)
+            df = ts.get_k_data(code = self.code , end = self.end , start = self.start , ktype = self.ktype)
             #print(df)
             return df
         elif False:
@@ -150,8 +150,7 @@ class CDP(Technical_Analysis):
             print(df)
         pass
   
-        #df2 = ts.get_today_ticks('510300')
-        #print(df2.head(100))
+
 
 class ATR(Technical_Analysis):
     """ATR类，继承自TA
@@ -179,6 +178,12 @@ class ATR(Technical_Analysis):
         df['MAHR_20'] = df['close'].rolling(MAHR_20).mean()
         #小时线30小时均线价格
         df['MAHR_30'] = df['close'].rolling(MAHR_30).mean()
+        #小时线100小时ATR偏离
+        df['MAHR_100_HIGH_DEV'] = (df['close'] - df['MAHR_100_HIGH']) / df['ATR']
+        #小时线20小时均线ATR偏离
+        df['MAHR_20_DEV'] = (df['close'] - df['MAHR_20']) / df['ATR']
+        ##小时线20小时均线ATR偏离
+        df['MAHR_30_DEV'] = (df['close'] - df['MAHR_30']) / df['ATR']
         #print(df[['date','close','ATR']])
         return df
         
@@ -192,13 +197,13 @@ class ATR(Technical_Analysis):
         返回：
             [日期 证券代码 收盘价 TR ATR MA HIGH]
         """
-        df_main=pd.DataFrame(columns=['date','code','close','TR','ATR','MAHR_100_HIGH','MAHR_20','MAHR_30'])
+        df_main=pd.DataFrame(columns=['date','code','close','TR','ATR','MAHR_100_HIGH','MAHR_20','MAHR_30','MAHR_100_HIGH_DEV','MAHR_20_DEV','MAHR_30_DEV'])
         for code in code_list:
             #循环截取所有列表中的数据
             atr = ATR(code = code , start = start , ktype = ktype)
-            print(code)
+            #print(code)
             atr.network_OK = True
-            df = atr.cal_ATR()[['date','close','TR','ATR','MAHR_100_HIGH','MAHR_20','MAHR_30']]
+            df = atr.cal_ATR()[['date','close','TR','ATR','MAHR_100_HIGH','MAHR_20','MAHR_30','MAHR_100_HIGH_DEV','MAHR_20_DEV','MAHR_30_DEV']]
             df['code'] = code
             #日期转换为datetime64[ns] 否则会在merge操作中因为两列属性不同和无法完成合并操作
             df['date'] = pd.to_datetime(df['date'])
@@ -224,7 +229,7 @@ if __name__=="__main__":
         print(df)
     
     #计算ATR
-    atr = ATR(code = '512880',start = '2019-10-01',ktype="D")
+    atr = ATR(code = '512880', start = '2019-10-01' , ktype="D")
     atr.network_OK=a.network_OK
     atr.cal_ATR()
 
