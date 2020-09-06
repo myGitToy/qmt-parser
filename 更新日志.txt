@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 2020/9/6
 1. 【ATR模块】增加100小时新高ATR偏离、30小时均线ATR偏离
+2. 汇总了关于时间格式的一点心得：https://d.docs.live.net/73cc4880b9aaa2e9/文档/Hui%20的笔记本/MyFunds.one#关于时间格式的几点心得&section-id={04CCDE94-D7F7-48DF-BD9E-9565D325438C}&page-id={FB660396-89F6-478A-8AED-1BCA11A80093}&end
+3. 新高次数模块测试完成，但未进行归类和封装
+4. 【K模块】k_new_high_count 修正对于end日期格式的要求
+5. 【K模块】k_new_high_count 移除对于end必须输入的要求
 
 2020/7/6
 1. 重构软件整体框架，采用python典型包结构

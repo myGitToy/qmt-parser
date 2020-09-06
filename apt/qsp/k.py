@@ -15,21 +15,19 @@ class k:
         【计算K线中指定周期新高的次数】
         常规使用小时线上100小时新高（ktype = 60 , MA_HIGH_PERIOD = 100）
         code start end ktype均为常规参数
+        code start 必须输入
+        end 选择输入
         MA_HIGH_PERIOD：计算新高的周期，需要和ktype配合使用
         【注意】数据前MA_HIGH_PERIOD中新高数据均为NA，因rolling前滚取不到数据的缘故
-        【规则】start 格式不限，但end只允许使用YYYY/MM/DD 
-        【规则】df输出格式为YYYY-MM-DD
-        """
-        #检查end字符串格式
-        
-        if "-"  in end:
-            print('请使用YYYY/MM/DD格式，不允许使用YYYY-MM-DD')
-            return False
-        
+        """   
+        #最后日期为空，则打开数据自动更新功能
+        if  end == None:
+            end = datetime.now().strftime("%Y-%m-%d")
+            auto_update = True
         df = dl.load_data(self , code = code , start = start , end = end , ktype = ktype)
         #两个日期序列化 last_index 为索引转换成日期，last_end为字符串转换成日期再按照指定格式输出
-        last_index = df.last_valid_index().strftime( '%Y/%m/%d')
-        last_end = datetime.strptime(end, '%Y/%m/%d').strftime( '%Y/%m/%d')
+        last_index = df.last_valid_index().strftime( '%Y-%m-%d')
+        last_end = datetime.strptime(end, '%Y-%m-%d').strftime( '%Y-%m-%d')
         if (auto_update == True) & (last_index != last_end):
             #自动更新至最新数据（小时数据）
             lst=[]
