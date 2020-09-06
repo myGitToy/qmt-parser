@@ -11,6 +11,7 @@ class Data_Load(TSOS):
     """
     数据加载类，继承自TSOS
     调用时请添加引用：from apt.os.data_load import Data_Load
+    数据加载的时间格式可以是2020/1/1 也可以是2020-01-01
     """
     def __init__(self):
         print('THIS IS IN APT.OS')

@@ -11,6 +11,8 @@ class Data_Update(TSOS):
     """
     数据更新类，继承自TSOS
     调用时请添加引用：from apt.os.data_update import Data_Update
+    数据更新目前接受的是codelist 对时间格式没有要求
+    单独的数据更新时间格式必须是YYYY-mm-dd
     """
     def __init__(self):
         pass
