@@ -68,30 +68,8 @@ class k:
         MA_HIGH_PERIOD：计算新高的周期，需要和ktype配合使用
         【注意】数据前MA_HIGH_PERIOD中新高数据均为NA，因rolling前滚取不到数据的缘故
         """   
-        #最后日期为空，则打开数据自动更新功能
-        if  end == None:
-            end = datetime.now().strftime("%Y-%m-%d")
-            auto_update = True
-        df = dl.load_data(self , code = code , start = start , end = end , ktype = ktype)
-        #两个日期序列化 last_index 为索引转换成日期，last_end为字符串转换成日期再按照指定格式输出
-        last_index = df.last_valid_index().strftime( '%Y-%m-%d')
-        last_end = datetime.strptime(end, '%Y-%m-%d').strftime( '%Y-%m-%d')
-        if (auto_update == True) & (last_index != last_end):
-            #证券代码转换成列表格式
-            lst=[]
-            lst.append(code)
-            if ktype =='D':
-                #自动更新至最新数据（日线数据）
-                ########################################################################################
-                #日线数据更新存在一些问题，删除最新的日期后，无法完成自动更新(手动删除csv最后几行的情况下)
-                #正常日线数据目前测试下来是可以更新的
-                update.update_day(self , code_list = lst )
-            else:
-                #自动更新至最新数据（小时数据）
-                update.update_min(self , code_list = lst , min = ktype)
-            #读取最新数据
-            df = dl.load_data(self , code = code , start = start , end = end , ktype = ktype)
-
+        #获取K线数据
+        df = __get_k_data(self , code = code , start = start , end = end , ktype = ktype , auto_update = auto_update)
         #小时线100小时最高收盘价计算
         df['MAHR_100_HIGH'] = df['high'].rolling(MA_HIGH_PERIOD).max()
         #计算此时点的最高是否为新高
