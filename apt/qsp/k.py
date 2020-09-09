@@ -10,7 +10,7 @@ from datetime import datetime
 class k:
     def __init__(self):
         pass
-    def __get_k_data(self , code : str , start = None , end = None , ktype = "60" , auto_update = True):
+    def get_k_data(self , code : str , start = None , end = None , ktype = "60" , auto_update = True):
         """
         抽取出来的总类，用于获取最新的K线数据，含自动更新
         输入：
@@ -46,7 +46,7 @@ class k:
                 update.update_min(self , code_list = lst , min = ktype)
             #读取最新数据
             df = dl.load_data(self , code = code , start = start , end = end , ktype = ktype)
-            return df
+        return df
 
     def new_high_break(self , ):
         """
@@ -69,7 +69,7 @@ class k:
         【注意】数据前MA_HIGH_PERIOD中新高数据均为NA，因rolling前滚取不到数据的缘故
         """   
         #获取K线数据
-        df = __get_k_data(self , code = code , start = start , end = end , ktype = ktype , auto_update = auto_update)
+        df = self.get_k_data( code = code , start = start , end = end , ktype = ktype , auto_update = auto_update)
         #小时线100小时最高收盘价计算
         df['MAHR_100_HIGH'] = df['high'].rolling(MA_HIGH_PERIOD).max()
         #计算此时点的最高是否为新高
