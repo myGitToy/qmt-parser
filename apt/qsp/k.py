@@ -48,11 +48,16 @@ class k:
             df = dl.load_data(self , code = code , start = start , end = end , ktype = ktype)
         return df
 
-    def new_high_break(self , ):
+    def new_high_break(self , MINIMUM = 5 ,MA_HIGH_PERIOD = 100 , auto_update = True) :
         """
         突破前高
+        此函数设有过滤系统，必须突破新高次数降低到0以后重新回升才会计算在内；下降过程中的突破新高次数递减的情况会被过滤掉
         输入：
-            
+            MINIMUM：突破前高大于多少返回True 默认为3
+            MA_HIGH_PERIOD 突破N均线 默认为100
+                注：通常日线采用20天突破 小时线采用100小时突破
+            auto_update：是否将K线数据更新至最新 默认值：True （False则使用csv中的数据，不进行联网更新）
+        
         返回：
             True False
 
