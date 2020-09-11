@@ -260,8 +260,8 @@ ETF_LIST = update.get_ETF_list()
 
 
 #优先更新列表 用完请注释掉
-#update.update_day( ETF_Trade , filter_last = 0 )
-#update.update_min( ETF_Trade , min = 60 )
+update.update_day( ETF_Trade , filter_last = 0 )
+update.update_min( ETF_Trade , min = 60 )
 #update.update_min( ETF_LIST , min = 15 )
 #update.update_min( ETF_LIST , min = 5 )
 #update.update_min( code , min = 5 )

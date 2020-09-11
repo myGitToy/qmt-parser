@@ -8,13 +8,10 @@ if __name__=="__main__":
     start = '2020-05-01'
     end = '2020-09-11'
     ktype = '60'
-    df = pd.DataFrame()
-    if df.empty == True :
-        print(True)
     
     for code in code_list:
         a = k()
-        if a.new_high_break(code =code , start = start , end = end ,  ktype = ktype , MA_HIGH_PERIOD = 100) ==True:
+        if a.new_high_break(code =code , start = start , end = end ,  ktype = ktype , MA_HIGH_PERIOD = 100) == True:
             print("%s新高突破" % (code))
 
 

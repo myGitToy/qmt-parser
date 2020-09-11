@@ -62,7 +62,9 @@ class k:
         
         返回：
             True False
-
+        存在的问题：
+            1. 如果在震荡行情中，前期有一个突破的动作，但是突破失败，由于首次突破后趋势还是正的，因此及时在下降通道中，根据规则还会有很长时间处于前高求和>0 趋势为正的情况
+            2. 
         """
         #获取新高数据
         df = self.k_new_high_count( code = code , start = start , end = end , ktype = ktype ,MA_HIGH_PERIOD = MA_HIGH_PERIOD , auto_update = auto_update)
@@ -74,6 +76,7 @@ class k:
         #将新高趋势=0的调整为NA，再ffill NA，从而将1或者-1（既连续化上升或下降）
         df.loc[df.new_high_tendency == 0 , 'new_high_tendency'] = np.nan
         df.fillna(method='ffill' , inplace = True)
+        #输出df信息，通常用于调试
         #print(df[['code','new_high','new_high_tendency' ,'new_high_count']])
         #print(df.loc[:,'new_high_count'])
         if (df.iloc[-1].at['new_high_count'] >= MINIMUM) & (df.iloc[-1].at['new_high_count'] <= MAXIMUM) & (df.iloc[-1].at['new_high_tendency'] ==1):
