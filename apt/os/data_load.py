@@ -28,7 +28,7 @@ class Data_Load(TSOS):
         #证券代码不能为空
         if code == None: 
             print('证券代码输入无效，请检查') 
-            return None
+            return pd.DataFrame()
         code = code.zfill(6)
         #K线类型处理
         if ktype == "D":
@@ -42,13 +42,13 @@ class Data_Load(TSOS):
             file_path=(".\\data\\%dmin\\%s.csv" % (ktype,code))
         else:
             print("K线类型输入无效，请检查")
-            return None
+            return pd.DataFrame()
         #文件读取
         try:
             df = pd.read_csv(file_path)
         except IOError:
             print("无可用文件，请检查！")
-            return None
+            return pd.DataFrame()
         df['date'] = pd.to_datetime(df['date']  )
         df.set_index(['date'], inplace = True , drop = True)  
         

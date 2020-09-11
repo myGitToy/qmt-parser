@@ -66,12 +66,15 @@ class k:
         """
         #获取新高数据
         df = self.k_new_high_count( code = code , start = start , end = end , ktype = ktype ,MA_HIGH_PERIOD = MA_HIGH_PERIOD , auto_update = auto_update)
+        if df.empty == True:
+            print("请检查代码%s" % (code))
+            return False
         #设置新高的趋势，所以新高次数逐渐增加，则设置1；逐渐减少设置-1；不变设置0
         df['new_high_tendency'] = df['new_high_count'] - df['new_high_count'].shift(1)
         #将新高趋势=0的调整为NA，再ffill NA，从而将1或者-1（既连续化上升或下降）
         df.loc[df.new_high_tendency == 0 , 'new_high_tendency'] = np.nan
         df.fillna(method='ffill' , inplace = True)
-        print(df[['code','new_high','new_high_tendency' ,'new_high_count']])
+        #print(df[['code','new_high','new_high_tendency' ,'new_high_count']])
         #print(df.loc[:,'new_high_count'])
         if (df.iloc[-1].at['new_high_count'] >= MINIMUM) & (df.iloc[-1].at['new_high_count'] <= MAXIMUM) & (df.iloc[-1].at['new_high_tendency'] ==1):
             #同时满足新高次数在上下限之间且非下降趋势（即回到0以后再上升的情况）
