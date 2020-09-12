@@ -64,7 +64,7 @@ class k:
             True False
         存在的问题：
             1. 如果在震荡行情中，前期有一个突破的动作，但是突破失败，由于首次突破后趋势还是正的，因此及时在下降通道中，根据规则还会有很长时间处于前高求和>0 趋势为正的情况
-            2. 
+            2. 建议通过均线向上的条件进行过滤
         """
         #获取新高数据
         df = self.k_new_high_count( code = code , start = start , end = end , ktype = ktype ,MA_HIGH_PERIOD = MA_HIGH_PERIOD , auto_update = auto_update)
@@ -79,7 +79,7 @@ class k:
         #输出df信息，通常用于调试
         #print(df[['code','new_high','new_high_tendency' ,'new_high_count']])
         #print(df.loc[:,'new_high_count'])
-        if (df.iloc[-1].at['new_high_count'] >= MINIMUM) & (df.iloc[-1].at['new_high_count'] <= MAXIMUM) & (df.iloc[-1].at['new_high_tendency'] ==1):
+        if (df.iloc[-1].at['new_high_count'] >= MINIMUM) and (df.iloc[-1].at['new_high_count'] <= MAXIMUM) and (df.iloc[-1].at['new_high_tendency'] ==1):
             #同时满足新高次数在上下限之间且非下降趋势（即回到0以后再上升的情况）
             return True
         else:
@@ -116,3 +116,27 @@ class k:
         #    df['new_high_count'] = 1
         return df
 
+    def ma_positive(self ,  code : str , start = None , end = None , ktype = "60" , MA = 30 , ROLLING_PERIOD = 3 , POSITIVE_VALUE = -0.0005 , auto_update = True) :
+        """
+        计算K线均线的斜率
+        输入：
+            MA :MA日/小时 均线；通常计算30日/小时均线
+            ROLLING_PERIOD：均线斜率的计算依据，一般使用3个周期的平均值，以规避一根线带来的干扰 默认为3
+            POSITIVE_VALUE：大于多少才认为斜率为正 一般取一个很小的负值，这样震荡走势中略微向下的情况也会被判断会正 默认值-0.0005
+            auto_update：是否将K线数据更新至最新 默认值：True （False则使用csv中的数据，不进行联网更新）
+        
+        返回：
+            True False
+        存在的问题：
+        """
+        df = self.get_k_data( code = code , start = start , end = end , ktype = ktype , auto_update = auto_update)
+        #计算MA日/小时均线价格
+        df['ma'] = df['close'].rolling(MA).mean()
+        df['ma_slope'] = (df['ma'] - df['ma'].shift(1)) / df['ma']
+        df['ma3_slope'] = df['ma_slope'].rolling(ROLLING_PERIOD).mean()
+        if df.iloc[-1].at['ma3_slope'] >= POSITIVE_VALUE:
+            return True
+        else:
+            return False
+        #df = get_line_k(self , code = __code ,  start = __start , end = __end , ktype = __ktype)
+        print(df)

@@ -65,6 +65,9 @@
     <Compile Include="demo\demo_get_k_slope.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="demo\demo_multiple_condition.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="demo\demo_new_high_break.py">
       <SubType>Code</SubType>
     </Compile>
