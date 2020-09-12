@@ -3,6 +3,7 @@ from  apt.os.data_load import Data_Load as dl
 from  apt.os.data_update import Data_Update as update
 from datetime import datetime
 import numpy as np
+import pandas as pd
 """
 【K线选股系统】
 
@@ -29,6 +30,9 @@ class k:
             end = datetime.now().strftime("%Y-%m-%d")
             auto_update = True
         df = dl.load_data(self , code = code , start = start , end = end , ktype = ktype)
+        #可能存在的一种情况：指定时间段内无数据，返回空dataframe
+        if df.empty ==True:
+           return pd.DataFrame()
         #两个日期序列化 last_index 为索引转换成日期，last_end为字符串转换成日期再按照指定格式输出
         last_index = df.last_valid_index().strftime( '%Y-%m-%d')
         last_end = datetime.strptime(end, '%Y-%m-%d').strftime( '%Y-%m-%d')
@@ -102,6 +106,9 @@ class k:
         """   
         #获取K线数据
         df = self.get_k_data( code = code , start = start , end = end , ktype = ktype , auto_update = auto_update)
+        if df.empty == True:
+            print("请检查代码%s" % (code))
+            return False
         #小时线100小时最高收盘价计算
         df['MAHR_100_HIGH'] = df['high'].rolling(MA_HIGH_PERIOD).max()
         #计算此时点的最高是否为新高

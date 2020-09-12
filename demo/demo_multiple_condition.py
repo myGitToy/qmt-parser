@@ -37,7 +37,9 @@ if __name__=="__main__":
     start = '2020-05-01'
     end = '2020-09-11'
     ktype = '60'
-
+    b =  k()
+    df2 = b.get_k_data(code = '600891' , start = start , end = end ,  ktype = ktype)
+    print(df2)
     #新高突破
     for code in code_list:
         a = k()
