@@ -46,7 +46,7 @@ if __name__=="__main__":
     for code in code_list:
         a = k()
         #if (a.new_high_break(code =code , start = start , end = end ,  ktype = ktype , MA_HIGH_PERIOD = 100 ,auto_update = False) == True) and (a.ma_positive(code =code , start = start , end = end ,  ktype = ktype , auto_update = False) == True):
-        if a.ma_positive(code =code , start = start , end = end ,  ktype = ktype , auto_update = False) and a.new_high_break(code =code , start = start , end = end ,  ktype = ktype , MA_HIGH_PERIOD = 100 ,auto_update =False) :
+        if a.ma_positive(code =code , start = start , end = end ,  ktype = ktype ,POSITIVE_VALUE = 0.001 , auto_update= False) and a.new_high_break(code =code , start = start , end = end ,  ktype = ktype , MA_HIGH_PERIOD = 100 , MINIMUM = 1 , MAXIMUM= 5 , auto_update =False) :
            print("%s新高突破且均线向上" % (code))
            lst.append(code)
     print(lst)
