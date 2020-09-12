@@ -249,7 +249,7 @@ ETF_Trade=['510300','510500','510050','510180','510900','159920','518880','15992
 
 
 #更新今日行情列表
-#update_today_all()
+update_today_all()
 #加载今日行情列表
 code=load_today_all()
 
@@ -260,8 +260,12 @@ ETF_LIST = update.get_ETF_list()
 
 
 #优先更新列表 用完请注释掉
-update.update_day( ETF_Trade , filter_last = 0 )
-update.update_min( ETF_Trade , min = 60 )
+#update.update_day( ETF_Trade , filter_last = 0 )
+#update.update_min( ETF_Trade , min = 60 )
+#update.update_min( ETF_Trade , min = 30 )
+#update.update_min( ETF_Trade , min = 15 )
+#update.update_min( ETF_Trade , min = 5 )
+
 #update.update_min( ETF_LIST , min = 15 )
 #update.update_min( ETF_LIST , min = 5 )
 #update.update_min( code , min = 5 )
@@ -281,10 +285,10 @@ print('ETF处理完毕！')
 
 #一般证券列表数据更新
 #update.update_day( code , filter_last = 0 )
-#update.update_min( code , min = 5 )
-#update.update_min( code , min = 15 )
+update.update_min( code , min = 5 )
+update.update_min( code , min = 15 )
 #update.update_min( code , min = 30 )
-update.update_min( code , min = 60)
+#update.update_min( code , min = 60)
 print('处理完毕！')
 
 #update_day(['sh'])
