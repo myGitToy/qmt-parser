@@ -15,7 +15,7 @@
 协同方式：
     【数据处理】：python+pandas
     【数据存储】：mysql
-    【程序界面】：VB.NET
+    【程序界面】：PYQT
     【其他】：多账号管理；多策略管理；数据模型历史回测功能
 '''
 from datetime import datetime,timedelta

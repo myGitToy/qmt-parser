@@ -108,7 +108,8 @@ class k:
         df = self.get_k_data( code = code , start = start , end = end , ktype = ktype , auto_update = auto_update)
         if df.empty == True:
             print("请检查代码%s" % (code))
-            return False
+            #本函数因为提供的dataframe 因此不能返回False 只能返回空数据
+            return pd.DataFrame()
         #小时线100小时最高收盘价计算
         df['MAHR_100_HIGH'] = df['high'].rolling(MA_HIGH_PERIOD).max()
         #计算此时点的最高是否为新高
@@ -137,6 +138,10 @@ class k:
         存在的问题：
         """
         df = self.get_k_data( code = code , start = start , end = end , ktype = ktype , auto_update = auto_update)
+        df = df.iloc[-(MA + 10):]
+        if df.empty == True:
+            print("请检查代码%s" % (code))
+            return False
         #计算MA日/小时均线价格
         df['ma'] = df['close'].rolling(MA).mean()
         df['ma_slope'] = (df['ma'] - df['ma'].shift(1)) / df['ma']
