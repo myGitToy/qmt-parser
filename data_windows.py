@@ -3,15 +3,11 @@ import os
 import pandas as pd
 import tushare as ts
 import numpy as np
-from MyTSOS import Data_Update
+from apt.os.data_update import Data_Update
 
 
 def update_day():
-    '''
-    【此函数已停止使用】    
-    '''
-    print("此函数已停止使用")
-    return False
+    
     #获取第一个df
     df1 = ts.get_k_data('510050', start='2014-02-21',end='2014-04-01',ktype='D',autype='qfq')
     #重构索引
@@ -90,7 +86,6 @@ def update_day():
 
 def update_min(code_list='',min=''):
     '''
-    【此函数已停止使用】
     [更新XX分钟数据]######
     函数说明 乔晖 2018/4/23
     具体步骤如下：
@@ -101,8 +96,6 @@ def update_min(code_list='',min=''):
     5.写入原有文件
     
     '''
-    print("此函数已停止使用")
-    return False
     ####步骤二：读取现有数据
     for code in code_list:
         try:
@@ -152,6 +145,19 @@ def update_min(code_list='',min=''):
             df_current.set_index(['date'], inplace = True)  
             df_current.to_csv('.\\data\\%smin\\%s.csv' % (min,code))
             print('%s分钟线：新增代码%s，数据量：%s条' % (min,code,df_current.shape[0]))
+
+def update_day(code_list=''):
+    '''
+    [更新日线数据]######
+    函数说明 乔晖 2018/8/6
+    具体步骤如下：
+    1.从[get_k_data]中读取新数据并保存
+    to_csv
+    '''        
+    for code in code_list:
+        df=ts.get_k_data(code)    
+        df.to_csv('.\\data\\day\\%s.csv' % (code))
+     
             
 def get_allcode():
     '''
@@ -188,7 +194,6 @@ def load_today_all():
     [加载当日实时数据]######
     函数说明 乔晖 2018/4/25
     从硬盘中获取当日交易的数据，数据由update_today_all提供更新
-    这一版计划也要重写的
     【行情不含基金和ETF】
     读取目录在/data/today_all.csv
     '''
@@ -208,8 +213,8 @@ def load_today_all():
             trade=0
         #print("%s交易价格为%s" % (idx,trade))
         if trade==0:
-            #未交易，不写入代码列表 【2020/4/8修正 由于文件已经能够识别正确，因此未交易的数据也写入列表内】
-            #print('%s未交易%s 但依旧写入' % (idx,trade))
+            #未交易，不写入代码列表
+            #print('%s未交易%s' % (idx,trade))
             allcode.append(idx)
         else:
             allcode.append(idx)
@@ -222,10 +227,12 @@ def get_allcode():
     #print(stock_info.shape[0])
     #print(stock_info)
     for i in stock_info.index:
-        i=i.zfill(6)
+        i=i.zfill(5)
         allcode.append(i)
         #print(i)
-    return allcode   
+    return allcode
+
+   
     
 def update_all():
     '''
@@ -237,12 +244,12 @@ def update_all():
     ETF特指以下基金列表['512880','510050','510180','510230','510300','510500','510880','510900','159901','159902','159915','159919','159920','159934','159937','159938','159949','159952','512980','512800','512880','512660','512680','512290','512580','512760','513500']
     '''
     #512710未上市
-ETF_Trade=['512880','510050','510180','510230','510300','510500','510880','510900','159901','159902','159915','159919','159920','159934','159937','159938','159949','159952','512980','512800','512880','512660','512680','512290','512580','512760','513500']
+ETF_Trade=['510300','510500','510050','510180','510900','159920','518880','159928','515030','512580','512170','512290','515220','515210','512720','515880','159995','159939','512760','512800','512880','512660','511010','511260','159949','512200','600089','600036','600519','600570','600958','300033','512200','300059','300236','603976','000651','601318','000063','159996','000001']
 #ETF_LIST=['501060','501070','601798']
 
 
 #更新今日行情列表
-update_today_all()
+#update_today_all()
 #加载今日行情列表
 code=load_today_all()
 
@@ -254,27 +261,29 @@ ETF_LIST = update.get_ETF_list()
 
 #优先更新列表 用完请注释掉
 update.update_day( ETF_Trade , filter_last = 0 )
+update.update_min( ETF_Trade , min = 60 )
 #update.update_min( ETF_LIST , min = 15 )
-#update.update_min( code , min = 15 )
+#update.update_min( ETF_LIST , min = 5 )
+#update.update_min( code , min = 5 )
 
 #优先列表更新
 #update.update_day( code , filter_last = 0 )
 #update.update_min( code , min = 5 )
-
+#exit
 
 #ETF数据更新
-update.update_day( ETF_LIST )
-update.update_min( ETF_LIST , min = 5 )
-update.update_min( ETF_LIST , min = 15 )
-update.update_min( ETF_LIST , min = 30 )
-update.update_min( ETF_LIST , min = 60 )
+#update.update_day( ETF_LIST , filter_last = 0)
+#update.update_min( ETF_LIST , min = 5 )
+#update.update_min( ETF_LIST , min = 15 )
+#update.update_min( ETF_LIST , min = 30 )
+#update.update_min( ETF_LIST , min = 60 )
 print('ETF处理完毕！')
 
 #一般证券列表数据更新
-update.update_day( code , filter_last = 0 )
-update.update_min( code , min = 5 )
-update.update_min( code , min = 15 )
-update.update_min( code , min = 30 )
+#update.update_day( code , filter_last = 0 )
+#update.update_min( code , min = 5 )
+#update.update_min( code , min = 15 )
+#update.update_min( code , min = 30 )
 update.update_min( code , min = 60)
 print('处理完毕！')
 

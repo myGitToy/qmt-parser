@@ -19,6 +19,10 @@ import tushare as ts
 import pandas as pd
 import tushare.stock.indictor as ti
 import fund
+import apt
+from apt.os.data_load import Data_Load
+from apt.os.data_update import Data_Update
+
 class tick(object):
     def __init__(self,code,date):
         df = ts.get_tick_data(code,date,src='tt')
@@ -31,6 +35,16 @@ if __name__:
     df=ti.boll(df_raw )
     print(df)
     print(fund.init_value)
+    #a = apt.tree_list()
+    b = Data_Update()
+
+    df2 = b.update_day(['600000','600638'])
+    txt = 600000
+    print("停止单已触发，代码：{ self.txt }")
+    df3 = ts.get_hist_data(code = '159949' , start = '2020-07-03' , ktype = "60")
+    print(df3)
+
+    
     
 
 
