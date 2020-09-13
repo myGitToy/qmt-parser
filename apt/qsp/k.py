@@ -62,7 +62,7 @@ class k:
             MAXMUM：突破前高需要限定在多少以内 一般不会用到，先预留着，目前做到逻辑里面了，默认为100
             MA_HIGH_PERIOD 突破N均线 默认为100
                 注：通常日线采用20天突破 小时线采用100小时突破
-            auto_update：是否将K线数据更新至最新 默认值：True （False则使用csv中的数据，不进行联网更新）
+            auto_update：是否将K线数据更新至最新 默认值：True （False则使用csv中的数据，不进行联网更新） 关闭该参数将提升20%左右的性能
         
         返回：
             True False
@@ -108,7 +108,8 @@ class k:
         df = self.get_k_data( code = code , start = start , end = end , ktype = ktype , auto_update = auto_update)
         if df.empty == True:
             print("请检查代码%s" % (code))
-            return False
+            #本函数因为提供的dataframe 因此不能返回False 只能返回空数据
+            return pd.DataFrame()
         #小时线100小时最高收盘价计算
         df['MAHR_100_HIGH'] = df['high'].rolling(MA_HIGH_PERIOD).max()
         #计算此时点的最高是否为新高
@@ -127,16 +128,20 @@ class k:
         """
         计算K线均线的斜率
         输入：
-            MA :MA日/小时 均线；通常计算30日/小时均线
+            MA :MA日/小时 均线；通常计算30日/小时均线 默认为30
             ROLLING_PERIOD：均线斜率的计算依据，一般使用3个周期的平均值，以规避一根线带来的干扰 默认为3
             POSITIVE_VALUE：大于多少才认为斜率为正 一般取一个很小的负值，这样震荡走势中略微向下的情况也会被判断会正 默认值-0.0005
-            auto_update：是否将K线数据更新至最新 默认值：True （False则使用csv中的数据，不进行联网更新）
+            auto_update：是否将K线数据更新至最新 默认值：True （False则使用csv中的数据，不进行联网更新） 关闭该参数将提升20%左右的性能
         
         返回：
             True False
         存在的问题：
         """
         df = self.get_k_data( code = code , start = start , end = end , ktype = ktype , auto_update = auto_update)
+        df = df.iloc[-(MA + 10):]
+        if df.empty == True:
+            print("请检查代码%s" % (code))
+            return False
         #计算MA日/小时均线价格
         df['ma'] = df['close'].rolling(MA).mean()
         df['ma_slope'] = (df['ma'] - df['ma'].shift(1)) / df['ma']
