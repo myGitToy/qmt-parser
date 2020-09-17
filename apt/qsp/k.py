@@ -81,7 +81,7 @@ class k:
         df.loc[df.new_high_tendency == 0 , 'new_high_tendency'] = np.nan
         df.fillna(method='ffill' , inplace = True)
         #输出df信息，通常用于调试
-        #print(df[['code','new_high','new_high_tendency' ,'new_high_count']])
+        print(df[['code','new_high','new_high_tendency' ,'new_high_count']])
         #print(df.loc[:,'new_high_count'])
         if (df.iloc[-1].at['new_high_count'] >= MINIMUM) and (df.iloc[-1].at['new_high_count'] <= MAXIMUM) and (df.iloc[-1].at['new_high_tendency'] ==1):
             #同时满足新高次数在上下限之间且非下降趋势（即回到0以后再上升的情况）
