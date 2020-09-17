@@ -50,7 +50,7 @@ class k(base):
             df = dl.load_data(self , code = code , start = start , end = end , ktype = ktype)
         return df
 
-    def new_high_break(self ,  code : str , start = None , end = None , ktype = "60" , MINIMUM = 3 ,MAXIMUM = 100 , MA_HIGH_PERIOD = 100 , auto_update = True) :
+    def new_high_break(self , MINIMUM = 3 ,MAXIMUM = 100 , MA_HIGH_PERIOD = 100 ) :
         """
         突破前高
         此函数设有过滤系统，必须突破新高次数降低到0以后重新回升才会计算在内；下降过程中的突破新高次数递减的情况会被过滤掉
@@ -68,7 +68,7 @@ class k(base):
             2. 建议通过均线向上的条件进行过滤
         """
         #获取新高数据
-        df = self.k_new_high_count( code = code , start = start , end = end , ktype = ktype ,MA_HIGH_PERIOD = MA_HIGH_PERIOD , auto_update = auto_update)
+        df = self.k_new_high_count( MA_HIGH_PERIOD = MA_HIGH_PERIOD )
         if df.empty == True:
             print("请检查代码%s" % (code))
             return False
@@ -90,19 +90,16 @@ class k(base):
 
 
 
-    def k_new_high_count(self , code : str , start = None , end = None , ktype = "60" , MA_HIGH_PERIOD = 100 , auto_update = True):
+    def k_new_high_count(self , MA_HIGH_PERIOD = 100 ):
         """
         【计算K线中指定周期新高的次数】
         常规使用小时线上100小时新高（ktype = 60 , MA_HIGH_PERIOD = 100）
-        code start end ktype均为常规参数
-        code start 必须输入
-        end 选择输入
         【返回值】 dataframe 含最新数据的df
         MA_HIGH_PERIOD：计算新高的周期，需要和ktype配合使用
         【注意】数据前MA_HIGH_PERIOD中新高数据均为NA，因rolling前滚取不到数据的缘故
         """   
         #获取K线数据
-        df = self.get_k_data( code = code , start = start , end = end , ktype = ktype , auto_update = auto_update)
+        df = self.get_k_data()
         if df.empty == True:
             print("请检查代码%s" % (code))
             #本函数因为提供的dataframe 因此不能返回False 只能返回空数据
