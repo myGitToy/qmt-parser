@@ -2,17 +2,14 @@
 from  apt.os.data_load import Data_Load as dl
 from  apt.os.data_update import Data_Update as update
 from datetime import datetime
+from apt.qsp.base import base
 import numpy as np
 import pandas as pd
 """
 【K线选股系统】
-
-
 """
-class k:
-    def __init__(self):
-        pass
-    def get_k_data(self , code : str , start = None , end = None , ktype = "60" , auto_update = True):
+class k(base):
+    def get_k_data_delete(self , code : str , start = None , end = None , ktype = "60" , auto_update = True):
         """
         抽取出来的总类，用于获取最新的K线数据，含自动更新
         输入：
@@ -124,20 +121,17 @@ class k:
         #    df['new_high_count'] = 1
         return df
 
-    def ma_positive(self ,  code : str , start = None , end = None , ktype = "60" , MA = 30 , ROLLING_PERIOD = 3 , POSITIVE_VALUE = -0.0005 , auto_update = True) :
+    def ma_positive(self , MA = 30 , ROLLING_PERIOD = 3 , POSITIVE_VALUE = -0.0005 ) :
         """
         计算K线均线的斜率
         输入：
             MA :MA日/小时 均线；通常计算30日/小时均线 默认为30
             ROLLING_PERIOD：均线斜率的计算依据，一般使用3个周期的平均值，以规避一根线带来的干扰 默认为3
-            POSITIVE_VALUE：大于多少才认为斜率为正 一般取一个很小的负值，这样震荡走势中略微向下的情况也会被判断会正 默认值-0.0005
-            auto_update：是否将K线数据更新至最新 默认值：True （False则使用csv中的数据，不进行联网更新） 关闭该参数将提升20%左右的性能
-        
+            POSITIVE_VALUE：大于多少才认为斜率为正 一般取一个很小的负值，这样震荡走势中略微向下的情况也会被判断会正 默认值-0.0005      
         返回：
             True False
-        存在的问题：
         """
-        df = self.get_k_data( code = code , start = start , end = end , ktype = ktype , auto_update = auto_update)
+        df = self.get_k_data()
         df = df.iloc[-(MA + 10):]
         if df.empty == True:
             print("请检查代码%s" % (code))
@@ -150,5 +144,3 @@ class k:
             return True
         else:
             return False
-        #df = get_line_k(self , code = __code ,  start = __start , end = __end , ktype = __ktype)
-        print(df)
