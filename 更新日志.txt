@@ -1,4 +1,9 @@
 # -*- coding: utf-8 -*-
+2020/09/18
+1. 【new】新建base和vol模块，base模块为K和VOL模块的基类，将数据获取环节抽象到基准模块，并且将证券代码 开始日期 结束日期 K线类型全部并入base的init中
+2. 【VOL模块】amount_between 新建成交额符合指定区间的函数，
+3. 【base模块】get_rolling_k 新建用于处理获取最新的K线数据，比如5分钟线的数据计算当日成交量，需要rolling 48条K线计算求和
+
 2020/09/12
 1. 【K模块】增加新高突破模块 new_high_break
 2. 【K模块】增加均线向上模块 ma_positive

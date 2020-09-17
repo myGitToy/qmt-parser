@@ -2,17 +2,14 @@
 from  apt.os.data_load import Data_Load as dl
 from  apt.os.data_update import Data_Update as update
 from datetime import datetime
+from apt.qsp.base import base
 import numpy as np
 import pandas as pd
 """
 【K线选股系统】
-
-
 """
-class k:
-    def __init__(self):
-        pass
-    def get_k_data(self , code : str , start = None , end = None , ktype = "60" , auto_update = True):
+class k(base):
+    def get_k_data_delete(self , code : str , start = None , end = None , ktype = "60" , auto_update = True):
         """
         抽取出来的总类，用于获取最新的K线数据，含自动更新
         输入：
@@ -53,7 +50,7 @@ class k:
             df = dl.load_data(self , code = code , start = start , end = end , ktype = ktype)
         return df
 
-    def new_high_break(self ,  code : str , start = None , end = None , ktype = "60" , MINIMUM = 3 ,MAXIMUM = 100 , MA_HIGH_PERIOD = 100 , auto_update = True) :
+    def new_high_break(self , MINIMUM = 3 ,MAXIMUM = 100 , MA_HIGH_PERIOD = 100 ) :
         """
         突破前高
         此函数设有过滤系统，必须突破新高次数降低到0以后重新回升才会计算在内；下降过程中的突破新高次数递减的情况会被过滤掉
@@ -71,7 +68,7 @@ class k:
             2. 建议通过均线向上的条件进行过滤
         """
         #获取新高数据
-        df = self.k_new_high_count( code = code , start = start , end = end , ktype = ktype ,MA_HIGH_PERIOD = MA_HIGH_PERIOD , auto_update = auto_update)
+        df = self.k_new_high_count( MA_HIGH_PERIOD = MA_HIGH_PERIOD )
         if df.empty == True:
             print("请检查代码%s" % (code))
             return False
@@ -81,7 +78,7 @@ class k:
         df.loc[df.new_high_tendency == 0 , 'new_high_tendency'] = np.nan
         df.fillna(method='ffill' , inplace = True)
         #输出df信息，通常用于调试
-        #print(df[['code','new_high','new_high_tendency' ,'new_high_count']])
+        print(df[['code','new_high','new_high_tendency' ,'new_high_count']])
         #print(df.loc[:,'new_high_count'])
         if (df.iloc[-1].at['new_high_count'] >= MINIMUM) and (df.iloc[-1].at['new_high_count'] <= MAXIMUM) and (df.iloc[-1].at['new_high_tendency'] ==1):
             #同时满足新高次数在上下限之间且非下降趋势（即回到0以后再上升的情况）
@@ -93,19 +90,16 @@ class k:
 
 
 
-    def k_new_high_count(self , code : str , start = None , end = None , ktype = "60" , MA_HIGH_PERIOD = 100 , auto_update = True):
+    def k_new_high_count(self , MA_HIGH_PERIOD = 100 ):
         """
         【计算K线中指定周期新高的次数】
         常规使用小时线上100小时新高（ktype = 60 , MA_HIGH_PERIOD = 100）
-        code start end ktype均为常规参数
-        code start 必须输入
-        end 选择输入
         【返回值】 dataframe 含最新数据的df
         MA_HIGH_PERIOD：计算新高的周期，需要和ktype配合使用
         【注意】数据前MA_HIGH_PERIOD中新高数据均为NA，因rolling前滚取不到数据的缘故
         """   
         #获取K线数据
-        df = self.get_k_data( code = code , start = start , end = end , ktype = ktype , auto_update = auto_update)
+        df = self.get_k_data()
         if df.empty == True:
             print("请检查代码%s" % (code))
             #本函数因为提供的dataframe 因此不能返回False 只能返回空数据
@@ -124,20 +118,17 @@ class k:
         #    df['new_high_count'] = 1
         return df
 
-    def ma_positive(self ,  code : str , start = None , end = None , ktype = "60" , MA = 30 , ROLLING_PERIOD = 3 , POSITIVE_VALUE = -0.0005 , auto_update = True) :
+    def ma_positive(self , MA = 30 , ROLLING_PERIOD = 3 , POSITIVE_VALUE = -0.0005 ) :
         """
         计算K线均线的斜率
         输入：
             MA :MA日/小时 均线；通常计算30日/小时均线 默认为30
             ROLLING_PERIOD：均线斜率的计算依据，一般使用3个周期的平均值，以规避一根线带来的干扰 默认为3
-            POSITIVE_VALUE：大于多少才认为斜率为正 一般取一个很小的负值，这样震荡走势中略微向下的情况也会被判断会正 默认值-0.0005
-            auto_update：是否将K线数据更新至最新 默认值：True （False则使用csv中的数据，不进行联网更新） 关闭该参数将提升20%左右的性能
-        
+            POSITIVE_VALUE：大于多少才认为斜率为正 一般取一个很小的负值，这样震荡走势中略微向下的情况也会被判断会正 默认值-0.0005      
         返回：
             True False
-        存在的问题：
         """
-        df = self.get_k_data( code = code , start = start , end = end , ktype = ktype , auto_update = auto_update)
+        df = self.get_k_data()
         df = df.iloc[-(MA + 10):]
         if df.empty == True:
             print("请检查代码%s" % (code))
@@ -150,5 +141,3 @@ class k:
             return True
         else:
             return False
-        #df = get_line_k(self , code = __code ,  start = __start , end = __end , ktype = __ktype)
-        print(df)
