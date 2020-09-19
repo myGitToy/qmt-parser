@@ -70,7 +70,7 @@ class k(base):
         #获取新高数据
         df = self.k_new_high_count( MA_HIGH_PERIOD = MA_HIGH_PERIOD )
         if df.empty == True:
-            print("请检查代码%s" % (code))
+            print("请检查代码%s" % (self.code))
             return False
         #设置新高的趋势，所以新高次数逐渐增加，则设置1；逐渐减少设置-1；不变设置0
         df['new_high_tendency'] = df['new_high_count'] - df['new_high_count'].shift(1)
@@ -78,7 +78,7 @@ class k(base):
         df.loc[df.new_high_tendency == 0 , 'new_high_tendency'] = np.nan
         df.fillna(method='ffill' , inplace = True)
         #输出df信息，通常用于调试
-        print(df[['code','new_high','new_high_tendency' ,'new_high_count']])
+        #print(df[['code','new_high','new_high_tendency' ,'new_high_count']])
         #print(df.loc[:,'new_high_count'])
         if (df.iloc[-1].at['new_high_count'] >= MINIMUM) and (df.iloc[-1].at['new_high_count'] <= MAXIMUM) and (df.iloc[-1].at['new_high_tendency'] ==1):
             #同时满足新高次数在上下限之间且非下降趋势（即回到0以后再上升的情况）
@@ -101,7 +101,7 @@ class k(base):
         #获取K线数据
         df = self.get_k_data()
         if df.empty == True:
-            print("请检查代码%s" % (code))
+            print("请检查代码%s" % (self.code))
             #本函数因为提供的dataframe 因此不能返回False 只能返回空数据
             return pd.DataFrame()
         #小时线100小时最高收盘价计算
@@ -128,11 +128,11 @@ class k(base):
         返回：
             True False
         """
-        df = self.get_k_data()
-        df = df.iloc[-(MA + 10):]
+        df = self.get_k_data()       
         if df.empty == True:
-            print("请检查代码%s" % (code))
+            print("请检查代码%s" % (self.code))
             return False
+        df = df.iloc[-(MA + 10):]
         #计算MA日/小时均线价格
         df['ma'] = df['close'].rolling(MA).mean()
         df['ma_slope'] = (df['ma'] - df['ma'].shift(1)) / df['ma']
