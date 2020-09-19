@@ -261,9 +261,10 @@ pro = ts.pro_api()
 #加载今日行情列表（新版）
 #code = pro.daily(trade_date='20200918')['ts_code'].apply(lambda x:x[:6]).tolist()
 #加载全部股票代码列表（新版）
-code = pro.stock_basic()['symbol'].tolist()
+code = pro.stock_basic(list_status = 'L')['symbol'].tolist()
 
 print(code)
+print(len(code))
 #从文件中获取ETF列表
 update = Data_Update()
 ETF_LIST = update.get_ETF_list()
@@ -297,8 +298,8 @@ print('ETF处理完毕！')
 #一般证券列表数据更新
 #update.update_day( code , filter_last = 0 )
 #update.update_min( code , min = 5 )
-#update.update_min( code , min = 15 )
-update.update_min( code , min = 30 )
+update.update_min( code , min = 15 )
+#update.update_min( code , min = 30 )
 #update.update_min( code , min = 60)
 print('处理完毕！')
 

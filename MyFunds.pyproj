@@ -62,6 +62,9 @@
     <Compile Include="apt\vendor\tspro\base.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="apt\vendor\tspro\tspro.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="apt\vendor\tspro\__init__.py" />
     <Compile Include="apt\vendor\__init__.py" />
     <Compile Include="apt\__init__.py">
