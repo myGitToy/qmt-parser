@@ -36,12 +36,12 @@ if __name__=="__main__":
     code_list= ['510300','510500','510050','510180','510900','159920','518880','159928','515030','512580','512170','512290','515220','515210','512720','515880','159995','159939','512760','512800','512880','512660','511010','511260','159949','512200','600089','600036','600519','600570','600958','300033','512200','300059','300236','603976','000651','601318','000063','159996','000001']
     #code_list = load_today_all()
     dl = DL()
-    #code_list =dl.get_ETF_list()
+    code_list =dl.get_ETF_list()
 
     #新高突破
     lst=[]
     for code in code_list:
-        a = k(code = code , start = '2020-06-02' , end = '2020-09-17' , ktype = 60 )
+        a = k(code = code , start = '2020-06-02' , end = '2020-09-18' , ktype = 60 )
         #if (a.new_high_break(code =code , start = start , end = end ,  ktype = ktype , MA_HIGH_PERIOD = 100 ,auto_update = False) == True) and (a.ma_positive(code =code , start = start , end = end ,  ktype = ktype , auto_update = False) == True):
         if a.ma_positive(POSITIVE_VALUE = -0.0005 ) and a.new_high_break( MA_HIGH_PERIOD = 100 , MINIMUM = 3 , MAXIMUM= 100 ) :
            print("%s新高突破且均线向上" % (code))
