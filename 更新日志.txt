@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+2020/09/19
+1. 修正获取每日证券代码列表的方式，改为使用tushare pro来获取，原有的load_today_all将不再使用
+
 2020/09/18
 1. 【new】新建base和vol模块，base模块为K和VOL模块的基类，将数据获取环节抽象到基准模块，并且将证券代码 开始日期 结束日期 K线类型全部并入base的init中
 2. 【VOL模块】amount_between 新建成交额符合指定区间的函数，

@@ -164,6 +164,8 @@ def get_allcode():
     [获取全部代码]######
     函数说明 代码源自网络 2018/4/23
     '''    
+    print("本函数不再使用，返回空值")
+    return pd.DataFrame()
     allcode=[]
     stock_info=ts.get_stock_basics()
     for i in stock_info.index:
@@ -185,6 +187,8 @@ def update_today_all():
     【行情不含基金和ETF】
     结果保存在/data/today_all.csv
     '''
+    print("本函数不再使用，返回空值")
+    return pd.DataFrame()
     #修正乱码
     df=ts.get_today_all()
     df.to_csv('.\\data\\today_all.csv', encoding = 'utf_8_sig')
@@ -197,6 +201,8 @@ def load_today_all():
     【行情不含基金和ETF】
     读取目录在/data/today_all.csv
     '''
+    print("本函数不再使用，返回空值")
+    return pd.DataFrame()
     allcode=[]
     #载入代码
     df=pd.read_csv('.\\data\\today_all.csv')
