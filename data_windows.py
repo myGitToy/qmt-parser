@@ -4,6 +4,7 @@ import pandas as pd
 import tushare as ts
 import numpy as np
 from apt.os.data_update import Data_Update
+from datetime import datetime
 
 
 def update_day():
@@ -164,6 +165,8 @@ def get_allcode():
     [获取全部代码]######
     函数说明 代码源自网络 2018/4/23
     '''    
+    print("本函数不再使用，返回空值")
+    return pd.DataFrame()
     allcode=[]
     stock_info=ts.get_stock_basics()
     for i in stock_info.index:
@@ -185,6 +188,8 @@ def update_today_all():
     【行情不含基金和ETF】
     结果保存在/data/today_all.csv
     '''
+    print("本函数不再使用，返回空值")
+    return pd.DataFrame()
     #修正乱码
     df=ts.get_today_all()
     df.to_csv('.\\data\\today_all.csv', encoding = 'utf_8_sig')
@@ -197,6 +202,8 @@ def load_today_all():
     【行情不含基金和ETF】
     读取目录在/data/today_all.csv
     '''
+    print("本函数不再使用，返回空值")
+    return pd.DataFrame()
     allcode=[]
     #载入代码
     df=pd.read_csv('.\\data\\today_all.csv')
@@ -247,17 +254,24 @@ def update_all():
 ETF_Trade=['510300','510500','510050','510180','510900','159920','518880','159928','515030','512580','512170','512290','515220','515210','512720','515880','159995','159939','512760','512800','512880','512660','511010','511260','159949','512200','600089','600036','600519','600570','600958','300033','512200','300059','300236','603976','000651','601318','000063','159996','000001']
 #ETF_LIST=['501060','501070','601798']
 
-
-#更新今日行情列表
+pro = ts.pro_api() 
+#更新今日行情列表（旧版）
 #update_today_all()
-#加载今日行情列表
-code=load_today_all()
+#加载今日行情列表（旧版）
+#code=load_today_all()
+#加载今日行情列表（新版）
+#code = pro.daily(trade_date='20200918')['ts_code'].apply(lambda x:x[:6]).tolist()
+#加载全部股票代码列表（新版）
+code = pro.stock_basic(list_status = 'L')['symbol'].tolist()
 
+print(code)
+print(len(code))
 #从文件中获取ETF列表
 update = Data_Update()
 ETF_LIST = update.get_ETF_list()
 
-
+#最后更新日期
+last_day = '2020-09-29'
 
 #优先更新列表 用完请注释掉
 #update.update_day( ETF_Trade , filter_last = 0 )
@@ -284,11 +298,11 @@ ETF_LIST = update.get_ETF_list()
 print('ETF处理完毕！')
 
 #一般证券列表数据更新
-#update.update_day( code , filter_last = 0 )
-#update.update_min( code , min = 5 )
+#update.update_day( code , filter_last = 0 , last_day = last_day )
+update.update_min( code , min = 5 )
 #update.update_min( code , min = 15 )
-update.update_min( code , min = 30 )
-#update.update_min( code , min = 60)
+#update.update_min( code , min = 30 )
+update.update_min( code , min = 60)
 print('处理完毕！')
 
 #update_day(['sh'])

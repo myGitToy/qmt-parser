@@ -59,6 +59,14 @@
     <Compile Include="apt\testB\A.py" />
     <Compile Include="apt\testB\B.py" />
     <Compile Include="apt\testB\__init__.py" />
+    <Compile Include="apt\vendor\tspro\base.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="apt\vendor\tspro\tspro.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="apt\vendor\tspro\__init__.py" />
+    <Compile Include="apt\vendor\__init__.py" />
     <Compile Include="apt\__init__.py">
       <SubType>Code</SubType>
     </Compile>
@@ -81,6 +89,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_qsp_test.py" />
+    <Compile Include="demo\demo_tspro_tokon.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="fund\class1.py">
       <SubType>Code</SubType>
     </Compile>
@@ -137,10 +148,12 @@
     <Content Include="更新日志.txt" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="apt\vendor\" />
     <Folder Include="apt\qsp\" />
     <Folder Include="apt\testB\" />
     <Folder Include="apt\testA\" />
     <Folder Include="apt\os\" />
+    <Folder Include="apt\vendor\tspro\" />
     <Folder Include="fund\" />
     <Folder Include="apt\" />
     <Folder Include="demo\" />
