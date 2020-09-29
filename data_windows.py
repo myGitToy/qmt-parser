@@ -4,6 +4,7 @@ import pandas as pd
 import tushare as ts
 import numpy as np
 from apt.os.data_update import Data_Update
+from datetime import datetime
 
 
 def update_day():
@@ -297,8 +298,8 @@ last_day = '2020-09-29'
 print('ETF处理完毕！')
 
 #一般证券列表数据更新
-update.update_day( code , filter_last = 0 , last_day = last_day )
-#update.update_min( code , min = 5 )
+#update.update_day( code , filter_last = 0 , last_day = last_day )
+update.update_min( code , min = 5 )
 #update.update_min( code , min = 15 )
 #update.update_min( code , min = 30 )
 update.update_min( code , min = 60)

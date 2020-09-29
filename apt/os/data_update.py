@@ -32,7 +32,6 @@ class Data_Update(TSOS):
         #设置最后默认的最后交易日
         if last_day == None:
             last_day = datetime.date.today()
-            print(last_day)
         for code in code_list:
             #数据补零
             code = code.zfill(6)
@@ -110,7 +109,7 @@ class Data_Update(TSOS):
                 else:
                     print('日线：代码%s 无数据' % (code))
 
-    def update_min(self , code_list ='' , min=60 , filter_last = 0):
+    def update_min(self , code_list = '' , min = 60 , filter_last = 0 , last_day = None):
         '''
         [更新XX分钟数据]######
         函数说明 乔晖 2020/4/9
@@ -125,6 +124,9 @@ class Data_Update(TSOS):
         5.写入原有文件
         '''
         ####步骤一：读取现有数据
+        #设置最后默认的最后交易日
+        if last_day == None:
+            last_day = datetime.date.today().strftime('%Y-%m-%d')
         for code in code_list:
             #数据补零
             code = code.zfill(6)
@@ -160,39 +162,50 @@ class Data_Update(TSOS):
                 df_old = df_old[['open','close','high','low','volume','amount','turnoverratio','code']]
                 #过滤旧数据中最后几条
                 if filter_last != 0:                    
-                    df_old=df_old[:-filter_last] #测试环节用，删除部分最新数据以调试新老df的合并情况
-                #旧数据量
-                old_count = df_old.shape[0]
-                #获取新数据
-                df_new = ts.get_k_data('%s' % (code), ktype='%s' % (min))
-                df_new.set_index(['date'], inplace = True)  
-                df_new = df_new[['open','close','high','low','volume','amount','turnoverratio','code']]
-                ###两个dataframe合并【按照日期进行关键词校对 注：日期date为索引】
-                df = pd.concat([df_old, df_new] , sort = True)
-                #检查去重
-                #df.drop_duplicates(keep = 'last', inplace = True)
-                #删除重复项【重要提示：由于未知原因，使用drop_duplicates依旧会出现重复，所以此处采用对索引进行判断，如果索引相同，则表示有重复】
-                if df.index.is_unique == False:
-                    df = df[~df.index.duplicated(keep='last')]     #这里还有一个效率的问题，理论上旧数据不做去重，合并后再去重，但为了明确获取新老数据量的差别，因此做两次去重，降低一些效率
-                    #print('合并后有重复项，去重')
-                #按照索引[日期]进行排序，升序
-                df = df.sort_index(ascending = True)
-                df = df[['open','close','high','low','volume','amount','turnoverratio','code']]
-                #df = df[~df.index.duplicated(keep='first')]
-                #总数据量
-                all_count = df.shape[0]
-                print('%s分钟线：%s读取完毕，新增数据量：%s条' % (min,code,all_count-old_count))
-                if all_count-old_count != 0:
-                    #保存数据
-                    df.to_csv('.\\data\\%smin\\%s.csv' % (min,code))
+                    df_old = df_old[:-filter_last] #测试环节用，删除部分最新数据以调试新老df的合并情况
+                #获取最后更新日期
+                old_day = df_old.iloc[-1:].index.tolist()
+                #old_day = df_old.last_valid_index()[0:10]
+                #print(old_day[0].strftime('%Y-%m-%d'))
+                if len(old_day) != 0 and old_day[0][0:10] == last_day:
+                    #如果两个日期相同 则跳过合并
+                    print('%s分钟线：%s 数据已是最新，跳过读取' % (min , code))
+                    pass
+                else:
+                    #数据不为最新，进行更新操作                
+                    
+                    #旧数据量
+                    old_count = df_old.shape[0]
+                    #获取新数据
+                    df_new = ts.get_k_data('%s' % (code) , ktype='%s' % (min))
+                    df_new.set_index(['date'] , inplace = True)  
+                    df_new = df_new[['open','close','high','low','volume','amount','turnoverratio','code']]
+                    ###两个dataframe合并【按照日期进行关键词校对 注：日期date为索引】
+                    df = pd.concat([df_old, df_new] , sort = True)
+                    #检查去重
+                    #df.drop_duplicates(keep = 'last', inplace = True)
+                    #删除重复项【重要提示：由于未知原因，使用drop_duplicates依旧会出现重复，所以此处采用对索引进行判断，如果索引相同，则表示有重复】
+                    if df.index.is_unique == False:
+                        df = df[~df.index.duplicated(keep='last')]     #这里还有一个效率的问题，理论上旧数据不做去重，合并后再去重，但为了明确获取新老数据量的差别，因此做两次去重，降低一些效率
+                        #print('合并后有重复项，去重')
+                    #按照索引[日期]进行排序，升序
+                    df = df.sort_index(ascending = True)
+                    df = df[['open','close','high','low','volume','amount','turnoverratio','code']]
+                    #df = df[~df.index.duplicated(keep='first')]
+                    #总数据量
+                    all_count = df.shape[0]
+                    print('%s分钟线：%s读取完毕，新增数据量：%s条' % (min , code , all_count-old_count))
+                    if all_count-old_count != 0:
+                        #保存数据
+                        df.to_csv('.\\data\\%smin\\%s.csv' % (min , code))
             else:
                 #读取失败，说明目录无文件，直接写入
                 #获取新数据并保存
-                df_current = ts.get_k_data('%s' % (code), ktype='%s' % (min))
+                df_current = ts.get_k_data('%s' % (code), ktype = '%s' % (min))
                 if df_current.empty == False:
-                    df_current.set_index(['date'], inplace = True)  
-                    df_current.to_csv('.\\data\\%smin\\%s.csv' % (min,code))
-                    print('%s分钟线：新增代码%s，数据量：%s条' % (min,code,df_current.shape[0]))
+                    df_current.set_index(['date'] , inplace = True)  
+                    df_current.to_csv('.\\data\\%smin\\%s.csv' % (min , code))
+                    print('%s分钟线：新增代码%s，数据量：%s条' % (min,code , df_current.shape[0]))
                 else:
                     print('代码%s 无数据' % (code))
 
