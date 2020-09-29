@@ -38,7 +38,7 @@ class Technical_Analysis():
     #关于network_OK的说明：默认需要调用network_connection才能返回正确的结果，如果之前调用过，再使用network_OK可节约ping，增加效率
     network_OK = None
     #tushare社区的token
-    _token = "55297f16c0119146589e059db315ba28a9412e89ec9f91e538e655b2"
+    #_token = "55297f16c0119146589e059db315ba28a9412e89ec9f91e538e655b2"
     def network_connection(self,testing_url = None):
         """检查网络连接情况，可自定义网址，默认ping 百度；连通返回True 断开返回False"""
         print("CHECKING NETWORK CONNECTION......")
@@ -59,29 +59,23 @@ class Technical_Analysis():
             return True
 
     def get_data(self):
-        """获取基本数据用于技术分析，有网络：从get_his_data；无网络：从本地文档"""
+        """获取基本数据用于技术分析，有网络：从get_k_data；无网络：从本地文档"""
         """如果网络断开，则读取本地文档用于技术分析"""
         if self.network_OK is None:
             print ("请检查语句，应先检查网络连接，XX.network_connection")
         elif True:
             #网络连接正常
-            pro = ts.pro_api(self._token)
-            #####【BUG report】这里的时间格式只能接受为YYYY-MM-DD
+            #pro = ts.pro_api(self._token)
             df = ts.get_k_data(code = self.code , end = self.end , start = self.start , ktype = self.ktype)
-            #print(df)
             return df
         elif False:
             #网络连接不正常
             df=pd.read_csv('.\\data\\day\\%s.csv' % (self.code))
-            #print(df)
             print("网络连接不正常，读取本地文件")
             return df
         else:
             print("未知错误，请检查代码")
-
-        #df=pd.read_csv('.\\data\\day\\%s.csv' % (self.code))
-        #print(df)
-        pass
+            return pd.DataFrame()
 
     def __init__(self,code = None , start = None , end = None , ktype = "D"):
         """
@@ -108,14 +102,14 @@ class CDP(Technical_Analysis):
         #调用父类进行初始化
         super(CDP,self).__init__()
     """
-    def cal_CDP(self,idx_tomorrow = False):
+    def cal_CDP(self , idx_tomorrow = False):
         """计算CDP"""
         #默认CDP计算使用的是前一天的数据，但如果idx_tomorrow=True，则输出预测第二个交易日的数据，且只输出一行
         if idx_tomorrow is False:
             #计算整个矩阵
             df = super(CDP,self).get_data()
             #CDP = (最高價 + 最低價 + 2*收盤價) /4
-            df['CDP'] = (df['high'].shift(1) + df['low'].shift(1) + 2*df['close'].shift(1)) / 4 
+            df['CDP'] = (df['high'].shift(1) + df['low'].shift(1) + 2 * df['close'].shift(1)) / 4 
             #最高值(AH)、(NH)、近低值(NL)及最低值(AL)
             #最高值AH = CDP + (最高價 - 最低價)
             df['AH'] = round(df['CDP'] + (df['high'].shift(1) - df['low'].shift(1)) , 3)
@@ -212,7 +206,7 @@ class ATR(Technical_Analysis):
         #保存数据
         if to_csv == True:
             df_main.to_csv('.\\trade\\ATR.csv', encoding = 'utf_8_sig')
-        return df_main    
+        return df_main
 
 
 if __name__=="__main__":
