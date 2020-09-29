@@ -5,6 +5,7 @@ import pandas as pd
 import tushare as ts
 import logging
 import os
+import datetime
 #载入基类
 from apt.os.tsos import TSOS
 class Data_Update(TSOS):
@@ -17,16 +18,21 @@ class Data_Update(TSOS):
     def __init__(self):
         pass
 
-    def update_day(self , code_list='' , filter_last = 0):
+    def update_day(self , code_list='' , filter_last = 0 , last_day = None):
         '''
         [更新日线数据]######
         code_list: 需要更新的证券代码列表
         filter_last：需要过滤的数据量，如果出现当天交易日进行过了更新，则当日的数据不准确，需要去除旧数据中最后几条数据，因此可以接受参数输入
+        last_day：数据更新的最后日期，如果不设置，默认为当天
         函数说明 乔晖 2020/4/8
         修正一系列已知问题，基本无错误，移植至TSOS->Data_Update列中
         原函数仅涉及保存，不进行新老文件的合并操作，因此重构
         '''
         ####步骤一：读取现有数据
+        #设置最后默认的最后交易日
+        if last_day == None:
+            last_day = datetime.date.today()
+            print(last_day)
         for code in code_list:
             #数据补零
             code = code.zfill(6)
@@ -57,31 +63,41 @@ class Data_Update(TSOS):
                 df_old = df_old[['open','close','high','low','volume','code']]
                 #过滤旧数据中最后几条
                 if filter_last != 0:                    
-                    df_old=df_old[:-filter_last] #测试环节用，删除部分最新数据以调试新老df的合并情况
-                #旧数据量
-                old_count = df_old.shape[0]
-                #获取新数据
-                df_new = ts.get_k_data(code, ktype = 'D')
-                df_new.set_index(['date'], inplace = True)  
-                df_new = df_new[['open','close','high','low','volume','code']]
-                ###两个dataframe合并【按照日期进行关键词校对 注：日期date为索引】
-                df = pd.concat([df_old, df_new] , sort = True)
-                #检查去重
-                #df.drop_duplicates(keep = 'last', inplace = True)
-                #删除重复项【重要提示：由于未知原因，使用drop_duplicates依旧会出现重复，所以此处采用对索引进行判断，如果索引相同，则表示有重复】
-                if df.index.is_unique == False:
-                    df = df[~df.index.duplicated(keep='last')]     #这里还有一个效率的问题，理论上旧数据不做去重，合并后再去重，但为了明确获取新老数据量的差别，因此做两次去重，降低一些效率
-                    #print('合并后有重复项，去重')
-                #按照索引[日期]进行排序，升序
-                df = df.sort_index(ascending = True)
-                df = df[['open','close','high','low','volume','code']]
-                #df = df[~df.index.duplicated(keep='first')]
-                #总数据量
-                all_count = df.shape[0]
-                print('日线：%s读取完毕，新增数据量：%s条' % (code,all_count-old_count))
-                if all_count-old_count != 0:
-                    #保存数据
-                    df.to_csv('.\\data\\day\\%s.csv' % (code))
+                    df_old = df_old[:-filter_last] #测试环节用，删除部分最新数据以调试新老df的合并情况
+                #获取最后更新日期
+                #old_day = df_old.head(1).index.tolist()
+                old_day = df_old.iloc[-1:].index.tolist()
+                #print(old_day[0])
+                if old_day[0] == last_day:
+                    #如果两个日期相同 则跳过合并
+                    print('日线：%s 数据已是最新，跳过读取' % (code))
+                else:
+                    #数据不为最新，进行更新操作
+               
+                    #旧数据量
+                    old_count = df_old.shape[0]
+                    #获取新数据
+                    df_new = ts.get_k_data(code, ktype = 'D')
+                    df_new.set_index(['date'], inplace = True)  
+                    df_new = df_new[['open','close','high','low','volume','code']]
+                    ###两个dataframe合并【按照日期进行关键词校对 注：日期date为索引】
+                    df = pd.concat([df_old, df_new] , sort = True)
+                    #检查去重
+                    #df.drop_duplicates(keep = 'last', inplace = True)
+                    #删除重复项【重要提示：由于未知原因，使用drop_duplicates依旧会出现重复，所以此处采用对索引进行判断，如果索引相同，则表示有重复】
+                    if df.index.is_unique == False:
+                        df = df[~df.index.duplicated(keep='last')]     #这里还有一个效率的问题，理论上旧数据不做去重，合并后再去重，但为了明确获取新老数据量的差别，因此做两次去重，降低一些效率
+                        #print('合并后有重复项，去重')
+                    #按照索引[日期]进行排序，升序
+                    df = df.sort_index(ascending = True)
+                    df = df[['open','close','high','low','volume','code']]
+                    #df = df[~df.index.duplicated(keep='first')]
+                    #总数据量
+                    all_count = df.shape[0]
+                    print('日线：%s读取完毕，新增数据量：%s条' % (code,all_count-old_count))
+                    if all_count-old_count != 0:
+                        #保存数据
+                        df.to_csv('.\\data\\day\\%s.csv' % (code))
             else:
                 #读取失败，说明目录无文件，直接写入
                 #获取新数据并保存
