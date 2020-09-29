@@ -270,7 +270,7 @@ update = Data_Update()
 ETF_LIST = update.get_ETF_list()
 
 #最后更新日期
-last_day = '2020-09-25'
+last_day = '2020-09-29'
 
 #优先更新列表 用完请注释掉
 #update.update_day( ETF_Trade , filter_last = 0 )
@@ -297,7 +297,7 @@ last_day = '2020-09-25'
 print('ETF处理完毕！')
 
 #一般证券列表数据更新
-update.update_day( code , filter_last = 0 , last_day = last_day)
+update.update_day( code , filter_last = 0 , last_day = last_day )
 #update.update_min( code , min = 5 )
 #update.update_min( code , min = 15 )
 #update.update_min( code , min = 30 )

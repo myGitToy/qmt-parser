@@ -68,9 +68,10 @@ class Data_Update(TSOS):
                 #old_day = df_old.head(1).index.tolist()
                 old_day = df_old.iloc[-1:].index.tolist()
                 #print(old_day[0])
-                if old_day[0] == last_day:
+                if len(old_day) !=0 and old_day[0] == last_day:
                     #如果两个日期相同 则跳过合并
-                    print('日线：%s 数据已是最新，跳过读取' % (code))
+                    #print('日线：%s 数据已是最新，跳过读取' % (code))
+                    pass
                 else:
                     #数据不为最新，进行更新操作
                
