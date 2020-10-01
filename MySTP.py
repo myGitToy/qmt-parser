@@ -167,7 +167,8 @@ class STP():
         #载入交割单
         df_trans = self.get_transactions_info(start = self.start)
         #获取交割单的最早日期
-        oldest_day = df_trans.head(1).iloc[ 0,  df_trans.columns.get_loc('交收日期') ]
+        #oldest_day = df_trans.head(1).iloc[ 0,  df_trans.columns.get_loc('交收日期') ] #此处代码被注释，和下方代码表达一个意思
+        oldest_day = df_trans.head(1).iloc[ 0].at['交收日期']
         oldest_day = oldest_day - timedelta(days = 60)
         #更新交割单中交易股票的列表
         df_code_list = df_trans.copy()    
@@ -332,7 +333,7 @@ if __name__=="__main__":
     print('最后交易日为： %s'  % (df_last.tail(len(stp.code_list)))) 
 
     #读取交割单
-    #df_trans = stp.daily_board()
+    df_trans = stp.daily_board()
 
     #每日头寸汇总 还在测试中 未完成最终代码编写工作
     #stp.get_remaining_unit()
