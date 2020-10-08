@@ -132,11 +132,13 @@ class k(base):
         if df.empty == True:
             print("请检查代码%s" % (self.code))
             return False
-        df = df.iloc[-(MA + 10):]
+        #df = df.iloc[-(MA + 10):]  #测试中需要注释掉这条，否则只会输出最新的数据
         #计算MA日/小时均线价格
         df['ma'] = df['close'].rolling(MA).mean()
         df['ma_slope'] = (df['ma'] - df['ma'].shift(1)) / df['ma']
         df['ma3_slope'] = df['ma_slope'].rolling(ROLLING_PERIOD).mean()
+        print(df)
+        df.to_csv('.\\data\\159949_ma30.csv', encoding = 'utf_8_sig')
         if df.iloc[-1].at['ma3_slope'] >= POSITIVE_VALUE:
             return True
         else:
