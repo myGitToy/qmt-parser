@@ -25,5 +25,5 @@ class tspro(base):
             code = df.loc[df['name'].str.contains('ST') == False]
             return code['symbol'].tolist() 
         else:
-            code = pro.stock_basic()['symbol'].tolist() 
+            code = df['symbol'].tolist() 
             return code
