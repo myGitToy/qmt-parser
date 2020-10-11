@@ -39,6 +39,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="apt\os\__init__.py" />
+    <Compile Include="apt\qsp\atr.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="apt\qsp\base.py">
       <SubType>Code</SubType>
     </Compile>
@@ -68,6 +71,9 @@
     <Compile Include="apt\vendor\tspro\__init__.py" />
     <Compile Include="apt\vendor\__init__.py" />
     <Compile Include="apt\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_atr_index.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_atr_test.py">
