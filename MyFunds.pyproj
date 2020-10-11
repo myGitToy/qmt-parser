@@ -45,6 +45,9 @@
     <Compile Include="apt\qsp\base.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="apt\qsp\cdp.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="apt\qsp\k.py">
       <SubType>Code</SubType>
     </Compile>
