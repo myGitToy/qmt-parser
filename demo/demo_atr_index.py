@@ -8,6 +8,10 @@ from apt.qsp.atr import ATR as atr
 
 
 def get_atr_index(market = ['主板' , '中小板' , '创业板' , '科创板'] , start = None , end = None , ktype = 'D'):
+    df3 = ts.get_k_data(code = '159949')
+    df2 = ts.pro_bar(ts_code='159949.SZ', adj='qfq')
+    print(df3)
+    print(df2)
     a = ppp()
     code_list = a.get_code_list(market = market)
     #总表
@@ -22,8 +26,8 @@ def get_atr_index(market = ['主板' , '中小板' , '创业板' , '科创板'] 
     #result = result['MAHR_30_DEV','MAHR_100_HIGH_DEV']
     gp = result.groupby(['date']).median()
     print(gp)
-    gp.to_csv('.\\trade\\ATR_INDEX.csv', encoding = 'utf_8_sig')
+    gp.to_csv('.\\trade\\ATR_INDEX_CYB.csv', encoding = 'utf_8_sig')
 
-h = get_atr_index(start = '2019-01-01' , end = '2020-10-09' , ktype = 'D')
+h = get_atr_index(start = '2019-01-01' , end = '2020-10-09' , market = ['创业板'] , ktype = 'D')
 
 

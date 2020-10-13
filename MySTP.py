@@ -333,7 +333,7 @@ if __name__=="__main__":
     print('最后交易日为： %s'  % (df_last.tail(len(stp.code_list)))) 
 
     #读取交割单
-    df_trans = stp.daily_board()
+    #df_trans = stp.daily_board()
 
     #每日头寸汇总 还在测试中 未完成最终代码编写工作
     #stp.get_remaining_unit()
