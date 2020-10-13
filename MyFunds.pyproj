@@ -39,7 +39,13 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="apt\os\__init__.py" />
+    <Compile Include="apt\qsp\atr.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="apt\qsp\base.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="apt\qsp\cdp.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="apt\qsp\k.py">
@@ -70,7 +76,13 @@
     <Compile Include="apt\__init__.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="demo\demo_atr_index.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="demo\demo_atr_test.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_fix_atr_today_error.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_fix_min30_error.py">

@@ -8,7 +8,10 @@ if __name__=="__main__":
     d = DL()
     d.update_day(['000001'],last_day = '2020-09-25')
     print(ts.get_hist_data(code = '000001'))
-    a = k(code = '159949' , start = '2020-01-02' , end = '2020-09-28' , ktype = "D" )
+    a = k(code = '159949' , start = '2020-01-02' , end = '2020-09-28' , ktype = "60" )
     print(a.k_new_high_count(80))
     df = ts.get_k_data(code = '510300' , ktype='60')
+
+    a.ma_positive(MA = 30 , ROLLING_PERIOD = 3)
+
     #print(df)
