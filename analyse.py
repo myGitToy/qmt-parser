@@ -177,8 +177,12 @@ class ATR(Technical_Analysis):
         df['MAHR_100_HIGH_DEV'] = (df['close'] - df['MAHR_100_HIGH']) / df['ATR']
         #小时线20小时均线ATR偏离
         df['MAHR_20_DEV'] = (df['close'] - df['MAHR_20']) / df['ATR']
+        #小时线20小时均线ATR偏离最大值（周期为MAHR_100_HIGH）
+        df['MAX_MAHR_20_DEV'] = df['MAHR_20_DEV'].rolling(MAHR_100_HIGH).max()
         ##小时线20小时均线ATR偏离
         df['MAHR_30_DEV'] = (df['close'] - df['MAHR_30']) / df['ATR']
+        df['MAX_MAHR_30_DEV'] = df['MAHR_30_DEV'].rolling(MAHR_100_HIGH).max()
+        #小时线30小时均线ATR偏离最大值（周期为MAHR_100_HIGH）
         #print(df[['date','close','ATR']])
         return df
         
@@ -192,13 +196,13 @@ class ATR(Technical_Analysis):
         返回：
             [日期 证券代码 收盘价 TR ATR MA HIGH]
         """
-        df_main=pd.DataFrame(columns=['date','code','close','TR','ATR','MAHR_100_HIGH','MAHR_20','MAHR_30','MAHR_100_HIGH_DEV','MAHR_20_DEV','MAHR_30_DEV'])
+        df_main=pd.DataFrame(columns=['date','code','close','TR','ATR','MAHR_100_HIGH','MAHR_20','MAHR_30','MAHR_100_HIGH_DEV','MAHR_20_DEV','MAHR_30_DEV','MAX_MAHR_20_DEV','MAX_MAHR_30_DEV'])
         for code in code_list:
             #循环截取所有列表中的数据
             atr = ATR(code = code , start = start , ktype = ktype)
             #print(code)
             atr.network_OK = True
-            df = atr.cal_ATR()[['date','close','TR','ATR','MAHR_100_HIGH','MAHR_20','MAHR_30','MAHR_100_HIGH_DEV','MAHR_20_DEV','MAHR_30_DEV']]
+            df = atr.cal_ATR()[['date','close','TR','ATR','MAHR_100_HIGH','MAHR_20','MAHR_30','MAHR_100_HIGH_DEV','MAHR_20_DEV','MAHR_30_DEV','MAX_MAHR_20_DEV','MAX_MAHR_30_DEV']]
             df['code'] = code
             #日期转换为datetime64[ns] 否则会在merge操作中因为两列属性不同和无法完成合并操作
             df['date'] = pd.to_datetime(df['date'])
