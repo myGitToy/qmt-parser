@@ -165,10 +165,12 @@ class ATR(Technical_Analysis):
             MAHR_20：N小时均线 N = 20小时/5天
             MAHR_30：N小时均线 N = 30小时/8天
             MAHR_100_HIGH_DEV：N天内最高价格ATR偏离程度 N = 100小时/25天
-            MAHR_20_DEV：20小时（5天线）均线ATR偏离程度 
-            MAHR_30_DEV：30小时（8天线）均线ATR偏离程度
-            MAX_MAHR_20_DEV：N周期内，20小时（5天线）均线最大ATR偏离程度 N =  MAHR_100_HIGH
-            MAX_MAHR_30_DEV：N周期内，30小时（8天线）均线最大ATR偏离程度 N =  MAHR_100_HIGH
+            MAHR_20_DEV：20小时（5天线）均线ATR偏离程度（收盘价） 
+            MAHR_30_DEV：30小时（8天线）均线ATR偏离程度（收盘价）
+            MAHR_20_LOW_DEV（过渡列，不进行输出）：20小时（5天线）均线ATR偏离程度（最低价）
+            MAHR_30_LOW_DEV（过渡列，不进行输出）：30小时（8天线）均线ATR偏离程度（最低价）
+            MAX_MAHR_20_DEV：N周期内，20小时（5天线）均线最大ATR偏离程度（最低价） N =  MAHR_100_HIGH / 2
+            MAX_MAHR_30_DEV：N周期内，30小时（8天线）均线最大ATR偏离程度（最低价） N =  MAHR_100_HIGH / 2
         """
         df = super(ATR,self).get_data()
         df['close_1'] = df['close'].shift(1)
@@ -185,16 +187,20 @@ class ATR(Technical_Analysis):
         df['MAHR_30'] = df['close'].rolling(MAHR_30).mean()
         #小时线100小时ATR偏离
         df['MAHR_100_HIGH_DEV'] = (df['close'] - df['MAHR_100_HIGH']) / df['ATR']
+
         #小时线20小时均线ATR偏离
         df['MAHR_20_DEV'] = (df['close'] - df['MAHR_20']) / df['ATR']
+        #小时线20小时的最低价格对于均线的ATR偏离程度
+        df['MAHR_20_LOW_DEV'] = (df['low'] - df['MAHR_20']) / df['ATR']
         #小时线20小时均线ATR偏离最大值（周期为MAHR_100_HIGH）
-        df['MAX_MAHR_20_DEV'] = df['MAHR_20_DEV'].rolling(MAHR_100_HIGH).max()
+        df['MAX_MAHR_20_LOW_DEV'] = df['MAHR_20_LOW_DEV'].rolling(int(MAHR_100_HIGH / 2)).min()
+
         #小时线30小时均线ATR偏离
         df['MAHR_30_DEV'] = (df['close'] - df['MAHR_30']) / df['ATR']
         #小时线30小时的最低价格对于均线的ATR偏离程度
-        df['MAHR_30_LOW_DEV'] = (df['MAHR_30'] - df['low'] ) / df['ATR']
+        df['MAHR_30_LOW_DEV'] = (df['low'] - df['MAHR_30']) / df['ATR']
         #小时线30小时的最低价格对于均线的ATR偏离程度（周期为MAHR_100_HIGH）
-        df['MAX_MAHR_30_LOW_DEV'] = df['MAHR_30_LOW_DEV'].rolling(MAHR_100_HIGH).max()
+        df['MAX_MAHR_30_LOW_DEV'] = df['MAHR_30_LOW_DEV'].rolling(int(MAHR_100_HIGH / 2)).min()
         
         #print(df[['date','close','ATR']])
         return df
@@ -209,13 +215,13 @@ class ATR(Technical_Analysis):
         返回：
             [日期 证券代码 收盘价 TR ATR MA HIGH]
         """
-        df_main=pd.DataFrame(columns=['date','code','close','TR','ATR','MAHR_100_HIGH','MAHR_20','MAHR_30','MAHR_100_HIGH_DEV','MAHR_20_DEV','MAHR_30_DEV','MAX_MAHR_20_DEV','MAX_MAHR_30_LOW_DEV'])
+        df_main=pd.DataFrame(columns=['date','code','close','TR','ATR','MAHR_100_HIGH','MAHR_20','MAHR_30','MAHR_100_HIGH_DEV','MAHR_20_DEV','MAHR_30_DEV','MAX_MAHR_20_LOW_DEV','MAX_MAHR_30_LOW_DEV'])
         for code in code_list:
             #循环截取所有列表中的数据
             atr = ATR(code = code , start = start , ktype = ktype)
             #print(code)
             atr.network_OK = True
-            df = atr.cal_ATR()[['date','close','TR','ATR','MAHR_100_HIGH','MAHR_20','MAHR_30','MAHR_100_HIGH_DEV','MAHR_20_DEV','MAHR_30_DEV','MAX_MAHR_20_DEV','MAX_MAHR_30_LOW_DEV']]
+            df = atr.cal_ATR()[['date','close','TR','ATR','MAHR_100_HIGH','MAHR_20','MAHR_30','MAHR_100_HIGH_DEV','MAHR_20_DEV','MAHR_30_DEV','MAX_MAHR_20_LOW_DEV','MAX_MAHR_30_LOW_DEV']]
             df['code'] = code
             #日期转换为datetime64[ns] 否则会在merge操作中因为两列属性不同和无法完成合并操作
             df['date'] = pd.to_datetime(df['date'])
