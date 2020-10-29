@@ -137,7 +137,7 @@ class k(base):
         df['ma'] = df['close'].rolling(MA).mean()
         df['ma_slope'] = (df['ma'] - df['ma'].shift(1)) / df['ma']
         df['ma3_slope'] = df['ma_slope'].rolling(ROLLING_PERIOD).mean()
-        print(df)
+        #print(df)
         df.to_csv('.\\data\\159949_ma30.csv', encoding = 'utf_8_sig')
         if df.iloc[-1].at['ma3_slope'] >= POSITIVE_VALUE:
             return True

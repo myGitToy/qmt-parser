@@ -39,14 +39,14 @@ if __name__=="__main__":
     #code_list = ['512830']
     #code_list = load_today_all()   
     dl = DL()
-    #code_list =dl.get_ETF_list()
+    code_list =dl.get_ETF_list()
     ts = tspro()
-    code_list = ts.get_code_list()
+    #code_list = ts.get_code_list()
     #新高突破
     lst=[]
     for code in code_list:
-        a = k(code = code , start = '2020-06-02' , end = '2020-09-25' , ktype = 60 )
-        b =  vol(code = code , start = '2020-06-02' , end = '2020-09-25' , ktype = 60 )
+        a = k(code = code , start = '2020-06-02' , end = '2020-10-29' , ktype = 60 )
+        b =  vol(code = code , start = '2020-06-02' , end = '2020-10-29' , ktype = 60 )
         #if (a.new_high_break(code =code , start = start , end = end ,  ktype = ktype , MA_HIGH_PERIOD = 100 ,auto_update = False) == True) and (a.ma_positive(code =code , start = start , end = end ,  ktype = ktype , auto_update = False) == True):
         if a.ma_positive(POSITIVE_VALUE = -0.0005 ) and a.new_high_break( MA_HIGH_PERIOD = 100 , MINIMUM = 5 , MAXIMUM= 100 ) and b.amount_between(LOW = 1e7 , HIGH = 1e15):
            print("%s新高突破且均线向上" % (code))
