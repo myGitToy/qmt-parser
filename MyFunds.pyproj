@@ -104,6 +104,9 @@
     <Compile Include="demo\demo_tspro_tokon.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="demo\demo_历史分笔测试.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="fund\class1.py">
       <SubType>Code</SubType>
     </Compile>

@@ -2,7 +2,7 @@ import tushare as ts
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
-code='000063'
+code='000001'
 #df = ts.get_tick_data(code,date=day,src='tt')   #历史分笔交易  支持ETF 基本上为每隔三秒左右生成的合并数据，
 df = ts.get_today_ticks(code)
 #首尾行颠倒
