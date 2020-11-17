@@ -11,7 +11,7 @@
     <OutputPath>.</OutputPath>
     <Name>MyFunds</Name>
     <RootNamespace>MyFunds</RootNamespace>
-    <InterpreterId>CondaEnv|CondaEnv|Anaconda3</InterpreterId>
+    <InterpreterId>MSBuild|env_myfund|$(MSBuildProjectFullPath)</InterpreterId>
     <TestFramework>Pytest</TestFramework>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -94,6 +94,9 @@
     <Compile Include="demo\demo_get_k_slope.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="demo\demo_jqdata.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="demo\demo_multiple_condition.py">
       <SubType>Code</SubType>
     </Compile>
@@ -173,6 +176,17 @@
     <Folder Include="apt\" />
     <Folder Include="demo\" />
     <Folder Include="VB\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Interpreter Include="env_myfund\">
+      <Id>env_myfund</Id>
+      <Version>3.7</Version>
+      <Description>env_myfund (Python 3.7 (64-bit))</Description>
+      <InterpreterPath>Scripts\python.exe</InterpreterPath>
+      <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
+      <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
+      <Architecture>X64</Architecture>
+    </Interpreter>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
