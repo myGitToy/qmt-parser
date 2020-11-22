@@ -3,6 +3,7 @@ from datetime import datetime,timedelta
 import numpy as np
 import pandas as pd
 import tushare as ts
+import sqlalchemy
 import logging
 import os
 #载入基类

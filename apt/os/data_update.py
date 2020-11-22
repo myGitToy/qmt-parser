@@ -2,6 +2,7 @@
 from datetime import datetime,timedelta
 import numpy as np
 import pandas as pd
+import sqlalchemy
 import tushare as ts
 import logging
 import os
@@ -220,6 +221,7 @@ class Data_Update(TSOS):
 
     def get_ETF_list(self , file_path = None):
         #设置ETF路径
+        print('正在使用os.data_update中的获取ETF列表模块')
         if file_path == None:
             file_path = '.\\data\\ETF.csv'    
         #df=pd.read_csv(trade_log,dtype={'证券代码': np.str,'交收日期':np.str,'成交数量':np.int,'发生金额':np.float},encoding='gb18030')
