@@ -43,23 +43,32 @@ class Data_tick(TSOS):
         """
         ##########读取更新列表
         code_list  = list(get_all_securities(['stock','etf'],date = '2020-11-23').index)
-        day_list = get_trade_days(start_date='2020-10-27', end_date='2020-11-20')
+        day_list = get_trade_days(start_date='2020-11-02', end_date='2020-11-23')
         for day in day_list:
             print("##############正在更新%s数据##############" % day.strftime("%Y-%m-%d"))
             for code in code_list:
                 code = code[0:6]
-                df = self.get_tick_data(code = code , day = day.strftime("%Y-%m-%d"))
-                #保存至数据库
-                if df.empty == True:
-                    print("%s tick数据为空，跳过上传" % (code))
-                #print(df)
+                #检查数据库是否存在数据
+                query = "select count(code) as num from ts_tick where code = '%s' and left(time,10)='%s'" % (code,day)
+                df_old = pd.read_sql_query(query, self.engine)
+                count = df_old.loc[0,'num']
+                if count > 0 :
+                    #此处存在数据，不进入更新序列，直接跳过
+                    print("%s存在数据，跳过更新" % code)
                 else:
-                    df.to_sql(
-                            name = 'ts_tick',
-                            con = self.engine,
-                            index = False,
-                            if_exists = 'append')
-                    print("%s tick数据已上传完成" % (code))
+                    #不存在数据，进行更新
+                    df = self.get_tick_data(code = code , day = day.strftime("%Y-%m-%d"))
+                    #保存至数据库
+                    if df.empty == True:
+                        print("%s tick数据为空，跳过上传" % (code))
+                    #print(df)
+                    else:
+                        df.to_sql(
+                                name = 'ts_tick',
+                                con = self.engine,
+                                index = False,
+                                if_exists = 'append')
+                        print("%s tick数据已上传完成" % (code))
             
 
 

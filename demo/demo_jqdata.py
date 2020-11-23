@@ -1,5 +1,6 @@
 from jqdatasdk import *
 import pandas as pd
+import datetime
 #显示所有列
 pd.set_option('display.max_columns', None)
 auth('13817092632','JQ@tushare123')
@@ -9,8 +10,9 @@ auth('13817092632','JQ@tushare123')
 #关于列：
     #1d 列：['open', 'close', 'high', 'low', 'volume', 'money','paused','factor']
     #5m 列：['open', 'close', 'high', 'low', 'volume', 'money']
-df = get_price(security = '512760.XSHG',start_date='2020-09-01' ,end_date = '2020-09-8',frequency='1d',fields=['open', 'close', 'high', 'low', 'volume', 'money','paused','factor'], skip_paused=True, fq='pre',  fill_paused=False)
-
+#df = get_price(security = '512760.XSHG',start_date='2020-09-01' ,end_date = '2020-09-8',frequency='1d',fields=['open', 'close', 'high', 'low', 'volume', 'money','paused','factor'], skip_paused=True, fq='pre',  fill_paused=False)
+day = datetime.datetime(2020,9,12)
+df = get_bars(security = '512760.XSHG', count = 20, unit='60m',fields=['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'],include_now=False, end_dt= day, fq_ref_date=day,df=True)
 
 """
              open  close   high    low        volume         money    factor

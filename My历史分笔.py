@@ -12,7 +12,7 @@ import numpy as np
 """
 #df = ts.get_realtime_quotes('159949') #当日实时买盘 卖盘挂单 支持ETF
 #print(df[['b1_v','b1_p','a1_v','a1_p']])
-day='2020-11-13'  #时间格式必须是YYYY-MM-DD
+day='2020-10-26'  #时间格式必须是YYYY-MM-DD
 code='159996'
 df = ts.get_tick_data(code,date=day,src='tt')   #历史分笔交易  支持ETF 基本上为每隔三秒左右生成的合并数据，
 print(df)

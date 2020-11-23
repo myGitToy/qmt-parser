@@ -32,6 +32,9 @@
     <Compile Include="apt\os\data_load.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="apt\os\data_tick.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="apt\os\data_update.py">
       <SubType>Code</SubType>
     </Compile>
@@ -105,6 +108,9 @@
     </Compile>
     <Compile Include="demo\demo_qsp_test.py" />
     <Compile Include="demo\demo_tspro_tokon.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_ts_tick.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_历史分笔测试.py">
