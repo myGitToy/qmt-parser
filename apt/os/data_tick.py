@@ -30,6 +30,10 @@ class Data_tick(TSOS):
             df['time'] = day + ' ' + df['time']
             df['time'] = pd.to_datetime(df['time'])
             df['code'] = code
+            print(df)
+            #去除重复
+            df.drop_duplicates('time', keep = 'first' , inplace = True)
+            print(df)
             return df
 
     def get_last_update(self , code = None):
@@ -43,7 +47,7 @@ class Data_tick(TSOS):
         """
         ##########读取更新列表
         code_list  = list(get_all_securities(['stock','etf'],date = '2020-11-23').index)
-        day_list = get_trade_days(start_date='2020-11-02', end_date='2020-11-23')
+        day_list = get_trade_days(start_date='2020-11-03', end_date='2020-11-23')
         for day in day_list:
             print("##############正在更新%s数据##############" % day.strftime("%Y-%m-%d"))
             for code in code_list:
