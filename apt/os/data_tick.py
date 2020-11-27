@@ -10,14 +10,31 @@ import logging
 import os
 #载入基类
 from apt.os.tsos import TSOS
-class Data_tick(TSOS):
+from enum import Enum
+
+
+
+class Data_tick(TSOS):  
     """
     数据加载类，继承自TSOS
     调用时请添加引用：from apt.os.data_tick import Data_tick
     """
-    def __init__(self, code = None):
+    class Server(Enum):
+        aliyun = 1
+        localhost = 2
+        nas = 3
+
+    def __init__(self , server_name = Server.localhost):
         #初始化连接信息，这里未来计划需要迁移，因为直接把密码写入代码是不正确的
-        self.engine = sqlalchemy.create_engine('mysql+pymysql://stock_user:a@1#Yy1c@rm-uf670x8h47fdgl82tqo.mysql.rds.aliyuncs.com:3306/stock')
+        """
+        if server_name == 1:
+            self.engine = sqlalchemy.create_engine('mysql+pymysql://stock_user:a@1#Yy1c@rm-uf670x8h47fdgl82tqo.mysql.rds.aliyuncs.com:3306/stock')
+        elif server_name == 2:
+            self.engine = sqlalchemy.create_engine('mysql+pymysql://stock_user:a@localhost:3306/stock')
+        elif server_name == 3:
+            self.engine = sqlalchemy.create_engine('mysql+pymysql://stock_user:a@localhost:3306/stock')            
+        """
+        self.engine = sqlalchemy.create_engine('mysql+pymysql://stock_user:a@1#Yy1c@localhost:3306/stock')
         auth('13817092632','JQ@tushare123')
     
     def get_tick_data(self , code = None , day = '2020-01-01'):
@@ -30,10 +47,10 @@ class Data_tick(TSOS):
             df['time'] = day + ' ' + df['time']
             df['time'] = pd.to_datetime(df['time'])
             df['code'] = code
-            print(df)
+            #print(df)
             #去除重复
             df.drop_duplicates('time', keep = 'first' , inplace = True)
-            print(df)
+            #print(df)
             return df
 
     def get_last_update(self , code = None):
@@ -46,10 +63,11 @@ class Data_tick(TSOS):
         tick数据的每日更新任务
         """
         ##########读取更新列表
-        code_list  = list(get_all_securities(['stock','etf'],date = '2020-11-23').index)
-        day_list = get_trade_days(start_date='2020-11-03', end_date='2020-11-23')
+        code_list  = list(get_all_securities(['stock','etf'],date = '2020-11-25').index)
+        day_list = get_trade_days(start_date='2020-11-18', end_date='2020-11-25')
         for day in day_list:
             print("##############正在更新%s数据##############" % day.strftime("%Y-%m-%d"))
+            print(datetime.now())
             for code in code_list:
                 code = code[0:6]
                 #检查数据库是否存在数据
