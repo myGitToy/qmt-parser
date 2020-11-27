@@ -243,7 +243,7 @@ class STP():
                        df_board.loc[index_buy,['卖出发生金额']] = row_buy['成交数量'] / row_sell['成交数量'] * row_sell['发生金额']
                        remain_amout = row_sell['发生金额'] - df_board.loc[index_buy,['卖出发生金额']]
                        #卖出发生金额 = 卖出数量/成交数量 * 发生金额 
-                       
+                                
                        df_board.loc[index_buy,['剩余头寸']] = 0
                        break
                    elif row_sell['成交数量'] == row_buy['成交数量']:
