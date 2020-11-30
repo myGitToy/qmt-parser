@@ -6,8 +6,8 @@ from apt.vendor.jqdata.jqdata import jqdata as jqdata
 #显示所有列
 pd.set_option('display.max_columns', None)
 #auth('13817092632','JQ@tushare123')
-day = datetime.datetime(2019,12,1)
-end = datetime.datetime(2020,11,29,16)
+day = datetime.datetime(2020,1,1)
+end = datetime.datetime(2020,6,30,16)
 code = '512760.XSHG'
 
 print(datetime.datetime.now())
