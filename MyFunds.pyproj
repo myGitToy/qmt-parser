@@ -68,6 +68,9 @@
     <Compile Include="apt\testB\A.py" />
     <Compile Include="apt\testB\B.py" />
     <Compile Include="apt\testB\__init__.py" />
+    <Compile Include="apt\vendor\jqdata\base.py" />
+    <Compile Include="apt\vendor\jqdata\jqdata.py" />
+    <Compile Include="apt\vendor\jqdata\__init__.py" />
     <Compile Include="apt\vendor\tspro\base.py">
       <SubType>Code</SubType>
     </Compile>
@@ -97,6 +100,8 @@
     <Compile Include="demo\demo_get_k_slope.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="demo\demo_jqdata_factor.py" />
+    <Compile Include="demo\demo_jqdata_min.py" />
     <Compile Include="demo\demo_jqdata.py">
       <SubType>Code</SubType>
     </Compile>
@@ -177,6 +182,7 @@
     <Folder Include="apt\testB\" />
     <Folder Include="apt\testA\" />
     <Folder Include="apt\os\" />
+    <Folder Include="apt\vendor\jqdata\" />
     <Folder Include="apt\vendor\tspro\" />
     <Folder Include="fund\" />
     <Folder Include="apt\" />

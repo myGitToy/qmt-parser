@@ -11,9 +11,10 @@ auth('13817092632','JQ@tushare123')
     #1d 列：['open', 'close', 'high', 'low', 'volume', 'money','paused','factor']
     #5m 列：['open', 'close', 'high', 'low', 'volume', 'money']
 #df = get_price(security = '512760.XSHG',start_date='2020-09-01' ,end_date = '2020-09-8',frequency='1d',fields=['open', 'close', 'high', 'low', 'volume', 'money','paused','factor'], skip_paused=True, fq='pre',  fill_paused=False)
-day = datetime.datetime(2020,9,12)
-df = get_bars(security = '512760.XSHG', count = 20, unit='60m',fields=['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'],include_now=False, end_dt= day, fq_ref_date=day,df=True)
-
+day = datetime.datetime(2020,9,8,16)
+code = '512760.XSHG'
+df = get_bars(security = code , count = 30, unit = '60m' , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'] , include_now = False , end_dt = day, fq_ref_date = day , df = True)
+df['code'] = code
 """
              open  close   high    low        volume         money    factor
 2020-06-24  1.048  1.066  1.076  1.046  9.145897e+08  9.721797e+08  0.477323
