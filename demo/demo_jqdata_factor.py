@@ -14,6 +14,8 @@ pd.set_option('display.max_columns', None)
 auth('13817092632','JQ@tushare123')
 day = datetime.datetime(2020,9,8,16)
 code = '159949.XSHE'
+df_remain = get_query_count()
+print(df_remain)
 #动态复权
 #df = get_bars(security = code , count = 10, unit = '60m' , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'] , include_now = False , end_dt = day, fq_ref_date = day , df = True)
 #不复权
