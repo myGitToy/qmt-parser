@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+2020/10/22
+1. 【ATR模块】增加MAX_MAHR_30_LOW_DEV，目的是计算回滚N个周期内对于MA均线的最大ATR偏离值，用这个数值和0.5ATR进行比较，确定砍仓一半的止损位
+
 2020/09/19
 1. 修正获取每日证券代码列表的方式，改为使用tushare pro来获取，原有的load_today_all将不再使用
 2. 【ts Pro模块】增加对于tushare Pro的支持

@@ -11,7 +11,7 @@
     <OutputPath>.</OutputPath>
     <Name>MyFunds</Name>
     <RootNamespace>MyFunds</RootNamespace>
-    <InterpreterId>CondaEnv|CondaEnv|Anaconda3</InterpreterId>
+    <InterpreterId>MSBuild|env_myfund|$(MSBuildProjectFullPath)</InterpreterId>
     <TestFramework>Pytest</TestFramework>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
@@ -30,6 +30,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="apt\os\data_load.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="apt\os\data_tick.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="apt\os\data_update.py">
@@ -65,6 +68,9 @@
     <Compile Include="apt\testB\A.py" />
     <Compile Include="apt\testB\B.py" />
     <Compile Include="apt\testB\__init__.py" />
+    <Compile Include="apt\vendor\jqdata\base.py" />
+    <Compile Include="apt\vendor\jqdata\jqdata.py" />
+    <Compile Include="apt\vendor\jqdata\__init__.py" />
     <Compile Include="apt\vendor\tspro\base.py">
       <SubType>Code</SubType>
     </Compile>
@@ -94,6 +100,11 @@
     <Compile Include="demo\demo_get_k_slope.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="demo\demo_jqdata_factor.py" />
+    <Compile Include="demo\demo_jqdata_min.py" />
+    <Compile Include="demo\demo_jqdata.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="demo\demo_multiple_condition.py">
       <SubType>Code</SubType>
     </Compile>
@@ -102,6 +113,12 @@
     </Compile>
     <Compile Include="demo\demo_qsp_test.py" />
     <Compile Include="demo\demo_tspro_tokon.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_ts_tick.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_历史分笔测试.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="fund\class1.py">
@@ -165,11 +182,23 @@
     <Folder Include="apt\testB\" />
     <Folder Include="apt\testA\" />
     <Folder Include="apt\os\" />
+    <Folder Include="apt\vendor\jqdata\" />
     <Folder Include="apt\vendor\tspro\" />
     <Folder Include="fund\" />
     <Folder Include="apt\" />
     <Folder Include="demo\" />
     <Folder Include="VB\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Interpreter Include="env_myfund\">
+      <Id>env_myfund</Id>
+      <Version>3.7</Version>
+      <Description>env_myfund (Python 3.7 (64-bit))</Description>
+      <InterpreterPath>Scripts\python.exe</InterpreterPath>
+      <WindowsInterpreterPath>Scripts\pythonw.exe</WindowsInterpreterPath>
+      <PathEnvironmentVariable>PYTHONPATH</PathEnvironmentVariable>
+      <Architecture>X64</Architecture>
+    </Interpreter>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

@@ -307,7 +307,7 @@ def get_cash_flow_V2(start_date='2018-01-01'):
     df_fund=pd.DataFrame(index=idx_date.values.tolist(),columns=['基金申赎','确认份额','基金份额'])
     #   2.2 进行基金份额处理
     #   筛选申购记录（申购金额为正，赎回金额为负）
-    df_fund_purchase=df_transactions[(df_transactions['交收日期']>=start_date) & ((df_transactions['操作']=='证券转银行') | (df_transactions['操作']=='银行转证券'))][['交收日期','发生金额']] 
+    df_fund_purchase=df_transactions[(df_transactions['交收日期']>=start_date) & ((df_transactions['操作']=='证券转银行') | (df_transactions['操作']=='银行转证券') | (df_transactions['操作']=='基金申购拨出') | (df_transactions['操作']=='基金申购拨回'))][['交收日期','发生金额']] 
     #当日申购赎回记录进行汇总
     df_fund_purchase=df_fund_purchase.groupby(['交收日期']).sum()
     #插入总表

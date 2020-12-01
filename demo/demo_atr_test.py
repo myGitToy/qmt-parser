@@ -14,7 +14,6 @@ if __name__=="__main__":
     __code = '510300'
     __start =  '2020-01-01'
     __end =  '2020-09-04'
-    ######【BUG report】这里的时间格式只能接受为YYYY-MM-DD
     a = ATR(code = __code , start = __start , end = __end , ktype = 'D')
     a.network_OK = True
     df_day = a.cal_ATR()
