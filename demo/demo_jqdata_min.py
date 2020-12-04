@@ -7,8 +7,8 @@ from apt.vendor.jqdata.jqdata import jqdata as jqdata
 pd.set_option('display.max_columns', None)
 #auth('13817092632','JQ@tushare123')
 #jqdata_60m更新 已完成2018-2020年11月的数据导入
-day = datetime.datetime(2014,7,1)
-end = datetime.datetime(2014,12,31,16)
+day = datetime.datetime(2004,1,1) 
+end = datetime.datetime(2004,12,31,16)
 code = '512760.XSHG'
 
 print(datetime.datetime.now())
