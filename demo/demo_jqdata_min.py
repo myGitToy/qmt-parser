@@ -7,8 +7,12 @@ from apt.vendor.jqdata.jqdata import jqdata as jqdata
 pd.set_option('display.max_columns', None)
 #auth('13817092632','JQ@tushare123')
 #jqdata_60m更新 已完成2018-2020年11月的数据导入
-day = datetime.datetime(2004,1,1) 
-end = datetime.datetime(2004,12,31,16)
+#day = datetime.datetime(2004,1,1)  #2005年之前的数据不存在，聚宽未收录
+#end = datetime.datetime(2004,12,31,16)
+
+
+day = datetime.datetime(2020,1,1)  #未完成
+end = datetime.datetime(2020,12,4,16)
 code = '512760.XSHG'
 
 print(datetime.datetime.now())
@@ -16,7 +20,7 @@ jq = jqdata()
 ##########读取更新列表
 code_list  = list(get_all_securities(['stock','etf'],date = end).index)
 print(len(code_list))
-jq.jqdata_update_v2(start_date = day , code_list = code_list , ktype = '60m' , end_date = end)
+jq.jqdata_update_v2(start_date = day , code_list = ['512760.XSHG'] , ktype = '1d' , end_date = end)
 
 #动态复权
 #df = get_bars(security = code , count = 10, unit = '60m' , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'] , include_now = False , end_dt = day, fq_ref_date = day , df = True)

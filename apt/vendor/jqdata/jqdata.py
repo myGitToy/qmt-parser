@@ -68,7 +68,7 @@ class jqdata(base):
         聚宽数据日常更新的主入口 第二版本 使用单循环策略，所有更新只循环4000次
         code_list 需要更新的代码列表，默认为空，即全部更新
         start_date 开始时间，默认为2010年
-        end_date 结束时间 默认为当前时间（更新函数中默认不更新当天的及时数据，因为会造成重复录入，请注意）
+        end_date 结束时间 默认为当前时间（更新函数中默认不更新当天的即时数据，因为会造成重复录入，请注意）
         ktype K线周期 1d 5m 60m等
         更新逻辑：
             1. 获取需要更新的时间周期中的交易日
@@ -104,8 +104,14 @@ class jqdata(base):
                 #print(end_day)
                 df_jqdata = get_bars(security = code , count = count_suppose , unit = ktype , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'] , include_now = False , end_dt = end_date , df = True)
                 df_jqdata['code']= code
+                print(df_jqdata)
                 #数据去重（因为停盘的关系，比如获取1/1-1/30号的数据，实际通过count取到的数据可能包含前面12月份的，直接写入因为唯一索引的约束，会报错）
-                df_jqdata = df_jqdata[(df_jqdata.date >= start_date) & (df_jqdata.date <= end_date)]
+                if  ktype == '1d':
+                    #日线数据特殊处理，因为数据库中的格式是date，不是datetime
+                    df_jqdata = df_jqdata[(df_jqdata.date >= start_date.date()) & (df_jqdata.date <= end_date.date())]
+                else:
+                    #分时数据正常处理
+                    df_jqdata = df_jqdata[(df_jqdata.date >= start_date) & (df_jqdata.date <= end_date)]
                 #检索数据库中的数据
                 query2 = "select date from jqdata_%s where code = '%s' and left(date,10) BETWEEN '%s' and '%s'" % (ktype , code , start_date.strftime("%Y-%m-%d") , end_date.strftime("%Y-%m-%d"))         
                 df_db = pd.read_sql_query(query2, self.engine)

@@ -19,6 +19,8 @@ print(df_remain)
 #动态复权
 #df = get_bars(security = code , count = 10, unit = '60m' , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'] , include_now = False , end_dt = day, fq_ref_date = day , df = True)
 #不复权
+df_jqdata = get_bars(security = '159949.XSHE' , count = 20 , unit = '1d' , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'] , include_now = False , end_dt = day , df = True)
+print(df_jqdata)
 df = get_bars(security = code , count = 60, unit = '60m' , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'] , include_now = False , end_dt = day, df = True)
 
 
