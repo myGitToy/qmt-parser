@@ -20,7 +20,7 @@ jq = jqdata()
 ##########读取更新列表
 code_list  = list(get_all_securities(['stock','etf'],date = end).index)
 print(len(code_list))
-jq.jqdata_update_v2(start_date = day , code_list = ['512760.XSHG'] , ktype = '1d' , end_date = end)
+jq.jqdata_update_v2(start_date = day , code_list = code_list , ktype = '1d' , end_date = end)
 
 #动态复权
 #df = get_bars(security = code , count = 10, unit = '60m' , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'] , include_now = False , end_dt = day, fq_ref_date = day , df = True)
