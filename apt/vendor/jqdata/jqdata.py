@@ -8,11 +8,12 @@ from apt.vendor.jqdata.base import base as base
 
 
 class jqdata(base):
-    def jqdata_update(self , code_list = None , start_date = datetime.datetime(2010,1,1,1) , end_date = datetime.datetime.now() , ktype = '1d' ):
+    def jqdata_update_byday(self , code_list = None , start_date = datetime.datetime(2020,1,1,1) , end_date = datetime.datetime.now() , ktype = '5m' ):
         """
         聚宽数据日常更新的主入口 第一版本 使用双循环策略，判断简单但数据库操作偏多，每天每代码都要执行一遍读取、判断、写入
+        适合进行1m 5m数据更新
         code_list 需要更新的代码列表，默认为空，即全部更新
-        start_date 开始时间，默认为2010年
+        start_date 开始时间，默认为2020年
         end_date 结束时间 默认为当前时间（更新函数中默认不更新当天的及时数据，因为会造成重复录入，请注意）
         ktype K线周期 1d 5m 60m等
         更新逻辑：
@@ -51,6 +52,9 @@ class jqdata(base):
                     #print(end_day)
                     df = get_bars(security = code , count = update_num , unit = ktype , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'] , include_now = False , end_dt = end_day , df = True)
                     df['code']= code
+                    #进行当天数据的筛选，因为比如取5m数据，当天有48根，但可能上午停牌，因此48根数据就包含了昨天下午的，此时写入数据库会造成唯一索引约束错误
+                    df = df[(df.date >= datetime.datetime(day.year,day.month,day.day,1))& (df.date <= datetime.datetime(day.year,day.month,day.day,16))]
+                    #print(df)
                     #保存至数据库
                     if df.empty == True:
                         print("%s 当日数据为空，跳过上传" % (code))
@@ -63,11 +67,11 @@ class jqdata(base):
                                 if_exists = 'append')
                         print("%s 数据已上传完成(%s)" % (code,ktype))
 
-    def jqdata_update_v2(self , code_list = None , start_date = datetime.datetime(2010,1,1,1) , end_date = datetime.datetime.now() , ktype = '1d' ):
+    def jqdata_update_v2(self , code_list = None , start_date = datetime.datetime(2020,1,1,1) , end_date = datetime.datetime.now() , ktype = '1d' ):
         """
         聚宽数据日常更新的主入口 第二版本 使用单循环策略，所有更新只循环4000次
         code_list 需要更新的代码列表，默认为空，即全部更新
-        start_date 开始时间，默认为2010年
+        start_date 开始时间，默认为2020年
         end_date 结束时间 默认为当前时间（更新函数中默认不更新当天的即时数据，因为会造成重复录入，请注意）
         ktype K线周期 1d 5m 60m等
         更新逻辑：
