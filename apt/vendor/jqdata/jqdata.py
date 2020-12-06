@@ -129,7 +129,7 @@ class jqdata(base):
                 #print(df_jqdata)
                 #保存至数据库
                 if df_jqdata.empty == True:
-                    print("%s 进行差集处理后剩余数据为空，跳过上传" % (code))
+                    print("%s 进行差集处理后剩余数据为空或者jqdata无数据，跳过上传" % (code))
                 #print(df)
                 else:
                     df_jqdata.to_sql(
