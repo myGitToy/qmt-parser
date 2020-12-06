@@ -63,8 +63,8 @@ class Data_tick(TSOS):
         tick数据的每日更新任务
         """
         ##########读取更新列表
-        code_list  = list(get_all_securities(['stock','etf'],date = '2020-11-25').index)
-        day_list = get_trade_days(start_date='2020-12-01', end_date='2020-12-02')
+        code_list  = list(get_all_securities(['stock','etf'],date = '2020-12-06').index)
+        day_list = get_trade_days(start_date='2020-12-02', end_date='2020-12-04')
         for day in day_list:
             print("##############正在更新%s数据##############" % day.strftime("%Y-%m-%d"))
             print(datetime.now())
