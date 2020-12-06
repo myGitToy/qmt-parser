@@ -11,8 +11,8 @@ pd.set_option('display.max_columns', None)
 #end = datetime.datetime(2004,12,31,16)
 
 
-day = datetime.datetime(2020,1,1)  #未完成
-end = datetime.datetime(2020,12,31,16)
+day = datetime.datetime(2020,3,2)  #未完成
+end = datetime.datetime(2020,3,31,16)
 code = '512760.XSHG'
 
 print(datetime.datetime.now())

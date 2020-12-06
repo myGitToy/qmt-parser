@@ -34,6 +34,8 @@ class jqdata(base):
         update_num = self.__get_update_count(trade_days = 1 , ktype = ktype)
         for day in trade_days:
             print("##############正在更新%s数据##############" % day.strftime("%Y-%m-%d"))
+            df_remain = get_query_count()
+            print("当日数据剩余条目数：%s" % df_remain)
             #print(datetime.now())
             for code in code_list:
                 #检查数据库是否存在数据
