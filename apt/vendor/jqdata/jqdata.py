@@ -40,8 +40,8 @@ class jqdata(base):
             for code in code_list:
                 #检查数据库是否存在数据
                 query = "select count(code) as num from jqdata_%s where code = '%s' and left(date,10) = '%s'" % (ktype , code , day)
-                df_old = pd.read_sql_query(query, self.engine)
-                count = df_old.loc[0,'num']
+                df_old = pd.read_sql_query(query , self.engine)
+                count = df_old.loc[0 , 'num']
                 if count > 0 :
                     #此处存在数据，不进入更新序列，直接跳过
                     print("%s存在数据，跳过更新" % code)
@@ -93,15 +93,15 @@ class jqdata(base):
         for code in code_list:
             #检查数据库是否存在数据
             query = "select count(code) as num from jqdata_%s where code = '%s' and left(date,10) BETWEEN '%s' and '%s'" % (ktype , code , start_date.strftime("%Y-%m-%d") , end_date.strftime("%Y-%m-%d"))
-            df_old = pd.read_sql_query(query, self.engine)
+            df_old = pd.read_sql_query(query , self.engine)
             #获取数据库实际存在的数据
-            count_db = df_old.loc[0,'num']
+            count_db = df_old.loc[0 , 'num']
             #获取数据里理论上应该存在的数据
             count_suppose = self.__get_update_count(trade_days = len(trade_days) , ktype = ktype)
             if count_db == count_suppose :
                 #数据库中存在数据且数据条目等于理论条目数，不进入更新序列，直接跳过
                 print("%s存在数据，且校验通过，跳过更新" % code)
-            elif count_db <=count_suppose :
+            elif count_db <= count_suppose :
                 #数据库中数据条目小于理论条目数  无论数据库数据是否为零，获取新数据后予以合并，写入数据库库
                 #此处使用该方法进行日期重定位的原因(新版本这里已经不再需要了，参数中直接输入含16点的日期)：
                     #1. day的数据格式为datetime.date，无法进行+timedelta(hours=16)这样的操作
@@ -109,7 +109,7 @@ class jqdata(base):
                 #end_day = datetime.datetime(day.year,day.month,day.day,16)
                 #print(end_day)
                 df_jqdata = get_bars(security = code , count = count_suppose , unit = ktype , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'] , include_now = False , end_dt = end_date , df = True)
-                df_jqdata['code']= code
+                df_jqdata['code'] = code
                 #print(df_jqdata)
                 #数据去重（因为停盘的关系，比如获取1/1-1/30号的数据，实际通过count取到的数据可能包含前面12月份的，直接写入因为唯一索引的约束，会报错）
                 if  ktype == '1d':
@@ -122,10 +122,10 @@ class jqdata(base):
                 df_jqdata.dropna(inplace = True)
                 #检索数据库中的数据
                 query2 = "select date from jqdata_%s where code = '%s' and left(date,10) BETWEEN '%s' and '%s'" % (ktype , code , start_date.strftime("%Y-%m-%d") , end_date.strftime("%Y-%m-%d"))         
-                df_db = pd.read_sql_query(query2, self.engine)
+                df_db = pd.read_sql_query(query2 , self.engine)
                 #将新老库合并，求差集
                 df_jqdata = df_jqdata.append(df_db)
-                df_jqdata.drop_duplicates(subset = ['date'] , keep=False ,inplace =True)
+                df_jqdata.drop_duplicates(subset = ['date'] , keep = False ,inplace = True)
                 #print(df_jqdata)
                 #保存至数据库
                 if df_jqdata.empty == True:
@@ -146,7 +146,7 @@ class jqdata(base):
         ktype K线周期 1d 5m 60m等
         返回：根据ktype和交易日计算出来的K线数据
         """
-        if trade_days ==None:
+        if trade_days == None:
             print("交易日间隔天数设置错误，请检查")
             return 0
         if ktype == '1d':
