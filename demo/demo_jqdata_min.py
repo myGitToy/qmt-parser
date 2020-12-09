@@ -2,7 +2,7 @@ from jqdatasdk import *
 import pandas as pd
 import datetime
 import sqlalchemy
-from apt.vendor.jqdata.jqdata import jqdata as jqdata
+from apt.vendor.jqdata.jqdata import data as jqdata
 #显示所有列
 pd.set_option('display.max_columns', None)
 #auth('13817092632','JQ@tushare123')
@@ -11,8 +11,8 @@ pd.set_option('display.max_columns', None)
 #end = datetime.datetime(2004,12,31,16)
 
 
-day = datetime.datetime(2020,3,25)  #未完成
-end = datetime.datetime(2020,5,31,16)
+day = datetime.datetime(2020,9,29)  #未完成
+end = datetime.datetime(2020,11,30,16)
 code = '512760.XSHG'
 
 print(datetime.datetime.now())
@@ -22,8 +22,8 @@ code_list  = list(get_all_securities(['stock','etf'],date = end).index)
 print(len(code_list))
 df_remain = get_query_count()
 print(df_remain)
-jq.jqdata_update_byday(start_date = day , code_list = code_list , ktype = '5m' , end_date = end)
-jq.jqdata_update_v2(start_date = day , code_list = code_list , ktype = '1d' , end_date = end)
+#jq.update_byday(start_date = day , code_list = code_list , ktype = '5m' , end_date = end)
+jq.update(start_date = day , code_list = code_list , ktype = '5m' , end_date = end)
 
 #动态复权
 #df = get_bars(security = code , count = 10, unit = '60m' , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'] , include_now = False , end_dt = day, fq_ref_date = day , df = True)
