@@ -7,8 +7,8 @@ from jqdatasdk import *
 from apt.vendor.jqdata.base import base as base
 
 
-class jqdata(base):
-    def jqdata_update_byday(self , code_list = None , start_date = datetime.datetime(2020,1,1,1) , end_date = datetime.datetime.now() , ktype = '5m' ):
+class data(base):
+    def update_byday(self , code_list = None , start_date = datetime.datetime(2020,1,1,1) , end_date = datetime.datetime.now() , ktype = '5m' ):
         """
         聚宽数据日常更新的主入口 第一版本 使用双循环策略，判断简单但数据库操作偏多，每天每代码都要执行一遍读取、判断、写入
         适合进行1m 5m数据更新
@@ -29,7 +29,7 @@ class jqdata(base):
         #获取更新列表
         if code_list == None:
             #更新列表未填写，则默认为空，即全部更新
-            code_list = get_all_securities(types = ['stock','etf'] , date = end_date)
+            code_list = list(get_all_securities(['stock','etf'],date = end_date).index)
         #设置规则下需要更新的数目（按一天的量进行计算）
         update_num = self.__get_update_count(trade_days = 1 , ktype = ktype)
         for day in trade_days:
@@ -60,7 +60,6 @@ class jqdata(base):
                     #保存至数据库
                     if df.empty == True:
                         print("%s 当日数据为空，跳过上传" % (code))
-                    #print(df)
                     else:
                         df.to_sql(
                                 name = 'jqdata_%s' % (ktype),
@@ -69,7 +68,7 @@ class jqdata(base):
                                 if_exists = 'append')
                         print("%s 数据已上传完成(%s)" % (code,ktype))
 
-    def jqdata_update_v2(self , code_list = None , start_date = datetime.datetime(2020,1,1,1) , end_date = datetime.datetime.now() , ktype = '1d' ):
+    def update(self , code_list = None , start_date = datetime.datetime(2020,1,1,1) , end_date = datetime.datetime.now() , ktype = '1d' ):
         """
         聚宽数据日常更新的主入口 第二版本 使用单循环策略，所有更新只循环4000次
         code_list 需要更新的代码列表，默认为空，即全部更新
@@ -83,13 +82,12 @@ class jqdata(base):
                 2.2 没有数据则直接写入操作
                 2.3 存在数据，则去重后写入
         """
-        print("更新主入口")
         #获取交易日期
         trade_days = get_trade_days(start_date = start_date , end_date = end_date)
         #获取更新列表
         if code_list == None:
             #更新列表未填写，则默认为空，即全部更新
-            code_list = get_all_securities(types = ['stock','etf'] , date = end_date)
+            code_list = list(get_all_securities(['stock','etf'],date = end_date).index)
         for code in code_list:
             #检查数据库是否存在数据
             query = "select count(code) as num from jqdata_%s where code = '%s' and left(date,10) BETWEEN '%s' and '%s'" % (ktype , code , start_date.strftime("%Y-%m-%d") , end_date.strftime("%Y-%m-%d"))
