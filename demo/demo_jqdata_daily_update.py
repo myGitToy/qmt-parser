@@ -2,7 +2,7 @@ from jqdatasdk import *
 import pandas as pd
 import datetime
 import sqlalchemy
-from apt.vendor.jqdata.jqdata import jqdata as jqdata
+from apt.vendor.jqdata.jqdata import data as jqdata
 from apt.vendor.jqdata.ETF import ETF as ETF
 
 """
@@ -20,10 +20,20 @@ from apt.vendor.jqdata.ETF import ETF as ETF
 分钟行情	2005至今	盘前9:00更新 盘中实时更新（每3s刷新一次）盘后24:00更新
 """
 
-start = datetime.datetime(2020,12,1)
-end = datetime.datetime(2020,11,28,16)
+start = datetime.datetime(2020,11,30)
+#end = datetime.datetime(2020,1,28,16)
+end = datetime.datetime.now()
+jq = jqdata()
+df_remain = get_query_count()
+print(df_remain)
+#更新日线
+jq.update(start_date = start , end_date = end , ktype = '1d' )
+#更新60分钟线
+jq.update(start_date = start , end_date = end , ktype = '60m' )
+#更新5分钟线
 
 
+#更新ETF数据
 etf = ETF()
 etf.update_fund_share_daily(start_date = start)
 
