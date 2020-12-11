@@ -106,6 +106,9 @@ class data(base):
                     #2. 如果仅输入day参数，则时间默认为当天零点，所以实际更新的是前一天的数据
                 #end_day = datetime.datetime(day.year,day.month,day.day,16)
                 #print(end_day)
+                #日线进行日期偏移，需要特殊处理
+                if ktype == '1d': 
+                    end_date = end_date + datetime.timedelta(days=1)
                 df_jqdata = get_bars(security = code , count = count_suppose , unit = ktype , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'] , include_now = False , end_dt = end_date , df = True)
                 df_jqdata['code'] = code
                 #print(df_jqdata)
@@ -113,6 +116,7 @@ class data(base):
                 if  ktype == '1d':
                     #日线数据特殊处理，因为数据库中的格式是date，不是datetime
                     df_jqdata = df_jqdata[(df_jqdata.date >= start_date.date()) & (df_jqdata.date <= end_date.date())]
+                    #print(df_jqdata)
                 else:
                     #分时数据正常处理
                     df_jqdata = df_jqdata[(df_jqdata.date >= start_date) & (df_jqdata.date <= end_date)]
@@ -128,7 +132,6 @@ class data(base):
                 #保存至数据库
                 if df_jqdata.empty == True:
                     print("%s 进行差集处理后剩余数据为空或者jqdata无数据，跳过上传" % (code))
-                #print(df)
                 else:
                     df_jqdata.to_sql(
                             name = 'jqdata_%s' % (ktype),
