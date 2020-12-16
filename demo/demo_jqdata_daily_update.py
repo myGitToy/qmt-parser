@@ -18,20 +18,34 @@ from apt.vendor.jqdata.ETF import ETF as ETF
 分级基金数据	2005至今	8:00更新
 日行情	2005至今	盘中实时更新（每3s刷新一次）
 分钟行情	2005至今	盘前9:00更新 盘中实时更新（每3s刷新一次）盘后24:00更新
+############场内基金数据	时间范围	更新频率
+场内基金列表数据	2005至今	8:00更新
+分级基金数据	2005至今	8:00更新
+日行情	2005至今	盘中实时更新（每3s刷新一次）
+分钟行情	2005至今	盘前9:00更新 盘中实时更新（每3s刷新一次）盘后24:00更新
+净值数据	2005至今	下一个交易日10点之前更新
+融资融券	2010至今	下一个交易日10点之前更新
+场内基金份额数据	2005-02-23至今	下一个交易日10点之前更新
+集合竞价数据	2019年至今	交易日最晚9:28分之前更新
 """
 
-start = datetime.datetime(2020,11,30)
-#end = datetime.datetime(2020,1,28,16)
+start = datetime.datetime(2020,12,16)    #日线 60m 最后更新日12/16 含
+                                         #5m 最后更新XX/XX含
+                                         #30m 最后更新自2019年起的数据
+#end = datetime.datetime(2018,12,31,16)
 end = datetime.datetime.now()
 jq = jqdata()
 df_remain = get_query_count()
 print(df_remain)
 #更新日线
-jq.update(start_date = start , end_date = end , ktype = '1d' )
-#更新60分钟线
-jq.update(start_date = start , end_date = end , ktype = '60m' )
-#更新5分钟线
+jq.update_v2(start_date = start , end_date = end , ktype = '1d' )
+#更新30分钟线
+jq.update_v2(start_date = start , end_date = end , ktype = '30m' )
 
+#更新60分钟线
+jq.update_v2(start_date = start , end_date = end , ktype = '60m' )
+#更新5分钟线
+jq.update_v2(start_date = start , end_date = end , ktype = '5m' )
 
 #更新ETF数据
 etf = ETF()
