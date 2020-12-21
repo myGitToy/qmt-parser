@@ -28,7 +28,11 @@ class data(base):
                 2.2 没有数据则直接写入操作
                 2.3 存在数据，则去重后写入
         """
-        print("更新主入口")
+        #更新时段校验 如果更新的是日线数据且校验为更新时段，则不予以更新
+        check = self.get_today_is_trade()
+        if check == self.交易时段校验.交易时段:
+            print("update_V1规则不允许在交易时段进行更新")
+            return 0
         #获取交易日期
         trade_days = get_trade_days(start_date = start_date , end_date = end_date)
         #获取更新列表
