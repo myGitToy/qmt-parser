@@ -57,11 +57,15 @@ class data(base):
                         #2. 如果仅输入day参数，则时间默认为当天零点，所以实际更新的是前一天的数据
                     end_day = datetime.datetime(day.year,day.month,day.day,16)
                     #print(end_day)
-                    df = get_bars(security = code , count = update_num , unit = ktype , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'] , include_now = False , end_dt = end_day , df = True)
+                    if  ktype == '1d':
+                        #日线数据需要进行偏移处理
+                        dday = day + datetime.timedelta(days=1)
+                    df = get_bars(security = code , count = update_num , unit = ktype , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'] , include_now = False , end_dt = dday , df = True)
                     df['code']= code
                     if  ktype == '1d':
                         #日线数据特殊处理，因为数据库中的格式是date，不是datetime
                         df = df[(df.date == day)]
+                        #print(df)
                     else:
                         #分时数据正常处理
                         #############这里留一个问题，是否可以用df.date.date() == day的形式进行筛选
