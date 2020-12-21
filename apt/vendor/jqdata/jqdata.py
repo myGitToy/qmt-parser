@@ -44,7 +44,7 @@ class data(base):
             #print(datetime.now())
             for code in code_list:
                 #检查数据库是否存在数据
-                query = "select count(code) as num from jqdata_%s where code = '%s' and left(date,10) = '%s'" % (ktype , code , day)
+                query = "select count(code) as num from jqdata_%s where code = '%s' and date(date) = '%s'" % (ktype , code , day)
                 df_old = pd.read_sql_query(query , self.engine)
                 count = df_old.loc[0 , 'num']
                 if count > 0 :
@@ -106,7 +106,7 @@ class data(base):
             code_list = list(get_all_securities(['stock','etf'],date = end_date).index)
         for code in code_list:
             #检查数据库是否存在数据
-            query = "select count(code) as num from jqdata_%s where code = '%s' and left(date,10) BETWEEN '%s' and '%s'" % (ktype , code , start_date.strftime("%Y-%m-%d") , end_date.strftime("%Y-%m-%d"))
+            query = "select count(code) as num from jqdata_%s where code = '%s' and date(date) BETWEEN '%s' and '%s'" % (ktype , code , start_date.strftime("%Y-%m-%d") , end_date.strftime("%Y-%m-%d"))
             df_old = pd.read_sql_query(query , self.engine)
             #获取数据库实际存在的数据
             count_db = df_old.loc[0 , 'num']
@@ -139,7 +139,7 @@ class data(base):
                 #数据去除NA（在极特殊的情况下会引发异常 数据库字段NOT NULL 冲突）
                 df_jqdata.dropna(inplace = True)
                 #检索数据库中的数据
-                query2 = "select date from jqdata_%s where code = '%s' and left(date,10) BETWEEN '%s' and '%s'" % (ktype , code , start_date.strftime("%Y-%m-%d") , end_date.strftime("%Y-%m-%d"))         
+                query2 = "select date from jqdata_%s where code = '%s' and date(date) BETWEEN '%s' and '%s'" % (ktype , code , start_date.strftime("%Y-%m-%d") , end_date.strftime("%Y-%m-%d"))         
                 df_db = pd.read_sql_query(query2 , self.engine)
                 #将新老库合并，求差集
                 df_jqdata = df_jqdata.append(df_db)
@@ -183,7 +183,7 @@ class data(base):
             code_list = list(get_all_securities(['stock','etf'],date = end_date).index)
         for code in code_list:
             #检查数据库是否存在数据
-            query = "select count(code) as num from jqdata_%s where code = '%s' and left(date,10) BETWEEN '%s' and '%s'" % (ktype , code , start_date.strftime("%Y-%m-%d") , end_date.strftime("%Y-%m-%d"))
+            query = "select count(code) as num from jqdata_%s where code = '%s' and date(date) BETWEEN '%s' and '%s'" % (ktype , code , start_date.strftime("%Y-%m-%d") , end_date.strftime("%Y-%m-%d"))
             df_old = pd.read_sql_query(query , self.engine)
             #获取数据库实际存在的数据
             count_db = df_old.loc[0 , 'num']
@@ -216,7 +216,7 @@ class data(base):
                 #数据去除NA（在极特殊的情况下会引发异常 数据库字段NOT NULL 冲突）
                 df_jqdata.dropna(inplace = True)
                 #检索数据库中的数据
-                query2 = "select date from jqdata_%s where code = '%s' and left(date,10) BETWEEN '%s' and '%s'" % (ktype , code , start_date.strftime("%Y-%m-%d") , end_date.strftime("%Y-%m-%d"))         
+                query2 = "select date from jqdata_%s where code = '%s' and date(date) BETWEEN '%s' and '%s'" % (ktype , code , start_date.strftime("%Y-%m-%d") , end_date.strftime("%Y-%m-%d"))         
                 df_db = pd.read_sql_query(query2 , self.engine)
                 #将新老库合并，求差集
                 df_jqdata = df_jqdata.append(df_db)
