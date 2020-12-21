@@ -59,9 +59,15 @@ class data(base):
                     #print(end_day)
                     df = get_bars(security = code , count = update_num , unit = ktype , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'] , include_now = False , end_dt = end_day , df = True)
                     df['code']= code
-                    #进行当天数据的筛选，因为比如取5m数据，当天有48根，但可能上午停牌，因此48根数据就包含了昨天下午的，此时写入数据库会造成唯一索引约束错误
-                    df = df[(df.date >= datetime.datetime(day.year,day.month,day.day,1))& (df.date <= datetime.datetime(day.year,day.month,day.day,16))]
-                    #print(df)
+                    if  ktype == '1d':
+                        #日线数据特殊处理，因为数据库中的格式是date，不是datetime
+                        df = df[(df.date == day)]
+                    else:
+                        #分时数据正常处理
+                        #############这里留一个问题，是否可以用df.date.date() == day的形式进行筛选
+                        #进行当天数据的筛选，因为比如取5m数据，当天有48根，但可能上午停牌，因此48根数据就包含了昨天下午的，此时写入数据库会造成唯一索引约束错误
+                        df = df[(df.date >= datetime.datetime(day.year,day.month,day.day,1)) & (df.date <= datetime.datetime(day.year,day.month,day.day,16))]
+                        #print(df)
                     #保存至数据库
                     if df.empty == True:
                         print("%s 当日数据为空，跳过上传" % (code))
