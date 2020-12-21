@@ -11,6 +11,11 @@ class data(base):
     def update_v1(self , code_list = None , start_date = datetime.datetime(2020,1,1,1) , end_date = datetime.datetime.now() , ktype = '5m' ):
         """
         聚宽数据日常更新的主入口 第一版本 使用双循环策略，判断简单但数据库操作偏多，每天每代码都要执行一遍读取、判断、写入
+        适用场景：
+            1. 对时间要求不高的高准确性更新场景
+            2. 对更新工作进行校验的场景，比如检查每月是否有遗漏日期（即V2V3更新后，再用V1重新跑一彼遍进行校验）
+        不适用场景：
+            1. 日内更新（当天有数据则会跳过，因此不适用日内反复更新最新数据的场景）
         适合进行1m 5m数据更新
         code_list 需要更新的代码列表，默认为空，即全部更新
         start_date 开始时间，默认为2020年
@@ -71,17 +76,22 @@ class data(base):
     def update_v2(self , code_list = None , start_date = datetime.datetime(2020,1,1,1) , end_date = datetime.datetime.now() , ktype = '1d' ):
         """
         聚宽数据日常更新的主入口 第二版本 使用单循环策略，所有更新只循环4000次
-        【BUG REPORT】 目前在交易时段更新当日日线数据会存在错误
         code_list 需要更新的代码列表，默认为空，即全部更新
         start_date 开始时间，默认为2020年
-        end_date 结束时间 默认为当前时间（更新函数中默认不更新当天的即时数据，因为会造成重复录入，请注意）
-        ktype K线周期 1d 5m 60m等
+        end_date 结束时间 默认为当前时间（交易日盘中更新日线数据会直接否决）
+        ktype K线周期 1d 5m 60m等 默认1d日线数据
         更新逻辑：
             1. 获取需要更新的时间周期中的交易日
             2. 循环读取证券代码列表进行更新
                 2.1 读取数据库中单个代码在两个日期间的数据
                 2.2 没有数据则直接写入操作
                 2.3 存在数据，则去重后写入
+        适用场景或优点：
+            1. 开始和结束日期间的数据量有校验功能，有停牌等不符合的情况会全部重新下载数据并同数据库进行对比去重后进行写入 
+        不适用场景或缺点：
+            1. 因为适用场景1的逻辑，对更新条目数的消耗量会比较大
+            2. 由于更新周期不同，比如场内基金20:00以后才会出数据，比如12.18日晚18:00更新了全部数据，
+                并将最后更新日期重置到12.19，这样的话其实场内基金再12.18日的数据是没有获取成功的
         """
         #更新时段校验 如果更新的是日线数据且校验为更新时段，则不予以更新
         check = self.get_today_is_trade()
@@ -160,6 +170,11 @@ class data(base):
                 2.2 没有数据则直接写入操作
                 2.3 存在数据，则去重后写入
         """
+        #更新时段校验 如果更新的是日线数据且校验为更新时段，则不予以更新
+        check = self.get_today_is_trade()
+        if (ktype == '1d') and (check == self.交易时段校验.交易时段):
+            print("日线数据不允许在交易时段更新")
+            return 0
         #获取交易日期
         trade_days = get_trade_days(start_date = start_date , end_date = end_date)
         #获取更新列表
@@ -239,6 +254,8 @@ class data(base):
     def get_today_is_trade(self ):
         """
         获取今天是否是交易日和交易时段
+        用于更新日线数据时判断是否能够进行更新操作
+        更新逻辑中对于日线数据有一条规则：交易日盘中不得进行日线数据更新
         """
         #today = datetime.datetime(2020,12,16,12)
         today = datetime.datetime.now()
