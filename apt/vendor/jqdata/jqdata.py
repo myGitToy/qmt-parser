@@ -62,18 +62,19 @@ class data(base):
                     end_day = datetime.datetime(day.year,day.month,day.day,16)
                     #print(end_day)
                     if  ktype == '1d':
-                        #日线数据需要进行偏移处理
+                        #1. 日线数据需要进行偏移处理
+                        #2. 筛选作业
                         dday = day + datetime.timedelta(days=1)
-                    df = get_bars(security = code , count = update_num , unit = ktype , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'] , include_now = False , end_dt = dday , df = True)
-                    df['code']= code
-                    if  ktype == '1d':
+                        df = get_bars(security = code , count = update_num , unit = ktype , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'] , include_now = False , end_dt = dday , df = True)
+                        df['code']= code
                         #日线数据特殊处理，因为数据库中的格式是date，不是datetime
                         df = df[(df.date == day)]
-                        #print(df)
                     else:
                         #分时数据正常处理
                         #############这里留一个问题，是否可以用df.date.date() == day的形式进行筛选
                         #进行当天数据的筛选，因为比如取5m数据，当天有48根，但可能上午停牌，因此48根数据就包含了昨天下午的，此时写入数据库会造成唯一索引约束错误
+                        df = get_bars(security = code , count = update_num , unit = ktype , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'] , include_now = False , end_dt = end_day , df = True)
+                        df['code']= code
                         df = df[(df.date >= datetime.datetime(day.year,day.month,day.day,1)) & (df.date <= datetime.datetime(day.year,day.month,day.day,16))]
                         #print(df)
                     #保存至数据库
