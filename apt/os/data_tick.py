@@ -61,15 +61,15 @@ class Data_tick(TSOS):
         tick数据的每日更新任务
         """
         ##########读取更新列表
-        code_list  = list(get_all_securities(['stock','etf'],date = '2020-12-11').index)
-        day_list = get_trade_days(start_date='2020-12-08', end_date='2020-12-11')
+        code_list  = list(get_all_securities(['stock','etf'],date = '2020-12-23').index)
+        day_list = get_trade_days(start_date='2020-12-16', end_date='2020-12-23')
         for day in day_list:
             print("##############正在更新%s数据##############" % day.strftime("%Y-%m-%d"))
             print(datetime.now())
             for code in code_list:
                 code = code[0:6]
                 #检查数据库是否存在数据
-                query = "select count(code) as num from ts_tick where code = '%s' and left(time,10)='%s'" % (code,day)
+                query = "select count(code) as num from ts_tick where code = '%s' and date(time)='%s'" % (code,day)
                 df_old = pd.read_sql_query(query, self.engine)
                 count = df_old.loc[0,'num']
                 if count > 0 :

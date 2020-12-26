@@ -69,6 +69,9 @@
     <Compile Include="apt\testB\B.py" />
     <Compile Include="apt\testB\__init__.py" />
     <Compile Include="apt\vendor\jqdata\base.py" />
+    <Compile Include="apt\vendor\jqdata\ETF.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="apt\vendor\jqdata\jqdata.py" />
     <Compile Include="apt\vendor\jqdata\__init__.py" />
     <Compile Include="apt\vendor\tspro\base.py">
@@ -100,15 +103,26 @@
     <Compile Include="demo\demo_get_k_slope.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="demo\demo_jqdata_daily_update校验.py" />
+    <Compile Include="demo\demo_jqdata_daily_update.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="demo\demo_jqdata_factor.py" />
     <Compile Include="demo\demo_jqdata_min.py" />
     <Compile Include="demo\demo_jqdata.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_jqdata_市值计算.py" />
+    <Compile Include="demo\demo_jqdata_money_flow.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_multiple_condition.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_new_high_break.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_plt绘图.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_qsp_test.py" />
@@ -118,7 +132,8 @@
     <Compile Include="demo\demo_ts_tick.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="demo\demo_历史分笔测试.py">
+    <Compile Include="demo\demo_历史分笔.py" />
+    <Compile Include="demo\demo_绘图2.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="fund\class1.py">

@@ -46,6 +46,7 @@ class ETF(base):
                 #数据库存在数据，新定义开始日期（数据库最后一天+1）
                 new_start_date =  df_db.loc[0 , 'date']  + datetime.timedelta(days=1)         
             df_share = finance.run_query(query(finance.FUND_SHARE_DAILY).filter(finance.FUND_SHARE_DAILY.date >= new_start_date , finance.FUND_SHARE_DAILY.date <= end_date , finance.FUND_SHARE_DAILY.code == code ))
+            #print(df_share)
             #保存至数据库
             if df_share.empty == True:
                 print("%s 进行差集处理后剩余数据为空或者jqdata无数据，跳过上传" % (code))
@@ -56,4 +57,17 @@ class ETF(base):
                         index = False,
                         if_exists = 'append')
                 print("%s 数据已上传完成(share)" % (code))
+
+    def check_share_change(self , code = None , start_date = datetime.datetime(2005,1,1) , end_date = datetime.datetime.now()):
+        """
+        场内基金每日份额变化
+        输入：
+            code 证券代码
+            start_date 开始日期
+            end_date 结束日期
+
+        返回：
+            
+        """
+
 
