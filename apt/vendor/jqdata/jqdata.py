@@ -74,10 +74,14 @@ class data(base):
                         #############这里留一个问题，是否可以用df.date.date() == day的形式进行筛选
                         #进行当天数据的筛选，因为比如取5m数据，当天有48根，但可能上午停牌，因此48根数据就包含了昨天下午的，此时写入数据库会造成唯一索引约束错误
                         df = get_bars(security = code , count = update_num , unit = ktype , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'] , include_now = False , end_dt = end_day , df = True)
-                        df['code']= code
-                        df = df[(df.date.dt.date == day)]
-                        #df = df[(df.date >= datetime.datetime(day.year,day.month,day.day,1)) & (df.date <= datetime.datetime(day.year,day.month,day.day,16))]
-                        print(df)
+                        if df.empty == True:
+                            #增加一个判断和筛选，因为正常情况下不会出错，但是如果代码未上市，此时df不会取到前面几天，而是直接返回空值
+                            #PS 日线部分竟然不影响，挺神奇的
+                            pass
+                        else:
+                            df['code']= code
+                            df = df[(df.date.dt.date == day)]
+                            #df = df[(df.date >= datetime.datetime(day.year,day.month,day.day,1)) & (df.date <= datetime.datetime(day.year,day.month,day.day,16))]
                     #保存至数据库
                     if df.empty == True:
                         print("%s 当日数据为空，跳过上传" % (code))
@@ -248,6 +252,9 @@ class data(base):
                             index = False,
                             if_exists = 'append')
                     print("%s 数据已上传完成(%s)" % (code,ktype))
+
+    def get_data(self , code = None ,  start_date = datetime.datetime(2020,1,1,1) , end_date = datetime.datetime.now()  , ktype = '1d' , ):
+        pass
 
     def __get_update_count (self , trade_days = None , ktype = '1d'):
         """
