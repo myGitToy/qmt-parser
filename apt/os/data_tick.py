@@ -61,6 +61,9 @@ class Data_tick(TSOS):
         """
         tick数据的每日更新任务
         单日单代码循环 效率较低
+        输入：
+            start_date 开始日期 datetime
+            end_date 结束日期 datetime 默认为当前时刻
         """
         ##########读取更新列表
         code_list  = list(get_all_securities(['stock','etf'],date = end_date.date).index)
@@ -96,6 +99,9 @@ class Data_tick(TSOS):
         """
         tick数据的每日更新任务
         按代码循环，再获取每天的数据，一次性写入，希望能提高运行效率
+        输入：
+            start_date 开始日期 datetime
+            end_date 结束日期 datetime 默认为当前时刻
         """
         ##########读取更新列表
         code_list  = list(get_all_securities(['stock','etf'],date = end_date.date).index)
