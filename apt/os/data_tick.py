@@ -60,6 +60,7 @@ class Data_tick(TSOS):
     def update_v1(self , start_date = datetime.datetime(2020,1,1) , end_date = datetime.datetime.now()):
         """
         tick数据的每日更新任务
+        单日单代码循环 效率较低
         """
         ##########读取更新列表
         code_list  = list(get_all_securities(['stock','etf'],date = end_date.date).index)
@@ -91,5 +92,57 @@ class Data_tick(TSOS):
                                 if_exists = 'append')
                         print("%s tick数据已上传完成" % (code))
             
-
+    def update_v2(self , start_date = datetime.datetime(2020,1,1) , end_date = datetime.datetime.now()):
+        """
+        tick数据的每日更新任务
+        按代码循环，再获取每天的数据，一次性写入，希望能提高运行效率
+        """
+        ##########读取更新列表
+        code_list  = list(get_all_securities(['stock','etf'],date = end_date.date).index)
+        day_list = get_trade_days(start_date = start_date, end_date = end_date)
+        for code in code_list:
+            #print("##############正在更新%s数据##############" % day.strftime("%Y-%m-%d"))
+            #print(datetime.datetime.now())
+            code = code[0:6]
+            #定义主df 目前此位置为空
+            df_main = pd.DataFrame()
+            for day in day_list:
+                
+                #检查数据库是否存在数据
+                query = "select count(code) as num from ts_tick where code = '%s' and date(time)='%s'" % (code,day)
+                df_old = pd.read_sql_query(query, self.engine)
+                count = df_old.loc[0,'num']
+                if count > 0 :
+                    #此处存在数据，不进入更新序列，直接跳过
+                    pass
+                    #print("%s存在数据，跳过更新" % day.strftime("%Y-%m-%d"))
+                else:
+                    #不存在数据，进行更新
+                    df = self.get_tick_data(code = code , day = day.strftime("%Y-%m-%d"))
+                    #添加进队列
+                    df_main = df_main.append(df)
+                    #print(df_main)
+            #保存至数据库
+            if df_main.empty == True:
+                print("%s tick数据为空，跳过上传" % (code))
+            #print(df)
+            else:
+                #print( df_main.loc[0,'time'])
+                """
+                这里结果挺奇怪的
+                0   2020-12-17 09:25:00
+                0   2020-12-18 09:25:01
+                0   2020-12-21 09:25:01
+                0   2020-12-22 09:25:01
+                0   2020-12-23 09:25:01
+                0   2020-12-24 09:25:01
+                0   2020-12-25 09:25:00
+                """
+                df_main.to_sql(
+                        name = 'ts_tick',
+                        con = self.engine,
+                        index = False,
+                        if_exists = 'append')
+                print("%s tick数据已上传完成" % (code))
+                #print("%s tick数据已上传完成 %s - %s" % (code , df_main.head(1).loc[0,'time'].strftime("%Y-%m-%d") , df_main.tail(1).loc[0,'time'].strftime("%Y-%m-%d")))
 
