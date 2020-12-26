@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime,timedelta
+import datetime
 import sqlalchemy
 from jqdatasdk import *
 import numpy as np
@@ -56,16 +57,16 @@ class Data_tick(TSOS):
         获取指定代码最后更新的tick数据
         返回 data YYYY-MM-DD
         """
-    def daily_update(self):
+    def update_v1(self , start_date = datetime.datetime(2020,1,1) , end_date = datetime.datetime.now()):
         """
         tick数据的每日更新任务
         """
         ##########读取更新列表
-        code_list  = list(get_all_securities(['stock','etf'],date = '2020-12-23').index)
-        day_list = get_trade_days(start_date='2020-12-16', end_date='2020-12-23')
+        code_list  = list(get_all_securities(['stock','etf'],date = end_date.date).index)
+        day_list = get_trade_days(start_date = start_date, end_date = end_date)
         for day in day_list:
             print("##############正在更新%s数据##############" % day.strftime("%Y-%m-%d"))
-            print(datetime.now())
+            print(datetime.datetime.now())
             for code in code_list:
                 code = code[0:6]
                 #检查数据库是否存在数据
