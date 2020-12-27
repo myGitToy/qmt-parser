@@ -1,18 +1,19 @@
 # -*- coding: utf-8 -*-
+#载入基类
+from apt.os.tsos import TSOS
+from enum import Enum
 from datetime import datetime,timedelta
+from jqdatasdk import *
+import threading
 import datetime
 import sqlalchemy
-from jqdatasdk import *
+import time
 import numpy as np
 import pandas as pd
 import tushare as ts
 import sqlalchemy
 import logging
 import os
-#载入基类
-from apt.os.tsos import TSOS
-from enum import Enum
-
 
 
 class Data_tick(TSOS):  
@@ -152,3 +153,54 @@ class Data_tick(TSOS):
                 print("%s tick数据已上传完成" % (code))
                 #print("%s tick数据已上传完成 %s - %s" % (code , df_main.head(1).loc[0,'time'].strftime("%Y-%m-%d") , df_main.tail(1).loc[0,'time'].strftime("%Y-%m-%d")))
 
+    def update_t1(self , start_date = datetime.datetime(2020,1,1) , end_date = datetime.datetime.now()):
+            """
+            tick数据的每日更新任务（线程写入版）
+            单日单代码循环 效率较低
+            输入：
+                start_date 开始日期 datetime
+                end_date 结束日期 datetime 默认为当前时刻
+            """
+            ##########读取更新列表
+            code_list  = list(get_all_securities(['stock','etf'],date = end_date.date).index)
+            day_list = get_trade_days(start_date = start_date, end_date = end_date)
+            for day in day_list:
+                print("##############正在更新%s数据##############" % day.strftime("%Y-%m-%d"))
+                print(datetime.datetime.now())
+                for code in code_list:
+                    code = code[0:6]
+                    #检查数据库是否存在数据
+                    query = "select count(code) as num from ts_tick where code = '%s' and date(time)='%s'" % (code,day)
+                    df_old = pd.read_sql_query(query, self.engine)
+                    count = df_old.loc[0,'num']
+                    if count > 0 :
+                        #此处存在数据，不进入更新序列，直接跳过
+                        print("%s存在数据，跳过更新" % code)
+                    else:
+                        #不存在数据，进行更新
+                        df = self.get_tick_data(code = code , day = day.strftime("%Y-%m-%d"))
+                        #保存至数据库
+                        if df.empty == True:
+                            print("%s tick数据为空，跳过上传" % (code))
+                        #print(df)
+                        else:
+                            #需要更新，进行线程写入
+                            t = threading.Thread(target = self.export_to_mysql(df = df , code = code) , name = 'Exporting')
+                            t.start()
+                            t.join()
+
+
+    def export_to_mysql(self , df = None , code = None):
+        """
+        通过线程的方式写入数据库
+        """
+        if df.empty == True:
+            print("无效的数据")
+            return 0
+        else:
+            df.to_sql(
+                        name = 'ts_tick',
+                        con = self.engine,
+                        index = False,
+                        if_exists = 'append')
+            print("%s tick数据已上传完成" % (code))
