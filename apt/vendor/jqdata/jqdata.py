@@ -174,7 +174,7 @@ class data(base):
                             con = self.engine,
                             index = False,
                             if_exists = 'append')
-                    print("%s 数据已上传完成(%s)" % (code,ktype))
+                    print("%s 数据已上传完成(%s)" % (code,ktype))  
 
     def update_v3(self , code_list = None , start_date = datetime.datetime(2020,1,1,1) , end_date = datetime.datetime.now() , ktype = '1d' ):
         """
@@ -268,6 +268,32 @@ class data(base):
         ###4. 检查分时线数据完整性
         pass
 
+    def update_index(self , start_date = datetime.datetime(2020,1,1,1) , end_date = datetime.datetime.now() , ktype = '1d' ):
+        """
+        jqdata指数更新模块
+        start_date 开始时间，默认为2020年
+        end_date 结束时间 默认为当前时间（交易日盘中更新日线数据会直接否决）
+        ktype K线周期 1d 5m 60m等 默认1d日线数据
+
+        注：逻辑上调用update_v2，通过提供code_list的方式区分普通股票和指数更新（普通股票不需要提供code_list，指数需要）
+
+        目前指数支持：
+        000001.XSHG	上证指数
+        000016.XSHG	上证50
+        000010.XSHG	上证180
+        000300.XSHG	沪深300
+        000688.XSHG	科创50
+        000905.XSHG	中证500
+        000852.XSHG	中证1000指数
+        399001.XSHE	深证成指
+        399005.XSHE	中小板指
+        399006.XSHE	创业板指
+        """
+        #全指数列表 目前暂不启用
+        code_list = list(get_all_securities(['index'] , date = end_date).index)
+        #优先更新指数列表
+        code_list = ['000001.XSHG','000016.XSHG','000010.XSHG','000300.XSHG','000688.XSHG','000905.XSHG','000852.XSHG','399001.XSHE','399005.XSHE','399006.XSHE']
+        self.update_v2(code_list = code_list , start_date = start_date , end_date = end_date, ktype = ktype)
 
     def get_data(self , code = None ,  start_date = datetime.datetime(2020,1,1,1) , end_date = datetime.datetime.now()  , ktype = '1d' , fq = base.复权.动态复权):
         """

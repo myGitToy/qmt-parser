@@ -29,7 +29,7 @@ from apt.vendor.jqdata.ETF import ETF as ETF
 集合竞价数据	2019年至今	交易日最晚9:28分之前更新
 """
 
-start = datetime.datetime(2020,12,25)    #日线 60m 最后更新日12/17 含
+start = datetime.datetime(2005,1,1)    #日线 60m 最后更新日12/25 含
                                          #5m 最后更新XX/XX含
                                          #30m 最后更新自2019年起的数据
 #end = datetime.datetime(2018,12,31,16)
@@ -37,6 +37,11 @@ end = datetime.datetime.now()
 jq = jqdata(rds_host = jqdata.数据源.localhost)
 df_remain = get_query_count()
 print(df_remain)
+
+#更新指数
+jq.update_index(start_date = start , end_date = end , ktype = '60m')
+
+
 #更新日线
 jq.update_v2(start_date = start , end_date = end , ktype = '1d' )
 #更新30分钟线
