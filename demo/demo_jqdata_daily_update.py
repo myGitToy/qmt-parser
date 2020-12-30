@@ -29,7 +29,7 @@ from apt.vendor.jqdata.ETF import ETF as ETF
 集合竞价数据	2019年至今	交易日最晚9:28分之前更新
 """
 
-start = datetime.datetime(2020,12,22)    #日线 60m 最后更新日12/17 含
+start = datetime.datetime(2020,12,25)    #日线 60m 最后更新日12/17 含
                                          #5m 最后更新XX/XX含
                                          #30m 最后更新自2019年起的数据
 #end = datetime.datetime(2018,12,31,16)
@@ -38,16 +38,16 @@ jq = jqdata(rds_host = jqdata.数据源.localhost)
 df_remain = get_query_count()
 print(df_remain)
 #更新日线
-#jq.update_v2(start_date = start , end_date = end , ktype = '1d' )
+jq.update_v2(start_date = start , end_date = end , ktype = '1d' )
 #更新30分钟线
-#jq.update_v2(start_date = start , end_date = end , ktype = '30m' )
+jq.update_v2(start_date = start , end_date = end , ktype = '30m' )
 #更新60分钟线
-#jq.update_v2(start_date = start , end_date = end , ktype = '60m' )
+jq.update_v2(start_date = start , end_date = end , ktype = '60m' )
 #更新5分钟线 最后更新12/17 含
-jq.update_v1(start_date = start , end_date = end , ktype = '5m' )
+#jq.update_v1(start_date = start , end_date = end , ktype = '5m' )
 
 #更新ETF数据
 etf = ETF()
-#etf.update_fund_share_daily(start_date = start)
+etf.update_fund_share_daily(start_date = start)
 
 
