@@ -37,9 +37,10 @@ end = datetime.datetime.now()
 jq = jqdata(rds_host = jqdata.数据源.localhost)
 df_remain = get_query_count()
 print(df_remain)
-
+#dd = get_bars('399001.XSHE', end_dt = '2009-11-25',count =24,unit='5m' , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'])
+#print(dd)
 #更新指数
-jq.update_index(start_date = start , end_date = end , ktype = '60m')
+jq.update_index(start_date = start , end_date = end , ktype = '5m')
 
 
 #更新日线

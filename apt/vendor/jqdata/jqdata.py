@@ -147,6 +147,7 @@ class data(base):
                     end_date = end_date + datetime.timedelta(days=1)
                 df_jqdata = get_bars(security = code , count = count_suppose , unit = ktype , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'] , include_now = False , end_dt = end_date , df = True)
                 df_jqdata['code'] = code
+                #df_jqdata.to_csv('.\\data\\399001_jqdata.csv', encoding = 'utf_8_sig')
                 #print(df_jqdata)
                 #数据去重（因为停盘的关系，比如获取1/1-1/30号的数据，实际通过count取到的数据可能包含前面12月份的，直接写入因为唯一索引的约束，会报错）
                 if  ktype == '1d':
@@ -292,8 +293,12 @@ class data(base):
         #全指数列表 目前暂不启用
         code_list = list(get_all_securities(['index'] , date = end_date).index)
         #优先更新指数列表
-        code_list = ['000001.XSHG','000016.XSHG','000010.XSHG','000300.XSHG','000688.XSHG','000905.XSHG','000852.XSHG','399001.XSHE','399005.XSHE','399006.XSHE']
+        #code_list = ['000001.XSHG','000016.XSHG','000010.XSHG','000300.XSHG','000688.XSHG','000905.XSHG','000852.XSHG','399005.XSHE','399006.XSHE']
+        code_list = ['000010.XSHG','000300.XSHG','000688.XSHG','000905.XSHG','000852.XSHG','399005.XSHE','399006.XSHE']
+        
+        #code_list = ['399001.XSHE']
         self.update_v2(code_list = code_list , start_date = start_date , end_date = end_date, ktype = ktype)
+
 
     def get_data(self , code = None ,  start_date = datetime.datetime(2020,1,1,1) , end_date = datetime.datetime.now()  , ktype = '1d' , fq = base.复权.动态复权):
         """
