@@ -11,7 +11,10 @@ import mpl_finance as mpl
 import pylab
 from apt.os.data_load import Data_Load as dl
 import datetime as dt
-
+"""
+代码地址：
+https://zhuanlan.zhihu.com/p/29519040
+"""
 
 daylinefilespath = 'G:\\dayline\\'
 stock_b_code = '000001' #平安银行
@@ -48,7 +51,7 @@ def readstkData(rootpath, stockcode, sday, eday):
 
 def main():
     d = dl()
-    days = d.load_data(code = '159949' , start = '2020-01-01' , end = '2020-12-21')
+    days = d.load_data(code = '159949' , start = '2020-11-01' , end = '2020-12-21')
     days = days[['open','high','low','close','volume']]
     days.rename(columns = {'open':'Open','high':'High','low':'Low','close':'Close'})
     #print(days)
