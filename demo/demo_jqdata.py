@@ -4,14 +4,20 @@ import datetime
 #显示所有列
 pd.set_option('display.max_columns', None)
 auth('13817092632','JQ@tushare123')
+day = datetime.datetime(2020,9,15,16)
 #行情基础数据（含复权数据）
 #df = get_price(security = '512760.XSHG',end_date='2020-11-20' ,count = 100 ,frequency='1d',fields=['open', 'close', 'high', 'low', 'volume', 'money','factor'], skip_paused=True, fq=None,  fill_paused=False)
 #start_date 不是必须，end_date必须要有（不填写，默认是2015年的，所以会导致返回空值）
 #关于列：
     #1d 列：['open', 'close', 'high', 'low', 'volume', 'money','paused','factor']
     #5m 列：['open', 'close', 'high', 'low', 'volume', 'money']
-#df = get_price(security = '512760.XSHG',start_date='2020-09-01' ,end_date = '2020-09-8',frequency='1d',fields=['open', 'close', 'high', 'low', 'volume', 'money','paused','factor'], skip_paused=True, fq='pre',  fill_paused=False)
-day = datetime.datetime(2020,9,8,16)
+#不复权数据，包含复权因子等数据
+#在不复权数据中，复权因子均为1
+#df = get_price(security = '512760.XSHG',start_date='2020-09-01' ,end_date = '2020-09-15 16:00:00',frequency='1d',fields=['open', 'close', 'high', 'low', 'volume', 'money','paused','factor'], skip_paused=True, fq='pre',  fill_paused=False)
+df = get_bars(security = '512760.XSHG' , count = 10, unit = '1d' , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'] , include_now = False , end_dt = day, fq_ref_date = day , df = True)
+
+print(df)
+
 code = '512760.XSHG'
 df = get_bars(security = code , count = 30, unit = '60m' , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'] , include_now = False , end_dt = day, fq_ref_date = day , df = True)
 df['code'] = code
