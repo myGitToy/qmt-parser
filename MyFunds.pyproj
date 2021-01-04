@@ -143,9 +143,6 @@
     <Compile Include="fund\__init__.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="module1.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="MyCashFlowTest.py">
       <SubType>Code</SubType>
     </Compile>
@@ -171,19 +168,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="data_windows.py" />
-    <Compile Include="MSAP.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="MSAP1.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="pip_update.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="MyFunds.py" />
-    <Compile Include="ts_pro_test.py">
-      <SubType>Code</SubType>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="CondaEnv|CondaEnv|Anaconda3" />
