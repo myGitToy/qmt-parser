@@ -299,13 +299,15 @@ class data(base):
         #code_list = ['399001.XSHE']
         self.update_v2(code_list = code_list , start_date = start_date , end_date = end_date, ktype = ktype)
 
-    def get_data(self , code = None ,  start_date = datetime.datetime(2020,1,1,1) , end_date = datetime.datetime.now()  , ktype = '1d' , fq = base.复权.动态复权):
+    def get_data(self , code = None ,  start_date = datetime.datetime(2020,1,1,1,8) , end_date = datetime.datetime.now()  , ktype = '1d' , fq = base.复权.动态复权):
         """
         jqdata数据加载模块
+        start_time：开始时间 最好带上小时参数  比如(2020,12,31,8)
+        end_time：结束时间 最好带上小时参数  比如(2020,12,31,16)
         接受前复权 后复权 不复权 动态复权四种复权模式
         成交量、成交额目前未进行复权处理
         """
-        query = "select * from jqdata_%s where code = '%s' and date(date) BETWEEN '%s' and '%s'" % (ktype , code , start_date.strftime("%Y-%m-%d") , end_date.strftime("%Y-%m-%d"))         
+        query = "select * from jqdata_%s where code = '%s' and date BETWEEN '%s' and '%s'" % (ktype , code , start_date, end_date)         
         df_db = pd.read_sql_query(query , self.engine)
         if df_db.empty == True:
             #无数据
