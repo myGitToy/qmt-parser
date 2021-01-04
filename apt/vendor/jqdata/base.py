@@ -33,7 +33,12 @@ class base():
         localhost = 2
         nas = 3
 
-    def __init__(self , rds_host = 数据源.localhost):
+    def __init__(self , rds_host = 数据源.localhost , auth = True):
+        """
+        jqdata 初始化
+        rds_host: 数据源的选择 默认为本地数据
+        auth: jqdata授权 默认是授权的，False应对某些特殊情况 比如脱机对数据库进行读取操作
+        """
 
         if rds_host == self.数据源.aliyun:
             print("aliyun 暂不支持")
@@ -41,7 +46,8 @@ class base():
             print("aws 暂不支持")
         elif rds_host == self.数据源.localhost:
             self.engine = sqlalchemy.create_engine('mysql+pymysql://stock_user:a@1#Yy1c@localhost:3306/stock')
-            auth('13817092632','JQ@tushare123')
+            if auth == True:
+                auth('13817092632','JQ@tushare123')
         elif rds_host == self.数据源.nas:
             print("nas 暂不支持")
         else:
