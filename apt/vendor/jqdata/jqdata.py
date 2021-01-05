@@ -299,7 +299,11 @@ class data(base):
         #code_list = ['399001.XSHE']
         self.update_v2(code_list = code_list , start_date = start_date , end_date = end_date, ktype = ktype)
 
-    def get_data(self , code = None ,  start_date = datetime.datetime(2020,1,1,1,8) , end_date = datetime.datetime.now()  , ktype = '1d' , fq = base.复权.动态复权):
+    def get_k_data(self , code = None ,  
+                 start_date = datetime.datetime(2020,1,1,1,8) , end_date = datetime.datetime.now()  , 
+                 col = ['code','date','open','close','high','low','volume','money','factor'] , 
+                 ktype = '1d' , fq = base.复权.动态复权):
+        
         """
         jqdata数据加载模块
         start_time：开始时间 最好带上小时参数  比如(2020,12,31,8)
@@ -324,7 +328,7 @@ class data(base):
                 df_db['high'] = df_db['high'] / factor * df_db['factor']
                 df_db['low'] = df_db['low'] / factor * df_db['factor']
                 df_db['close'] = df_db['close'] / factor * df_db['factor']
-                return df_db[['code','date','open','close','high','low','volume','money','factor']]
+                return df_db[col]
             elif fq ==self.复权.后复权:
                 #后复权价格 = 当日价格 / 第一个交易日（start_date）的复权因子 * 当日复权因子    
                 #获取第一一个复权因子的数值
@@ -333,7 +337,7 @@ class data(base):
                 df_db['high'] = df_db['high'] / factor * df_db['factor']
                 df_db['low'] = df_db['low'] / factor * df_db['factor']
                 df_db['close'] = df_db['close'] / factor * df_db['factor']
-                return df_db[['code','date','open','close','high','low','volume','money','factor']]
+                return df_db[col]
             elif fq ==self.复权.动态复权:
                 #动态复权价格 = 当日价格 / 区间最后一天的复权因子 * 当日复权因子
                 #获取最后一个复权因子的数值
@@ -342,7 +346,7 @@ class data(base):
                 df_db['high'] = df_db['high'] / factor * df_db['factor']
                 df_db['low'] = df_db['low'] / factor * df_db['factor']
                 df_db['close'] = df_db['close'] / factor * df_db['factor']
-                return df_db[['code','date','open','close','high','low','volume','money','factor']]
+                return df_db[col]
             else:
                 print("不支持的复权模式，请检查！")
                 return df_db
