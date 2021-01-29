@@ -89,12 +89,14 @@ class Data_tick(TSOS):
                         print("%s tick数据为空，跳过上传" % (code))
                     #print(df)
                     else:
+                        time1 = datetime.datetime.now()
                         df.to_sql(
                                 name = 'ts_tick',
                                 con = self.engine,
                                 index = False,
                                 if_exists = 'append')
-                        print("%s tick数据已上传完成" % (code))
+                        time2 = datetime.datetime.now()
+                        print("%s tick数据已上传完成，耗时%s" % (code,(time2-time1)))
             
     def update_v2(self , start_date = datetime.datetime(2020,1,1) , end_date = datetime.datetime.now()):
         """
@@ -145,12 +147,14 @@ class Data_tick(TSOS):
                 0   2020-12-24 09:25:01
                 0   2020-12-25 09:25:00
                 """
+                time1 = datetime.datetime.now()
                 df_main.to_sql(
                         name = 'ts_tick',
                         con = self.engine,
                         index = False,
                         if_exists = 'append')
-                print("%s tick数据已上传完成" % (code))
+                time2 = datetime.datetime.now()
+                print("%s tick数据已上传完成，耗时%s" % (code,(time2-time1)))
                 #print("%s tick数据已上传完成 %s - %s" % (code , df_main.head(1).loc[0,'time'].strftime("%Y-%m-%d") , df_main.tail(1).loc[0,'time'].strftime("%Y-%m-%d")))
 
     def update_t1(self , start_date = datetime.datetime(2020,1,1) , end_date = datetime.datetime.now()):
