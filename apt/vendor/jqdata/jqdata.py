@@ -353,7 +353,7 @@ class data(base):
 
     def __get_last_factor(self , code = None , day = datetime.datetime(2020,12,1)):
         """
-        获取指定股票的最后复权因子
+        获取指定股票的最后复权因子（内部函数）
         """
         query = "select date,factor from jqdata_1d where code = '%s' and date >= '%s' order by date desc limit 1" % ( code , day.strftime("%Y-%m-%d"))         
         df_db = pd.read_sql_query(query , self.engine)
