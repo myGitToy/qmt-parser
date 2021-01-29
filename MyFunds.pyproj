@@ -94,7 +94,7 @@
     <Compile Include="demo\demo_fix_atr_today_error.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="demo\demo_fix_min30_error.py">
+    <Compile Include="demo\demo_jdata_k.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_get_k_data.py">
@@ -103,6 +103,7 @@
     <Compile Include="demo\demo_get_k_slope.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="demo\demo_jqdata_daily_update - Copy.py" />
     <Compile Include="demo\demo_jqdata_daily_update校验.py" />
     <Compile Include="demo\demo_jqdata_daily_update.py">
       <SubType>Code</SubType>
@@ -113,6 +114,7 @@
     <Compile Include="demo\demo_jqdata.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="demo\demo_jqdata_财务数据_合并资产负债表.py" />
     <Compile Include="demo\demo_jqdata_市值计算.py" />
     <Compile Include="demo\demo_jqdata_money_flow.py">
       <SubType>Code</SubType>
@@ -164,6 +166,12 @@
     </Compile>
     <Compile Include="My历史分笔.py" />
     <Compile Include="My实时分笔.py" />
+    <Compile Include="apt\qsp_jqdata\atr.py" />
+    <Compile Include="apt\qsp_jqdata\base.py" />
+    <Compile Include="apt\qsp_jqdata\cdp.py" />
+    <Compile Include="apt\qsp_jqdata\k.py" />
+    <Compile Include="apt\qsp_jqdata\vol.py" />
+    <Compile Include="apt\qsp_jqdata\__init__.py" />
     <Compile Include="tick.py">
       <SubType>Code</SubType>
     </Compile>
@@ -191,6 +199,7 @@
     <Folder Include="fund\" />
     <Folder Include="apt\" />
     <Folder Include="demo\" />
+    <Folder Include="apt\qsp_jqdata\" />
     <Folder Include="VB\" />
   </ItemGroup>
   <ItemGroup>

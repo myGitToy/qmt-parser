@@ -318,7 +318,7 @@ if __name__=="__main__":
     df = stp.daily_unit(code_list = stp.code_list , start = stp.start)
     #测试 每日账户持股清单输出
     #stp.get_daily_units(code='512290',start='2020-01-21') #带筛选的
-    stp.get_daily_units(start = '2019-01-21') #不带筛选，输出全部
+    stp.get_daily_units(start = '2020-11-21') #不带筛选，输出全部
 
     
     #指定证券代码和日期筛选
