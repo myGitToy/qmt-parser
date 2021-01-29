@@ -151,11 +151,11 @@ class ATR(Technical_Analysis):
     """ATR类，继承自TA
     用于海龟模型 ATR模块涉及到计算TR ATR MA HIGH等内容，提供下游环境进行模型计算
     """
-    def cal_ATR(self , MA_ATR = 20 , MAHR_100_HIGH = 25, MAHR_20 = 5 ,MAHR_30 = 8):
+    def cal_ATR(self , MA_ATR = 14 , MAHR_100_HIGH = 20, MAHR_20 = 5 ,MAHR_30 = 8):
         """计算ATR
         输入：
-            ATR_MA ATR的计算周期 默认20天移动平均线
-            MAHR_100_HIGH 小时线100小时最高价格 对应到日线为25天线最高价格 正常情况下无需更改
+            ATR_MA ATR的计算周期 默认20天移动平均线（2021/1/6修改到14天）
+            MAHR_100_HIGH 小时线100小时最高价格 对应到日线为25天线最高价格 正常情况下无需更改（2021/1/6修改到20天）
             MAHR_20: 小时线20小时均线价格 对应到日线为5天线 正常情况下无需更改
             MAHR_30: 小时线30小时均线价格 对应到日线为7.5天，近似成8天线 正常情况下无需更改
         输出：除正常日线数据外，还输出
@@ -172,6 +172,7 @@ class ATR(Technical_Analysis):
             MAX_MAHR_20_DEV：N周期内，20小时（5天线）均线最大ATR偏离程度（最低价） N =  MAHR_100_HIGH / 2
             MAX_MAHR_30_DEV：N周期内，30小时（8天线）均线最大ATR偏离程度（最低价） N =  MAHR_100_HIGH / 2
         """
+        
         df = super(ATR,self).get_data()
         df['close_1'] = df['close'].shift(1)
         #使用max函数会报错，目前措施是新建列，为上一天的收盘价，和当天的数据做对齐，随后进行计算和比较  max(df['high'],df['close'].shift(1)
@@ -218,7 +219,7 @@ class ATR(Technical_Analysis):
         df_main=pd.DataFrame(columns=['date','code','close','TR','ATR','MAHR_100_HIGH','MAHR_20','MAHR_30','MAHR_100_HIGH_DEV','MAHR_20_DEV','MAHR_30_DEV','MAX_MAHR_20_LOW_DEV','MAX_MAHR_30_LOW_DEV'])
         for code in code_list:
             #循环截取所有列表中的数据
-            atr = ATR(code = code , start = start , ktype = ktype)
+            atr = ATR(code = code , start = start , ktype = ktype )
             #print(code)
             atr.network_OK = True
             df = atr.cal_ATR()[['date','close','TR','ATR','MAHR_100_HIGH','MAHR_20','MAHR_30','MAHR_100_HIGH_DEV','MAHR_20_DEV','MAHR_30_DEV','MAX_MAHR_20_LOW_DEV','MAX_MAHR_30_LOW_DEV']]
