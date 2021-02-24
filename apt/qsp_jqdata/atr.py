@@ -46,5 +46,5 @@ class ATR(base):
         ##小时线30小时均线ATR偏离
         df['MAHR_30_DEV'] = (df['close'] - df['MAHR_30']) / df['ATR']
         #print(df[['date','close','ATR']])
-        return df[self.start : self.end]
+        return df
 

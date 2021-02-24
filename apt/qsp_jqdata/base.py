@@ -3,6 +3,7 @@ from  apt.os.data_load import Data_Load as dl
 from  apt.os.data_update import Data_Update as update
 from datetime import datetime
 from apt.vendor.jqdata.jqdata import data as jqdata
+from apt.vendor.jqdata.base import base as basebase
 import datetime
 import numpy as np
 import pandas as pd
@@ -10,8 +11,9 @@ import pandas as pd
 class base():
     """
     量化选股系统的基类(聚宽数据接口)
+    使用jqdata.base作为基类
     """
-    def __init__(self , code = None , start =datetime.datetime(2021,1,1), end =datetime.datetime.now() , ktype = "1d" , fq = jqdata.复权.动态复权 , auto_update = True):
+    def __init__(self , code = None , start = datetime.datetime(2021,1,1), end = datetime.datetime.now() , ktype = "1d" , fq = jqdata.复权.动态复权 , fwq = jqdata.数据源.localhost , myauth = True , auto_update = True):
         """
         初始化
         输入：
@@ -19,8 +21,10 @@ class base():
             start：开始日期  e.g. datetime
             end：结束日期    e.g. datetime
             ktype：K线类型 e.g. 1d 5m 30m 60m 
-            fq：复权类型 默认前复权
-            auto_update：数据自动更新 e.g. True False
+            fq：复权类型 默认动态复权
+            fwq：服务器 默认为localhost
+            myauth：是否初始化jqdata授权（需要脱机读取时要设置为False）
+            auto_update：数据自动更新 e.g. True False（暂未实装）
         返回：
         """
         self.code = code
@@ -29,39 +33,24 @@ class base():
         self.ktype = ktype
         self.auto_update = auto_update
         self.fq = fq
+        self.myauth = myauth
+        self.server = fwq
 
-    def get_rolling_k(self , ktype = "D"):
-        """
-        抽取出来的总类，用于获取最新的K线数据，含自动更新
-        输入：
-            ktype：K线类型 e.g. D 60 30
-        返回：
-            根据K线类型计算出来的当日K线总条数 
-        """
-        if ktype == "D":
-            #日线数据
-            return 1
-        elif ktype in ('5','15','30','60'):
-            #K线数据（文本类型）
-            return 60 / int(ktype) * 4
-        elif ktype in (5,15,30,60):
-            #K线数据（数字类型）
-            return 60 / ktype * 4
-        else:
-            print("K线类型输入无效，按照默认日线数据返回结果")
-            return 1
 
     def get_k_data(self):
         """
-        抽取出来的总类，用于获取最新的K线数据，含自动更新
+        调用jqdata.data.get_k_data 用于获取最新的K线数据
         输入：
-            auto_update：调用基类的值 是否将K线数据更新至最新 默认值：True （False则使用csv中的数据，不进行联网更新）
+            无
         返回：
-            dataframe ：包含开盘 收盘 最高 最低 换手率（依据代码类型） 代码
+            dataframe ：包含开盘 收盘 最高 最低 成交量 成交额 代码
             注：只返回基础数据，其他类似于MA ATR信息由其他函数进行计算
         """
         #最后日期为空，则打开数据自动更新功能
-        return jqdata.get_k_data(code = self.code , start_date = self.start , end_date = self.end , ktype = self.ktype , fq = self.fq)
+        a = jqdata(rds_host = self.server , myauth = self.myauth)
+        df = a.get_k_data(code = self.code , start_date = self.start , end_date = self.end , ktype = self.ktype , fq = self.fq)
+        return df
+        #return jqdata.get_k_data(code = self.code , start_date = self.start , end_date = self.end , ktype = self.ktype , fq = self.fq)
         if  self.end == None:
             self.end = datetime.now().strftime("%Y-%m-%d")
             self.auto_update = True

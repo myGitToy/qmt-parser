@@ -91,6 +91,18 @@
     <Compile Include="demo\demo_atr_test.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="demo\demo_backtarder_2.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_backtrader_getdata_pandas.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_backtrader.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_backtrander_pandas.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="demo\demo_fix_atr_today_error.py">
       <SubType>Code</SubType>
     </Compile>
