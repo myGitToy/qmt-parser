@@ -58,6 +58,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="apt\qsp\__init__.py" />
+    <Compile Include="apt\qsp_jqdata\prank.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="apt\testA\B.py" />
     <Compile Include="apt\testA\A.py">
       <SubType>Code</SubType>
@@ -91,10 +94,32 @@
     <Compile Include="demo\demo_atr_test.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="demo\demo_backtarder_2.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_backtrader_getdata_pandas.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_backtrader.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_backtrader_testfile1.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_backtrader_多仓位管理.py" />
+    <Compile Include="demo\demo_backtrader_分位数模型测试.py" />
+    <Compile Include="demo\demo_backtrader_增强型图表输出测试.py" />
+    <Compile Include="demo\demo_backtrader_welcome.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_backtrander_pandas.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="demo\demo_fix_atr_today_error.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="demo\demo_fix_min30_error.py">
+    <Compile Include="demo\demo_jdata_prank.py" />
+    <Compile Include="demo\demo_jdata_k.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_get_k_data.py">
@@ -103,6 +128,7 @@
     <Compile Include="demo\demo_get_k_slope.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="demo\demo_jqdata_daily_update - Copy.py" />
     <Compile Include="demo\demo_jqdata_daily_update校验.py" />
     <Compile Include="demo\demo_jqdata_daily_update.py">
       <SubType>Code</SubType>
@@ -113,6 +139,7 @@
     <Compile Include="demo\demo_jqdata.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="demo\demo_jqdata_财务数据_合并资产负债表.py" />
     <Compile Include="demo\demo_jqdata_市值计算.py" />
     <Compile Include="demo\demo_jqdata_money_flow.py">
       <SubType>Code</SubType>
@@ -143,9 +170,6 @@
     <Compile Include="fund\__init__.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="module1.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="MyCashFlowTest.py">
       <SubType>Code</SubType>
     </Compile>
@@ -167,23 +191,20 @@
     </Compile>
     <Compile Include="My历史分笔.py" />
     <Compile Include="My实时分笔.py" />
+    <Compile Include="apt\qsp_jqdata\atr.py" />
+    <Compile Include="apt\qsp_jqdata\base.py" />
+    <Compile Include="apt\qsp_jqdata\cdp.py" />
+    <Compile Include="apt\qsp_jqdata\k.py" />
+    <Compile Include="apt\qsp_jqdata\vol.py" />
+    <Compile Include="apt\qsp_jqdata\__init__.py" />
     <Compile Include="tick.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="data_windows.py" />
-    <Compile Include="MSAP.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="MSAP1.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="pip_update.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="MyFunds.py" />
-    <Compile Include="ts_pro_test.py">
-      <SubType>Code</SubType>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="CondaEnv|CondaEnv|Anaconda3" />
@@ -203,6 +224,7 @@
     <Folder Include="fund\" />
     <Folder Include="apt\" />
     <Folder Include="demo\" />
+    <Folder Include="apt\qsp_jqdata\" />
     <Folder Include="VB\" />
   </ItemGroup>
   <ItemGroup>
