@@ -58,6 +58,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="apt\qsp\__init__.py" />
+    <Compile Include="apt\qsp_jqdata\prank.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="apt\testA\B.py" />
     <Compile Include="apt\testA\A.py">
       <SubType>Code</SubType>
@@ -100,12 +103,22 @@
     <Compile Include="demo\demo_backtrader.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="demo\demo_backtrader_testfile1.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_backtrader_多仓位管理.py" />
+    <Compile Include="demo\demo_backtrader_分位数模型测试.py" />
+    <Compile Include="demo\demo_backtrader_增强型图表输出测试.py" />
+    <Compile Include="demo\demo_backtrader_welcome.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="demo\demo_backtrander_pandas.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_fix_atr_today_error.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="demo\demo_jdata_prank.py" />
     <Compile Include="demo\demo_jdata_k.py">
       <SubType>Code</SubType>
     </Compile>
