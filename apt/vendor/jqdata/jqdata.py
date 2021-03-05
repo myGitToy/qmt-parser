@@ -351,6 +351,21 @@ class data(base):
                 print("不支持的复权模式，请检查！")
                 return df_db
 
+    def jqdata_to_backtrader(self , df = None):
+        """
+        将jqdata数据格式转换成backtrader格式
+        """
+        if df.empty == True:
+            #无数据
+            print("无有效数据 请检查")
+            return pd.dataframe()
+        else:
+            #有数据
+            df['openinterest'] = 0
+            df['datatime'] = pd.to_datetime(df['date'])
+            df.set_index(['datatime'], inplace=True)
+            print(df)
+            return df[['open','high','low','close','volume','openinterest']]
     def __get_last_factor(self , code = None , day = datetime.datetime(2020,12,1)):
         """
         获取指定股票的最后复权因子（内部函数）
