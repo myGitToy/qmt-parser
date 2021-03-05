@@ -311,7 +311,7 @@ class data(base):
         接受前复权 后复权 不复权 动态复权四种复权模式
         成交量、成交额目前未进行复权处理
         """
-        query = "select * from jqdata_%s where code = '%s' and date BETWEEN '%s' and '%s'" % (ktype , code , start_date, end_date)         
+        query = "select * from jqdata_%s where code = '%s' and date BETWEEN '%s' and '%s' order by date asc" % (ktype , code , start_date, end_date)         
         df_db = pd.read_sql_query(query , self.engine)
         if df_db.empty == True:
             #无数据
@@ -364,7 +364,6 @@ class data(base):
             df['openinterest'] = 0
             df['datatime'] = pd.to_datetime(df['date'])
             df.set_index(['datatime'], inplace=True)
-            print(df)
             return df[['open','high','low','close','volume','openinterest']]
     def __get_last_factor(self , code = None , day = datetime.datetime(2020,12,1)):
         """
