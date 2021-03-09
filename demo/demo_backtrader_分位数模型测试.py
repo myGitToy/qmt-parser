@@ -17,7 +17,7 @@ import sqlalchemy
 """
 【模型说明】
 采用超过分位数0.6买入，低于分位数0.4卖出的简单策略
-测试分批买入的策略
+本模型采用单买单卖策略，全仓买入或卖出
 
 
 
@@ -29,10 +29,11 @@ import sqlalchemy
 
 """
 class TestStrategy(bt.Strategy):
-    params=(('high_period',14),
-            ('atr_period',14),
-            ('prank_period',14),
-            ('printlog',True),)
+    params=(('high_period',14),     #最高价（使用的是收盘价的最高价）向前回滚的时间周期 
+            ('atr_period',14),      #ATR向前回滚的时间周期 
+            ('min_ticksize',3),     #最小的价格单位 通常ETF为小数点后3位，一般证券为2位
+            ('prank_period',14),    #分位数向前回滚的时间周期  
+            ('printlog',True),)     #是否打印 默认是
     def log(self, txt, dt=None):
         ''' Logging function fot this strategy'''
         dt = dt or self.datas[0].datetime.date(0)
@@ -60,7 +61,7 @@ class TestStrategy(bt.Strategy):
         self.high_cut = bt.indicators.Highest(self.datas[0].close * 0.92 , period = self.params.high_period, plot = True , subplot= False) 
         
         #LinePlotterIndicator(self.new_high, name='NEW HIGH')
-        self.atr = bt.indicators.AverageTrueRange(self.datas[0] , period = self.params.atr_period)
+        self.atr = bt.indicators.AverageTrueRange(self.datas[0] , period = self.params.atr_period )
         self.tr = bt.indicators.TrueRange(self.datas[0])
         #self.tr =  bt.indicators.TrueRange(self.datas[0] )
         #副图叠加ATR指标并作图（增强型图表无法进行叠加）
@@ -137,11 +138,12 @@ class TestStrategy(bt.Strategy):
 
                 # Keep track of the created order to avoid a 2nd order
                 self.order = self.close()
-
+    def stop(self):
+        self.log("最大回撤:-%.2f%%" % self.stats.drawdown.maxdrawdown[-1])
 
 def get_k_data():
         engine = sqlalchemy.create_engine('mysql+pymysql://stock_user:a@1#Yy1c@localhost:3306/stock')
-        query = "select date as datatime,open,high,low,close,volume from jqdata_1d where code = '002292.XSHE' and DATE(date) between '2020-1-1' and '2021-04-21'"    
+        query = "select date as datatime,open,high,low,close,volume from jqdata_1d where code = '159949.XSHE' and DATE(date) between '2010-1-1' and '2020-07-16'"    
         df_db = pd.read_sql_query(query , engine)
         if df_db.empty == True:
             #无数据
@@ -172,6 +174,8 @@ if __name__ == '__main__':
     # Set our desired cash start
     cerebro.broker.setcash(1000000.0)
     cerebro.broker.setcommission(commission=0.00025)
+    # 添加回撤观察器
+    cerebro.addobserver(bt.observers.DrawDown)
     # Print out the starting conditions
     print('Starting Portfolio Value: %.2f' % cerebro.broker.getvalue())
     cerebro.addanalyzer(bt.analyzers.SharpeRatio,_name = 'SharpeRatio')

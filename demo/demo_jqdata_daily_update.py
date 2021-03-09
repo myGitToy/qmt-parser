@@ -29,9 +29,9 @@ from apt.vendor.jqdata.ETF import ETF as ETF
 集合竞价数据	2019年至今	交易日最晚9:28分之前更新
 """
 
-start = datetime.datetime(2021,3,4)    #日线 60m 30m 最后更新日3/2 含
-                                         #5m 最后更新3/1不含
-                                         #30m 最后更新自2019年起的数据
+start = datetime.datetime(2021,3,8)    #日线 60m 30m 最后更新日3/8 含
+                                         #5m 最后更新3/8含
+                                         #基金数据 最后更新3/6含
 #end = datetime.datetime(2018,12,31,16)
 end = datetime.datetime.now()
 jq = jqdata(rds_host = jqdata.数据源.localhost , myauth = True )

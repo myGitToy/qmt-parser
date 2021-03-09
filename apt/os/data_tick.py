@@ -75,7 +75,7 @@ class Data_tick(TSOS):
             for code in code_list:
                 code = code[0:6]
                 #检查数据库是否存在数据
-                query = "select count(code) as num from ts_tick where code = '%s' and date(time)='%s'" % (code,day)
+                query = "select count(code) as num from ts_tick_p where code = '%s' and date(time)='%s'" % (code,day)
                 df_old = pd.read_sql_query(query, self.engine)
                 count = df_old.loc[0,'num']
                 if count > 0 :
@@ -91,7 +91,7 @@ class Data_tick(TSOS):
                     else:
                         time1 = datetime.datetime.now()
                         df.to_sql(
-                                name = 'ts_tick',
+                                name = 'ts_tick_p',
                                 con = self.engine,
                                 index = False,
                                 if_exists = 'append')
@@ -118,7 +118,7 @@ class Data_tick(TSOS):
             for day in day_list:
                 
                 #检查数据库是否存在数据
-                query = "select count(code) as num from ts_tick where code = '%s' and date(time)='%s'" % (code,day)
+                query = "select count(code) as num from ts_tick_p where code = '%s' and date(time)='%s'" % (code,day)
                 df_old = pd.read_sql_query(query, self.engine)
                 count = df_old.loc[0,'num']
                 if count > 0 :
@@ -149,7 +149,7 @@ class Data_tick(TSOS):
                 """
                 time1 = datetime.datetime.now()
                 df_main.to_sql(
-                        name = 'ts_tick',
+                        name = 'ts_tick_p',
                         con = self.engine,
                         index = False,
                         if_exists = 'append')
