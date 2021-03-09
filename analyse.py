@@ -181,7 +181,7 @@ class ATR(Technical_Analysis):
         #ATR移动平均线计算
         df['ATR'] = df['TR'].rolling(MA_ATR).mean()
         #小时线100小时最高收盘价计算
-        df['MAHR_100_HIGH'] = df['high'].rolling(MAHR_100_HIGH).max()
+        df['MAHR_100_HIGH'] = df['close'].rolling(MAHR_100_HIGH).max()
         #小时线20小时均线价格计算
         df['MAHR_20'] = df['close'].rolling(MAHR_20).mean()
         #小时线30小时均线价格
