@@ -147,9 +147,6 @@
     <Compile Include="demo\demo_multiple_condition.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="demo\demo_mysql_dump.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="demo\demo_new_high_break.py">
       <SubType>Code</SubType>
     </Compile>
