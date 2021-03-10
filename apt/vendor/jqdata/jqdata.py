@@ -299,20 +299,27 @@ class data(base):
         #code_list = ['399001.XSHE']
         self.update_v2(code_list = code_list , start_date = start_date , end_date = end_date, ktype = ktype)
 
-    def get_k_data(self , code = None ,  
-                 start_date = datetime.datetime(2020,1,1,1,8) , end_date = datetime.datetime.now()  , 
+    def get_k_data(self , code = None , start_date = datetime.datetime(2020,1,1,1,8) ,end_date = datetime.datetime.now()  , 
+                 count = None ,
                  col = ['code','date','open','close','high','low','volume','money','factor'] , 
-                 ktype = '1d' , fq = base.复权.动态复权):
+                 ktype = '1d' , 
+                 fq = base.复权.动态复权):
         
         """
         jqdata数据加载模块
         start_time：开始时间 最好带上小时参数  比如(2020,12,31,8)
         end_time：结束时间 最好带上小时参数  比如(2020,12,31,16)
+        count : 获取K线条目的个数 默认是全部输出  
         接受前复权 后复权 不复权 动态复权四种复权模式
         成交量、成交额目前未进行复权处理
+        返回的数据按照升序排列（backtrader要求的数据格式）
         """
         query = "select * from jqdata_%s where code = '%s' and date BETWEEN '%s' and '%s' order by date asc" % (ktype , code , start_date, end_date)         
         df_db = pd.read_sql_query(query , self.engine)
+        #处理需要返回的个数
+        if count == None:
+            #返回全部
+            count = len(df_db)
         if df_db.empty == True:
             #无数据
             print("无数据")
@@ -320,7 +327,7 @@ class data(base):
         else:
             #有数据，进行复权处理
             if fq == self.复权.不复权:
-                return df_db
+                return df_db.iloc[-count:][col]
             elif fq ==self.复权.前复权:
                 #前复权价格 = 当日价格 / 最后一个交易日（非end_date）的复权因子 * 当日复权因子
                 factor = self.__get_last_factor(code = code)
@@ -328,7 +335,7 @@ class data(base):
                 df_db['high'] = df_db['high'] / factor * df_db['factor']
                 df_db['low'] = df_db['low'] / factor * df_db['factor']
                 df_db['close'] = df_db['close'] / factor * df_db['factor']
-                return df_db[col]
+                return df_db.iloc[-count:][col]
             elif fq ==self.复权.后复权:
                 #后复权价格 = 当日价格 / 第一个交易日（start_date）的复权因子 * 当日复权因子    
                 #获取第一一个复权因子的数值
@@ -337,7 +344,7 @@ class data(base):
                 df_db['high'] = df_db['high'] / factor * df_db['factor']
                 df_db['low'] = df_db['low'] / factor * df_db['factor']
                 df_db['close'] = df_db['close'] / factor * df_db['factor']
-                return df_db[col]
+                return df_db.iloc[-count:][col]
             elif fq ==self.复权.动态复权:
                 #动态复权价格 = 当日价格 / 区间最后一天的复权因子 * 当日复权因子
                 #获取最后一个复权因子的数值
@@ -346,7 +353,7 @@ class data(base):
                 df_db['high'] = df_db['high'] / factor * df_db['factor']
                 df_db['low'] = df_db['low'] / factor * df_db['factor']
                 df_db['close'] = df_db['close'] / factor * df_db['factor']
-                return df_db[col]
+                return df_db.iloc[-count:][col]
             else:
                 print("不支持的复权模式，请检查！")
                 return df_db
