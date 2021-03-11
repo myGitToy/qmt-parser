@@ -11,7 +11,9 @@ import argparse
 import backtrader as bt
 import pandas as pd
 import sqlalchemy
-
+import numpy as np
+from apt.vendor.jqdata.base import base
+from apt.vendor.jqdata.jqdata import data as jqdata
 
 # Create a Stratey
 """
@@ -28,7 +30,9 @@ import sqlalchemy
 
 """
 class TestStrategy(bt.Strategy):
-    params=(('maperiod',14),
+    params=(('high_period',100),
+            ('atr_period',14),
+            ('prank_period',14),
             ('printlog',True),)
     def log(self, txt, dt=None):
         ''' Logging function fot this strategy'''
@@ -46,18 +50,21 @@ class TestStrategy(bt.Strategy):
         self.buycomm = None
 
         #self.np75 = np.percentile(self.datas[0].close, 75)
-        self.prank = bt.ind.PctRank(period=100 , plot = True ,subplot=True)
+        self.prank = bt.ind.PctRank(period=self.p.prank_period , plot = True ,subplot=True)
         self.sma5 = bt.indicators.SimpleMovingAverage(self.datas[0].close, period = 5)  #这里用self.datas[0].close 或者self.dataclose 或者self.data.close(0)都可以
         #self.x = bt.indicators.Highest()
         #增强型图表不支持self.data.close(0) 的格式
         #self.sma10 = bt.indicators.SimpleMovingAverage(self.data.close(0) , period = 10)
         #self.sma30 = bt.indicators.SimpleMovingAverage(self.data.close(0) , period = 30)
-        
+        self.tr =  bt.indicators.TrueRange(self.datas[0] )
+        self.atr_smooth = bt.indicators.SmoothedMovingAverage(self.tr , period = self.params.atr_period)
+        self.atr_weight = bt.indicators.WeightedMovingAverage(self.tr , period = self.params.atr_period)
+        self.atr_simple = bt.indicators.SimpleMovingAverage(self.tr , period = self.params.atr_period)
         #self.H_line = bt.indicators.Highest(self.datas[0].close , period=50)
         self.high_cut = bt.indicators.Highest(self.datas[0].close *0.85 , period=100 , plot = True , subplot= False) 
         
         #LinePlotterIndicator(self.new_high, name='NEW HIGH')
-        #self.atr = bt.indicators.AverageTrueRange(self.datas[0] , period = self.params.maperiod)
+        self.atr = bt.indicators.AverageTrueRange(self.datas[0] , period = self.params.atr_period)
         #self.tr =  bt.indicators.TrueRange(self.datas[0] )
         #副图叠加ATR指标并作图（增强型图表无法进行叠加）
         bt.indicators.ATR(self.datas[0] , plot=False , period = 25)
@@ -100,12 +107,32 @@ class TestStrategy(bt.Strategy):
         self.log('OPERATION PROFIT, GROSS %.2f, NET %.2f' %
                  (trade.pnl, trade.pnlcomm))
 
+    def get_quantile(self):
+        #获取指定周期的分位数信息
+        s = pd.Series()
+        for num in range(0 , self.params.high_period):
+            s.append(self.dataclose[-num])
+            
+
+
     def next(self):
         # Simply log the closing price of the series from the reference
         #self.log('Close, %.2f' % self.dataclose[0])
-
+        #self.log(f"5周期前的收盘价 {self.dataclose[-5]}")
+        #self.log(f"当日收盘价 { self.dataclose[0] } ， TR值{ self.tr[0]:.3f } ，ATR值{ self.atr[0]:.3f } ")
+        self.log(f"收盘价{self.dataclose[0]:.3f},ATR测试，TR导出的简单移动平均线 {self.atr_simple[0]:.3f} TR导出的平滑移动平均线 {self.atr_smooth[0]:.3f} 直接使用内置指标ATR（smooth） {self.atr[0]:.3f}/ {(self.atr[0]-self.atr_simple[0]):.3f} 加权的WMA{self.atr_weight[0]:.3f}/ {(self.atr_weight[0]-self.atr_simple[0]):.3f}")
+        #arr1 = np.array(self.dataclose[0:2],dtype=float)
+        #print(np.percentile(arr1,0.4))
+        #print(np.percentile(self.dataclose[0][-5],0.4))
+        #print(self.dataclose[-5])
+        #self.log(self.dataclose.rolling(5).mean)
+        #获取分位数列表
+        #pct = self.get_quantile()
+        #calo2 = np.percentile(pct , 0.75)
+        #计算分位数
+        #self.log(f"100周期前的分位数 {calo2}")
         # Check if an order is pending ... if yes, we cannot send a 2nd one
-        if self.order:
+        if self.order:  
             return
 
         # Check if we are in the market
@@ -146,6 +173,18 @@ def get_k_data():
             return df_db
 
 if __name__ == '__main__':
+    #自定义参数
+    code = '601318.XSHG'
+    start = datetime.datetime(2016,12,1)
+    end = datetime.datetime(2021,3,11)
+    ktype = '1d'
+    d = jqdata(rds_host = jqdata.数据源.localhost , myauth= False)
+    df_db = d.get_k_data(code = code  , start_date = start , end_date = end, ktype = ktype , fq = d.复权.前复权)
+    #数据做适配
+    df_db['openinterest'] = 0
+    df_db['datatime'] = pd.to_datetime(df_db['date'])
+    df_db.set_index(["datatime"], inplace=True)
+    print(df_db)
     # Create a cerebro entity
     cerebro = bt.Cerebro()
 
@@ -153,9 +192,7 @@ if __name__ == '__main__':
     cerebro.addstrategy(TestStrategy)
 
     # Create a Data Feed
-    dataframe =  get_k_data()
-    #print(dataframe)
-    data = bt.feeds.PandasData(dataname=dataframe)
+    data = bt.feeds.PandasData(dataname = df_db)
 
     # Add the Data Feed to Cerebro
     cerebro.adddata(data)
