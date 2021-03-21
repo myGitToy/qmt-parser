@@ -94,34 +94,20 @@
     <Compile Include="demo\demo_atr_test.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="demo\demo_backtarder_2.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="demo\demo_backtrader_getdata_pandas.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="demo\demo_backtrader.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="demo\demo_backtrader_testfile1.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="demo\demo_backtrader_多仓位管理.py" />
+    <Compile Include="demo\demo_backtrader_订单测试.py" />
+    <Compile Include="demo\demo_backtrader_均线种类测试.py" />
     <Compile Include="demo\demo_backtrader_分位数模型测试.py" />
     <Compile Include="demo\demo_backtrader_增强型图表输出测试.py" />
     <Compile Include="demo\demo_backtrader_welcome.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="demo\demo_backtrander_pandas.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_fix_atr_today_error.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_jdata_prank.py" />
-    <Compile Include="demo\demo_jdata_k.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="demo\demo_get_k_data.py">
       <SubType>Code</SubType>
     </Compile>
@@ -137,6 +123,9 @@
     <Compile Include="demo\demo_jqdata_get_data.py" />
     <Compile Include="demo\demo_jqdata_min.py" />
     <Compile Include="demo\demo_jqdata.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_jqdata_valuation.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_jqdata_财务数据_合并资产负债表.py" />
