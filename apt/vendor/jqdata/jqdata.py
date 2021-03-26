@@ -314,6 +314,9 @@ class data(base):
         成交量、成交额目前未进行复权处理
         返回的数据按照升序排列（backtrader要求的数据格式）
         """
+        if code == None :
+            print("证券代码不能为空")
+            return
         query = "select * from jqdata_%s where code = '%s' and date BETWEEN '%s' and '%s' order by date asc" % (ktype , code , start_date, end_date)         
         df_db = pd.read_sql_query(query , self.engine)
         #处理需要返回的个数
