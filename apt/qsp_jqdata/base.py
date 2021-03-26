@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
-from  apt.os.data_load import Data_Load as dl
-from  apt.os.data_update import Data_Update as update
 from apt.vendor.jqdata.jqdata import data as jqdata
 from apt.vendor.jqdata.base import base as basebase
-import datetime
+from datetime import datetime
 import numpy as np
 import pandas as pd
 
