@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from  apt.os.data_load import Data_Load as dl
 from  apt.os.data_update import Data_Update as update
-from datetime import datetime
 from apt.vendor.jqdata.jqdata import data as jqdata
 from apt.vendor.jqdata.base import base as basebase
 import datetime
@@ -48,32 +47,6 @@ class base():
         """
         #最后日期为空，则打开数据自动更新功能
         a = jqdata(rds_host = self.server , myauth = self.myauth)
+        #此处的get_k_data从vendor.jqdata.data.get_k_data取数据，非tushare
         df = a.get_k_data(code = self.code , start_date = self.start , end_date = self.end , ktype = self.ktype , fq = self.fq)
-        return df
-        #return jqdata.get_k_data(code = self.code , start_date = self.start , end_date = self.end , ktype = self.ktype , fq = self.fq)
-        if  self.end == None:
-            self.end = datetime.now().strftime("%Y-%m-%d")
-            self.auto_update = True
-        df = dl.load_data(self , code = self.code , start = self.start , end = self.end , ktype = self.ktype)
-        #可能存在的一种情况：指定时间段内无数据，返回空dataframe
-        if df.empty ==True:
-           return pd.DataFrame()
-        #两个日期序列化 last_index 为索引转换成日期，last_end为字符串转换成日期再按照指定格式输出
-        last_index = df.last_valid_index().strftime( '%Y-%m-%d')
-        last_end = datetime.strptime(self.end, '%Y-%m-%d').strftime( '%Y-%m-%d')
-        if (self.auto_update == True) & (last_index != last_end):
-            #证券代码转换成列表格式
-            lst=[]
-            lst.append(self.code)
-            if self.ktype =='D':
-                #自动更新至最新数据（日线数据）
-                ########################################################################################
-                #日线数据更新存在一些问题，删除最新的日期后，无法完成自动更新(手动删除csv最后几行的情况下)
-                #正常日线数据目前测试下来是可以更新的
-                update.update_day(self , code_list = lst )
-            else:
-                #自动更新至最新数据（小时数据）
-                update.update_min(self , code_list = lst , min = self.ktype)
-            #读取最新数据
-            df = dl.load_data(self , code = self.code , start = self.start , end = self.end , ktype = self.ktype)
         return df
