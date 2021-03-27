@@ -20,3 +20,4 @@ def read_excel():
         return pd.DataFrame()
 a = read_excel()
 print (a)
+a.to_excel('.\\data\\zxg_write.xlsx', sheet_name='11',  header=True, index=False)
