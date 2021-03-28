@@ -420,3 +420,14 @@ class data(base):
         else:
             #不属于交易日
             return self.交易时段校验.非交易日
+
+    def read_excel(file_name = None , sheet_name = None):
+        """
+        读取excel数据
+        """
+        try:
+            df = pd.read_excel( file_name, sheet_name = sheet_name , engine = 'openpyxl' , encoding = 'utf-8')
+            return df
+        except Exception as e:
+            print(str(e))
+            return pd.DataFrame()
