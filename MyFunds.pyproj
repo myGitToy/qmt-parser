@@ -88,6 +88,7 @@
     <Compile Include="apt\__init__.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="demo\demo_jqdata_atr.py" />
     <Compile Include="demo\demo_atr_index.py">
       <SubType>Code</SubType>
     </Compile>
@@ -143,6 +144,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_qsp_test.py" />
+    <Compile Include="demo\demo_read_excel.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="demo\demo_tspro_tokon.py">
       <SubType>Code</SubType>
     </Compile>
