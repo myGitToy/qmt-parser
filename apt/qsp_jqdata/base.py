@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from apt.vendor.jqdata.jqdata import data as jqdata
 from apt.vendor.jqdata.base import base as basebase
-from datetime import datetime
+import datetime
 import numpy as np
 import pandas as pd
 
