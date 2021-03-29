@@ -216,6 +216,7 @@ class ATR(Technical_Analysis):
         返回：
             [日期 证券代码 收盘价 TR ATR MA HIGH]
         """
+        #下面代码突然报错了（已修复，因为升级了numpy后没有升级pandas导致的）
         df_main=pd.DataFrame(columns=['date','code','close','TR','ATR','MAHR_100_HIGH','MAHR_20','MAHR_30','MAHR_100_HIGH_DEV','MAHR_20_DEV','MAHR_30_DEV','MAX_MAHR_20_LOW_DEV','MAX_MAHR_30_LOW_DEV'])
         for code in code_list:
             #循环截取所有列表中的数据
