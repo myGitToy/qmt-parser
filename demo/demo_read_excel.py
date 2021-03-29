@@ -13,7 +13,7 @@ import pandas as pd
 def read_excel():
     #文件读取
     try:
-        df = pd.read_excel('.\\data\\zxg.xlsx' , sheet_name = '33指数' , engine = 'openpyxl' , encoding = 'utf-8')
+        df = pd.read_excel('.\\data\\zxg.xlsx' , sheet_name = '33指数' , engine = 'openpyxl' )
         return df
     except Exception as e:
         print(str(e))
