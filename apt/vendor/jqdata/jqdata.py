@@ -426,7 +426,7 @@ class data(base):
         读取excel数据
         """
         try:
-            df = pd.read_excel( file_name, sheet_name = sheet_name , engine = 'openpyxl' , encoding = 'utf-8')
+            df = pd.read_excel( file_name, sheet_name = sheet_name , engine = 'openpyxl' )
             return df
         except Exception as e:
             print(str(e))
