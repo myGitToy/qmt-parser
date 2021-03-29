@@ -74,9 +74,12 @@ class ATR(base):
             #日期转换为datetime64[ns] 否则会在merge操作中因为两列属性不同和无法完成合并操作
             df['date'] = pd.to_datetime(df['date'])
             df_main = pd.concat([df_main, df],sort = False)
+            #为了和老版本进行兼容，这里对输出的列做了严格的规划
+            #如果改动的话，会对海龟模型中ATR的rawData有所破坏，导致加载失败
+            df_main = df_main[['date','code','close','TR','ATR','MAHR_100_HIGH','MAHR_20','MAHR_30','MAHR_100_HIGH_DEV','MAHR_20_DEV','MAHR_30_DEV','MAX_MAHR_20_LOW_DEV','MAX_MAHR_30_LOW_DEV']]
         #保存数据
         if to_csv == True:
             #print(df_main)
-            df_main.to_csv('.\\trade\\ATR_test.csv', encoding = 'utf_8_sig')
+            df_main.to_csv('.\\trade\\ATR_jqdata.csv', encoding = 'utf_8_sig')
         return df_main
 
