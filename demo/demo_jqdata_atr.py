@@ -1,0 +1,44 @@
+#测试从local数据库中获取ATR数据，并测试不同类型的ATR（SMA EMA）
+import pandas as pd
+import datetime
+from backtrader import talib
+from apt.qsp_jqdata.atr import ATR
+from apt.qsp_jqdata.k import k
+from apt.vendor.jqdata.jqdata import data
+
+pd.set_option('display.max_rows',   None)
+pd.set_option('display.max_columns', None)
+a = ATR()
+
+a.myauth = False
+#a.code = '601318.XSHG'
+a.ktype = '1d'
+a.start = datetime.datetime(2020,1,1)
+a.end = datetime.datetime.now()
+#df = a.k_new_high_count()
+#print(df[['date','close','new_high','new_high_count']])
+#1. 加载不同的自选股列表
+code_list1 = data.read_excel(file_name = '.\\data\\海龟模型\\自选股列表.xlsx' , sheet_name='33指数')['证券代码'].tolist()
+code_list2 = data.read_excel(file_name = '.\\data\\海龟模型\\自选股列表.xlsx' , sheet_name='ETF')['证券代码'].tolist()
+
+#2. 合并自选股列表并去重
+code_list1.extend(code_list2)
+code_list = list(set(code_list1))
+
+#3. 获取ATR数据
+df_atr = a.daily_update(code_list = code_list , N = 14 , to_csv =False)
+
+#4. ATR数据存盘
+#df_atr.to_excel('.\\data\\海龟模型\\海龟模型JQDATA.xlsx', sheet_name='RAW_ATR',  header=True, index=False)
+df_atr.to_csv('.\\data\\海龟模型\\ATR_jqdata.csv', encoding = 'utf_8_sig')
+#5. 获取PRANK数据
+
+
+
+#6. PRANK数据存盘
+
+
+#df = a.get_atr( N = 14 )
+#print(df[['date','close','TR','ATR']])
+
+
