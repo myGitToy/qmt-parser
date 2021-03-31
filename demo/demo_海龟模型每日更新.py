@@ -33,6 +33,12 @@ code_list2 = data.read_excel(file_name = '.\\data\\海龟模型\\自选股列表
 code_list1.extend(code_list2)
 code_list = list(set(code_list1))
 
+#更新日线和60分钟线数据
+update_start = datetime.datetime(2021,3,31)
+jq = data(rds_host = data.数据源.localhost , myauth = True )
+jq.update_v2(code_list = code_list , start_date = update_start , end_date = a.end , ktype = '1d' )
+jq.update_v2(code_list = code_list , start_date = update_start , end_date = a.end , ktype = '60m' )
+
 #3. 获取ATR数据
 df_atr = a.daily_update(code_list = code_list , N = 14 , to_csv =False)
 
@@ -45,7 +51,5 @@ df_prank = rank.daily_update(code_list = code_list , N = 100 , to_csv =False)
 #6. PRANK数据存盘
 df_prank.to_csv('.\\data\\海龟模型\\prank_jqdata.csv', encoding = 'utf_8_sig')
 
-#df = a.get_atr( N = 14 )
-#print(df[['date','close','TR','ATR']])
 
 
