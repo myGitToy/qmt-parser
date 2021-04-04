@@ -294,7 +294,7 @@ class data(base):
         code_list = list(get_all_securities(['index'] , date = end_date).index)
         #优先更新指数列表
         #备注：399001.XSHG深成指在2019年11月的数据有错误
-        code_list = ['000001.XSHG','000016.XSHG','000010.XSHG','000300.XSHG','000688.XSHG','000905.XSHG','000852.XSHG','399005.XSHE','399006.XSHE']
+        code_list = ['000001.XSHG','000016.XSHG','000010.XSHG','000300.XSHG','000688.XSHG','000905.XSHG','000852.XSHG','399001.XSHE','399005.XSHE','399006.XSHE']
             
         #code_list = ['399001.XSHE']
         self.update_v2(code_list = code_list , start_date = start_date , end_date = end_date, ktype = ktype)
