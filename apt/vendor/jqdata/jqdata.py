@@ -42,9 +42,9 @@ class data(base):
         #设置规则下需要更新的数目（按一天的量进行计算）
         update_num = self.__get_update_count(trade_days = 1 , ktype = ktype)
         for day in trade_days:
-            print("##############正在更新%s数据##############" % day.strftime("%Y-%m-%d"))
+            print(f"##############正在更新%s数据##############" % day.strftime("%Y-%m-%d"))
             df_remain = get_query_count()
-            print("当日数据剩余条目数：%s" % df_remain)
+            #print("当日数据剩余条目数：%s" % df_remain)
             #print(datetime.now())
             for code in code_list:
                 #检查数据库是否存在数据
@@ -291,10 +291,11 @@ class data(base):
         399006.XSHE	创业板指
         """
         #全指数列表 目前暂不启用
-        code_list = list(get_all_securities(['index'] , date = end_date).index)
+        #code_list = list(get_all_securities(['index'] , date = end_date).index)
         #优先更新指数列表
         #备注：399001.XSHG深成指在2019年11月的数据有错误
-        code_list = ['000001.XSHG','000016.XSHG','000010.XSHG','000300.XSHG','000688.XSHG','000905.XSHG','000852.XSHG','399001.XSHE','399005.XSHE','399006.XSHE']
+        code_list =['399001.XSHE']
+        #code_list = ['000001.XSHG','000016.XSHG','000010.XSHG','000300.XSHG','000688.XSHG','000905.XSHG','000852.XSHG','399001.XSHE','399005.XSHE','399006.XSHE']
             
         #code_list = ['399001.XSHE']
         self.update_v2(code_list = code_list , start_date = start_date , end_date = end_date, ktype = ktype)
