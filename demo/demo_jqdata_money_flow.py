@@ -14,7 +14,7 @@ start = datetime.datetime(2020,10,1)
 end = datetime.datetime.now()
 print(start)
 print(start.date())
-code = '000063.XSHE'
+code = '600893.XSHG'
 #df_share = finance.run_query(query(finance.FUND_SHARE_DAILY).filter(finance.FUND_SHARE_DAILY.date >= '2020/12/8' , finance.FUND_SHARE_DAILY.date <= '2020/12/10' , finance.FUND_SHARE_DAILY.code == '159949.XSHE' ))
 #print(df_share)
 #获取全部

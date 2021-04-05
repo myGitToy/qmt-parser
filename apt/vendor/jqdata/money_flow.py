@@ -61,8 +61,8 @@ class money_flow(base):
 
 if __name__=="__main__":
     money = money_flow()
-    start = datetime.datetime(2010,1,1)
-    end = datetime.datetime(2010,12,31)
+    start = datetime.datetime(2016,1,1)
+    end = datetime.datetime(2016,12,31) #2015年数据已完成更新
     df_remain = get_query_count()
     print(df_remain)
     money.daily_update( start_date = start , end_date =end)

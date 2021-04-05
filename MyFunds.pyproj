@@ -76,6 +76,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="apt\vendor\jqdata\jqdata.py" />
+    <Compile Include="apt\vendor\jqdata\money_flow.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="apt\vendor\jqdata\__init__.py" />
     <Compile Include="apt\vendor\tspro\base.py">
       <SubType>Code</SubType>
@@ -88,7 +91,7 @@
     <Compile Include="apt\__init__.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="demo\demo_jqdata_atr.py" />
+    <Compile Include="demo\demo_海龟模型每日更新.py" />
     <Compile Include="demo\demo_atr_index.py">
       <SubType>Code</SubType>
     </Compile>
