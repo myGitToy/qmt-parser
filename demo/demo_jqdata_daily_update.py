@@ -29,10 +29,10 @@ from apt.vendor.jqdata.ETF import ETF as ETF
 集合竞价数据	2019年至今	交易日最晚9:28分之前更新
 """
 
-start = datetime.datetime(2021,4,11)    #日线 60m 30m 最后更新日4/9含
+start = datetime.datetime(2021,4,11)    #日线 60m 30m 最后更新日4/11含
              #（注意：日线数据不能在过零点及开盘前更新，否则会出现类似于停盘的数据 无VOL MONEY）
-                                         #5m 最后更新4/9含
-                                         #基金数据 最后更新4/9含
+                                         #5m 最后更新4/11含
+                                         #基金数据 最后更新4/11含
 #end = datetime.datetime(2005,12,31,16)
 end = datetime.datetime.now()
 jq = jqdata(rds_host = jqdata.数据源.localhost , myauth = True )
@@ -40,9 +40,9 @@ df_remain = get_query_count()
 print(df_remain)
 #dd = get_bars('399001.XSHE', end_dt = '2009-11-25',count =24,unit='5m' , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'])
 #print(dd)
-#更新ETF数据
-etf = ETF()
-etf.update_fund_share_daily(start_date = start)
+#更新ETF数据（已合并至日常更新模块，适时可下架）
+#etf = ETF()
+#etf.update_fund_share_daily(start_date = start)
 #更新5分钟线
 jq.update_v1(start_date = start , end_date = end , ktype = '5m' )
 #更新指数
