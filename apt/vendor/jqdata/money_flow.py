@@ -58,13 +58,23 @@ class money_flow(base):
                         index = False,
                         if_exists = 'append')
                 print("%s 数据已上传完成(money flow)" % (code))
+    def delete_null(self):
+        """
+        负责处理异常数据
+        https://huiqiao.visualstudio.com/MyFunds/_boards/board/t/MyFunds%20Team/Backlog%20items/?workitem=204
 
+        """
+        query2 = f"delete from jqdata_money_flow where (net_pct_s is null or net_amount_s is NULL) and date >='2021/1/1'" 
+        df_db = pd.read_sql_query(query2 , self.engine)
+        #print(df_db)
 if __name__=="__main__":
+    #此模块用于历史数据的更新，目前2021年前的数据已完成更新，因此模块下架停止使用
     money = money_flow()
     start = datetime.datetime(2021,1,1)
     end = datetime.datetime.now() #2020年数据已完成更新
     df_remain = get_query_count()
     print(df_remain)
+    money.delete_null()
     money.daily_update( start_date = start , end_date =end)
     df_remain = get_query_count()
     print(df_remain)
