@@ -35,8 +35,8 @@ class money_flow(base):
             4. 这里写入时没有做去重，可能还是会触发唯一性约束错误（可能性低于0.01%）
         """
         for code in code_list:
-            #获取数据库中存在的数据最后更新日期
-            query2 = f"select date FROM jqdata_money_flow WHERE date BETWEEN '{start_date.date()}' and '{end_date.date()}' and code = '{code}' ORDER BY date DESC LIMIT 1" 
+            #获取数据库中存在的数据最后更新日期（加入强制使用索引的内容）
+            query2 = f"select date FROM jqdata_money_flow FORCE INDEX (main) WHERE date BETWEEN '{start_date.date()}' and '{end_date.date()}' and code = '{code}' ORDER BY date DESC LIMIT 1" 
             df_db = pd.read_sql_query(query2 , self.engine)
             if df_db.empty == True:
                 #数据库不存在数据
@@ -61,8 +61,8 @@ class money_flow(base):
 
 if __name__=="__main__":
     money = money_flow()
-    start = datetime.datetime(2016,1,1)
-    end = datetime.datetime(2016,12,31) #2015年数据已完成更新
+    start = datetime.datetime(2021,1,1)
+    end = datetime.datetime.now() #2020年数据已完成更新
     df_remain = get_query_count()
     print(df_remain)
     money.daily_update( start_date = start , end_date =end)
