@@ -65,7 +65,11 @@ class money_flow(base):
 
         """
         query2 = f"delete from jqdata_money_flow where (net_pct_s is null or net_amount_s is NULL) and date >='2021/1/1'" 
-        df_db = pd.read_sql_query(query2 , self.engine)
+        try:
+            df_db = pd.read_sql_query(query2 , self.engine)
+        except:
+            print("校验通过，没有需要删除的数据")
+
         #print(df_db)
 if __name__=="__main__":
     #此模块用于历史数据的更新，目前2021年前的数据已完成更新，因此模块下架停止使用
@@ -74,7 +78,7 @@ if __name__=="__main__":
     end = datetime.datetime.now() #2020年数据已完成更新
     df_remain = get_query_count()
     print(df_remain)
-    money.delete_null()
     money.daily_update( start_date = start , end_date =end)
+    money.delete_null()
     df_remain = get_query_count()
     print(df_remain)
