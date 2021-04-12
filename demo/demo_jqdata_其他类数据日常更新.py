@@ -7,7 +7,7 @@ from jqdatasdk import *
 from apt.vendor.jqdata.base import base as base
 from apt.vendor.jqdata.ETF import ETF as ETF
 from apt.vendor.jqdata.money_flow import money_flow as money_flow
-
+from apt.vendor.jqdata.billboard_list import billboard_list as billboard
 """
 此模块用于进行ETF 资金流向表 大宗交易 北向资金 valudation表的日常更新
 开始日期不需要频繁更新，每半年或每季度重置即可
@@ -16,7 +16,8 @@ from apt.vendor.jqdata.money_flow import money_flow as money_flow
 start = datetime.datetime(2021,1,1)
 end = datetime.datetime.now()
 count_start = get_query_count()
-print(f"开始更新 数据条目剩余{count_start}")
+print(count_start)
+print("开始更新 数据条目剩余 %s" % count_start)
 
 ######ETF更新模块######
 etf = ETF()
@@ -33,7 +34,8 @@ money.delete_null()
 
 
 ######龙虎榜更新模块######
-
+bill = billboard()
+#bill.daily_update(start_date = start , end_date = end)
 
 ######valudation更新模块######
 
