@@ -10,16 +10,10 @@ class billboard_list(base):
     """
     专门处理龙虎榜的类
     """
-    def daily_update(self , code_list =  None , start_date = datetime.datetime(2005,1,1) , end_date = datetime.datetime.now()):
+    def daily_update(self , start_date = datetime.datetime(2005,1,1) , end_date = datetime.datetime.now()):
         """
         每日龙虎榜更新
         """
-        #获取更新列表(目前按照天来更新，不需要正确代码列表)
-        if code_list == None:
-            #更新列表未填写，则默认为空，即全部更新
-            pass
-            #code_list = list(get_all_securities(['stock'] , date = end_date).index)
-        #打印标题
         print("############正在准备更新龙虎榜信息###########")
         """
         更新逻辑：
@@ -27,17 +21,12 @@ class billboard_list(base):
             2. 查询数据库中的最后更新日期
             3. 在此基础上+1 ，得到中间的交易天数
             4. 按每个交易日取出所有的数据（所有股票）
-            取出所有的stock列表，进行单代码循环
-            2. 取出该代码在数据库中，指定日期间的最后更新日期
-                2.1 为空，则全部更新
-                2.2 不为空，则取出最后日期，以这个日期为基准，进行更新
-            3. 数据写入数据库
+            5. 数据写入数据库
         逻辑优点和不足：
-            1. 单循环运行效率较高
+            1. 按天更新 每日更新全部代码，不做细分的代码区分
             2. 可以解决日常更新中，有部分日期重复的问题，比如每月的更新开始周期设定为1号，但5号更新是会自动过滤1-4号的数据
             3. 上述第二条还有一个很重要的应用场景：因为是指定区间的更新取最后一天，因此如果先更新了2020年的数据，随后再要更新2019年的数据，
                 在这种情况下也是可以的，因为取的是区间最后一天，因此2019全年的数据也是空，也就会全部读取和更新
-            4. 这里写入时没有做去重，可能还是会触发唯一性约束错误（可能性低于0.01%）
         """
         #获取数据库中存在的数据最后更新日期（加入强制使用索引的内容）
         query2 = f"select date FROM jqdata_billboard_list FORCE INDEX (main) WHERE date BETWEEN '{start_date.date()}' and '{end_date.date()}'  ORDER BY date DESC LIMIT 1" 
@@ -77,7 +66,6 @@ if __name__=="__main__":
     end = datetime.datetime.now() #2020年数据已完成更新
     df_remain = get_query_count()
     print(f"更新条目数{df_remain}")
-    #money.delete_null()
     money.daily_update( start_date = start , end_date =end)
     df_remain = get_query_count()
     print(df_remain)
