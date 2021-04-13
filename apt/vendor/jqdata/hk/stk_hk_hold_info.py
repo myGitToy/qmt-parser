@@ -10,22 +10,24 @@ from apt.vendor.jqdata.base import base as base
 class STK_HK_HOLD_INFO(base):
     """
     STK_HK_HOLD_INFO 沪深港通持股数据 / 上市至今，交易日20:30-06:30更新
-    每次获取上限3000条
+
     """
     def daily_update(self , link_id =  ['310001','310002','310003','310004','310005'] , start_date = datetime.datetime(2005,1,1) , end_date = datetime.datetime.now()):
         """
         沪深港通持股数据 
-
+        每次获取上限3000条，目前每天更新数据为2888条
+        因此更新时将分类拆分了，这样每个link_id大约只更新1000条不到的数据，未来预计也不会触发3000的限制
         """
         #打印标题
         print("############正在准备沪深港通资金流向信息###########")
         """
         更新逻辑：
-            1. 取出开始和结束日期
-            2. 查询数据库中的最后更新日期
-            3. 在此基础上+1 ，得到中间的交易天数
-            4. 按每个交易日取出所有的数据（所有股票）
-            5. 数据写入数据库
+            1. 取出link_id数据
+            2. 每个id分别取出开始和结束日期
+            3. 查询数据库中的最后更新日期
+            4. 在此基础上+1 ，得到中间的交易天数（交易日未必北向资金开市）
+            5. 按每个交易日取出所有的数据（所有股票）
+            6. 数据写入数据库
         逻辑优点和不足：
             1. 按天更新 每日更新全部代码，不做细分的代码区分
             2. 可以解决日常更新中，有部分日期重复的问题，比如每月的更新开始周期设定为1号，但5号更新是会自动过滤1-4号的数据
@@ -59,15 +61,7 @@ class STK_HK_HOLD_INFO(base):
                             index = False,
                             if_exists = 'append')
                     print(f"{day}数据已上传完成({link})")
-    def delete_null(self):
-        """
-        负责处理异常数据
-        https://huiqiao.visualstudio.com/MyFunds/_boards/board/t/MyFunds%20Team/Backlog%20items/?workitem=204
 
-        """
-        query2 = f"delete from jqdata_money_flow where (net_pct_s is null or net_amount_s is NULL) and date >='2021/1/1'" 
-        df_db = pd.read_sql_query(query2 , self.engine)
-        #print(df_db)
 if __name__=="__main__":
     #此模块用于历史数据的更新，目前2021年前的数据已完成更新，因此模块下架停止使用
     money = STK_HK_HOLD_INFO()
