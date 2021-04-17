@@ -61,9 +61,10 @@ if __name__=="__main__":
     pd.set_option('display.max_rows', None)
     #df=get_billboard_list(start_date = '2021-04-09', end_date = '2021-04-09')
     #print (df)
+    ##此模块用于历史数据的更新，目前2021年前的数据已完成更新，因此模块下架停止使用
     money = billboard_list()
-    start = datetime.datetime(2010,1,1)
-    end = datetime.datetime.now() #2020年数据已完成更新
+    start = datetime.datetime(2021,1,1)
+    end = datetime.datetime.now() #2020年数据已完成更新 纳入正常更新模块
     df_remain = get_query_count()
     print(f"更新条目数{df_remain}")
     money.daily_update( start_date = start , end_date =end)

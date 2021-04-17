@@ -10,9 +10,9 @@ from apt.vendor.jqdata.base import base as base
 class STK_HK_HOLD_INFO(base):
     """
     STK_HK_HOLD_INFO 沪深港通持股数据 / 上市至今，交易日20:30-06:30更新
-
+    stk_hk_hold_info
     """
-    def daily_update(self , link_id =  ['310001','310002','310003','310004','310005'] , start_date = datetime.datetime(2005,1,1) , end_date = datetime.datetime.now()):
+    def daily_update(self , link_id =  ['310001','310002','310005'] , start_date = datetime.datetime(2005,1,1) , end_date = datetime.datetime.now()):
         """
         沪深港通持股数据 
         每次获取上限3000条，目前每天更新数据为2888条
@@ -65,8 +65,8 @@ class STK_HK_HOLD_INFO(base):
 if __name__=="__main__":
     #此模块用于历史数据的更新，目前2021年前的数据已完成更新，因此模块下架停止使用
     money = STK_HK_HOLD_INFO()
-    start = datetime.datetime(2014,1,1)
-    end = datetime.datetime(2017,12,31) #2020年数据已完成更新
+    start = datetime.datetime(2021,1,1)
+    end = datetime.datetime(2021,4,16) #2020年数据已完成更新 纳入正常更新模块
     df_remain = get_query_count()
     print(df_remain)
     money.daily_update( start_date = start , end_date =end)
