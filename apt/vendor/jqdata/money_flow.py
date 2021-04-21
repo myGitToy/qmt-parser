@@ -50,7 +50,7 @@ class money_flow(base):
             #print(df_flow)
             #保存至数据库 
             if df_flow.empty == True:
-                print("%s 进行差集处理后剩余数据为空或者jqdata无数据，跳过上传" % (code))
+                print(f"{code}数据为空，跳过上传")
             else:
                 df_flow.to_sql(
                         name = 'jqdata_money_flow',
