@@ -51,7 +51,7 @@ class tick(base):
         #self.tick_status_update(start_date = start_date)
 
         ##########第二步：取出需要更新的数据##########
-        df_main = self.get_tick_null(start_date = start_date)
+        df_main = self.get_tick_null(start_date = start_date , end_date = end_date)
         ##########第三步：获取tick数据##########
         for row in df_main.itertuples():
             id = getattr(row, 'id')
@@ -88,12 +88,12 @@ class tick(base):
 
 
 
-    def get_tick_null(self , start_date = datetime.datetime(2021,1,1) , end_date =datetime.datetime.now):
+    def get_tick_null(self , start_date = datetime.datetime(2021,1,1) , end_date =datetime.datetime.now()):
         """
         取出tick_status中的null数据，这是需要更新的部分
         通常这是每日更新的第二步
         """
-        query = f"select * from ts_tick_status where tick_status is null and date >='{start_date.date()}' order by date,code"
+        query = f"select * from ts_tick_status where tick_status is null and date between '{start_date.date()}' and '{end_date.date()}'order by date,code"
         try:
             df = pd.read_sql_query(query, self.engine)
             #print(f"已插入{df.shape[0]}条新数据")
@@ -142,5 +142,6 @@ class tick(base):
 if __name__=="__main__":
     #tick2 = tick(myauth = False)
     tick = tick(rds_host = base.数据源.localhost , myauth = False)
-    tick.daily_update(start_date = datetime.datetime(2021,4,1))
+    tick.daily_update(start_date = datetime.datetime(2021,1,1),end_date = datetime.datetime(2021,1,31))
+    #tick.daily_update(start_date = datetime.datetime(2021,1,6),end_date = datetime.datetime(2021,1,9))
     #tick.get_tick_null(start_date = datetime.datetime(2021,3,1))
