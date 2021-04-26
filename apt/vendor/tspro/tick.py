@@ -152,17 +152,41 @@ class tick(base):
                 if not os.path.exists(path):
                     os.mkdir(path)               
                 df[['time','price','change','volume','amount','type','code']].to_csv(f"{path}{code_jqdata}.csv", encoding = 'utf_8_sig')
-                print(f"{date} {code} 保存完毕")
+                #print(f"{date} {code} 保存完毕")
                 #删除数据库数据
                 try:
                     sql_d = f"delete from {table_name} where code = '{code}' and date(time) = '{date}'"
-                    df = pd.read_sql_query( sql_d , self.engine)
-                      
+                    df = pd.read_sql_query( sql_d , self.engine)                     
                 except:
-                    print(f"{date} {code} 已删除")    
+                    print(f"{date} {code} 已保存并删除") 
+                    
+    def tick数量校验(self,start_date = datetime.datetime(2021,1,1),end_date = datetime.datetime(2021,3,1)):
+        """
+        用于数据库导出函数mysql_to_csv处理完毕后重新刷新下数据
+        一次性函数
+        """
+        sql_1 = f"select code,date,tick_status from ts_tick_status where tick_status = 0 and date between '{start_date.date()}' and '{end_date.date()}'"
+        df_main = pd.read_sql_query(sql_1, self.engine)
+        for row in df_main.itertuples():
+            code = getattr(row, 'code')
+            date = getattr(row, 'date')
+            #判断路径中是否存在相关数据
+            t = os.path.exists(f".\\data\\tick\\{date}\\{code}.csv")
+            if t == True:
+                #存在文件但数量显示0 ，因此不是合理的数量，需要更新
+                #加载文件并计算数量
+                df = pd.read_csv(f".\\data\\tick\\{date}\\{code}.csv")
+                count = df.shape[0]
+                try:
+                    sql_update = f"update ts_tick_status set tick_status = {count} where code = '{code}' and date = '{date}'"
+                    pd.read_sql_query(sql_update, self.engine)
+                except:
+                    print(f"{date} {code} 数量已更新至{count}")
+
 if __name__=="__main__":
     tick = tick(rds_host = base.数据源.localhost , myauth = True)
     #判断文件是否存在
-    tick.mysql_to_csv()
+    #tick.mysql_to_csv()
+    tick.tick数量校验()
     #tick.daily_update(start_date = datetime.datetime(2021,1,1),end_date = datetime.datetime(2021,2,28))
-    tick.daily_update(start_date = datetime.datetime(2021,1,1),end_date = datetime.datetime.now())
+    #tick.daily_update(start_date = datetime.datetime(2021,1,1),end_date = datetime.datetime.now())
