@@ -48,7 +48,7 @@ class tick(base):
         """
         N = 0
         ##########第一步：需要更新的数据插入数据库##########
-        #self.tick_status_update(start_date = start_date)
+        self.tick_status_update(start_date = start_date)
 
         ##########第二步：取出需要更新的数据##########
         df_main = self.get_tick_null(start_date = start_date , end_date = end_date)
@@ -121,27 +121,48 @@ class tick(base):
                 print("没有新数据")
             else:
                 print(f"未知类型错误：{str(e)}")
-        
 
-
-    def export_to_mysql(self , df = None , code = None):
+    def mysql_to_csv(self , table_name = 'ts_tick2021'):     
         """
-        通过线程的方式写入数据库
+        将数据库中的数据转成csv格式
+        一次性函数，随着数据库清空，此函数将被停止使用
         """
-        if df.empty == True:
-            print("无效的数据")
-            return 0
-        else:
-            df.to_sql(
-                        name = 'ts_tick',
-                        con = self.engine,
-                        index = False,
-                        if_exists = 'append')
-            print("%s tick数据已上传完成" % (code))
-
+        sql_1 = f"select code,date(time) as date from {table_name} group by code,date(time)"
+        df_main = pd.read_sql_query(sql_1, self.engine)
+        for row in df_main.itertuples():
+            code = getattr(row, 'code')
+            date = getattr(row, 'date')
+            code_jqdata = normalize_code(code)
+            #判断路径中是否存在相关数据
+            t = os.path.exists(f".\\data\\tick\\{date}\\{code_jqdata}.csv")
+            if t == True:
+                #存在数据，直接进行删除操作
+                try:
+                    sql_d = f"delete from {table_name} where code = '{code}' and date(time) = '{date}'"
+                    df = pd.read_sql_query( sql_d , self.engine)
+                except:
+                    print(f"{date} {code} 已删除")
+            else:
+                #不存在数据
+                #读取并写入数据
+                sql_2 = f"select time,price,`change`,volume,amount,type,`code` from {table_name} where code = '{code}' and date(time) = '{date}'"
+                df = pd.read_sql_query(sql_2 , self.engine)
+                df['code'] = code_jqdata
+                path = f".\\data\\tick\\{date.strftime('%Y-%m-%d')}\\"
+                if not os.path.exists(path):
+                    os.mkdir(path)               
+                df[['time','price','change','volume','amount','type','code']].to_csv(f"{path}{code_jqdata}.csv", encoding = 'utf_8_sig')
+                print(f"{date} {code} 保存完毕")
+                #删除数据库数据
+                try:
+                    sql_d = f"delete from {table_name} where code = '{code}' and date(time) = '{date}'"
+                    df = pd.read_sql_query( sql_d , self.engine)
+                      
+                except:
+                    print(f"{date} {code} 已删除")    
 if __name__=="__main__":
-    #tick2 = tick(myauth = False)
-    tick = tick(rds_host = base.数据源.localhost , myauth = False)
-    tick.daily_update(start_date = datetime.datetime(2021,1,1),end_date = datetime.datetime(2021,1,31))
-    #tick.daily_update(start_date = datetime.datetime(2021,1,6),end_date = datetime.datetime(2021,1,9))
-    #tick.get_tick_null(start_date = datetime.datetime(2021,3,1))
+    tick = tick(rds_host = base.数据源.localhost , myauth = True)
+    #判断文件是否存在
+    tick.mysql_to_csv()
+    #tick.daily_update(start_date = datetime.datetime(2021,1,1),end_date = datetime.datetime(2021,2,28))
+    tick.daily_update(start_date = datetime.datetime(2021,1,1),end_date = datetime.datetime.now())
