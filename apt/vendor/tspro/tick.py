@@ -37,7 +37,7 @@ class tick(base):
             return df
 
 
-    def daily_update(self , start_date = datetime.datetime(2020,1,1) , end_date = datetime.datetime.now()):
+    def daily_update(self , start_date = datetime.datetime(2021,1,1) , end_date = datetime.datetime.now()):
         """
         通过查询ts_tick_status表格，获取需要更新的代码和日期
         下载csv格式的数据至本地保存
@@ -105,6 +105,14 @@ class tick(base):
                 print(f"未知类型错误：{str(e)}")
                 return pd.DataFrame()
         print(f"获取{df.shape[0]}条新数据")
+
+        #删除指数数据
+        sql = "DELETE from ts_tick_status where code in ('000001.XSHG','000016.XSHG','000010.XSHG','000300.XSHG','000688.XSHG','000905.XSHG','000852.XSHG','399001.XSHE','399005.XSHE','399006.XSHE')"
+        try:
+            df = pd.read_sql_query(sql, self.engine)
+        except Exception as e:
+            pass
+     
         return df
 
     def tick_status_update(self , start_date = datetime.datetime(2021,1,1)):
@@ -114,20 +122,21 @@ class tick(base):
         """
         query = f"INSERT INTO ts_tick_status (ts_tick_status.code , ts_tick_status.date) select	d.code , d.date FROM jqdata_1d d WHERE d.date >= '{start_date.date()}' and NOT EXISTS (SELECT * FROM ts_tick_status tick WHERE tick.date = d.date	AND tick.CODE = d.CODE and d.date >= '{start_date.date()}')"
         try:
-            df = pd.read_sql_query(query, self.engine)
+            df = pd.read_sql_query(query, self.engine) 
             print(f"已插入{df.shape[0]}条新数据")
         except Exception as e:
             if str(e) == "This result object does not return rows. It has been closed automatically." :
-                print("没有新数据")
+                #print(f"已插入{df.shape[0]}条新数据")
+                pass
             else:
                 print(f"未知类型错误：{str(e)}")
 
-    def mysql_to_csv(self , table_name = 'ts_tick2021'):     
+    def mysql_to_csv(self , table_name = 'ts_tick'):     
         """
         将数据库中的数据转成csv格式
         一次性函数，随着数据库清空，此函数将被停止使用
         """
-        sql_1 = f"select code,date(time) as date from {table_name} group by code,date(time)"
+        sql_1 = f"select code,date(time) as date from {table_name} where date(time) >= '2020/10/1' group by code,date(time)"
         df_main = pd.read_sql_query(sql_1, self.engine)
         for row in df_main.itertuples():
             code = getattr(row, 'code')
@@ -138,7 +147,10 @@ class tick(base):
             if t == True:
                 #存在数据，直接进行删除操作
                 try:
-                    sql_d = f"delete from {table_name} where code = '{code}' and date(time) = '{date}'"
+                    sql_d = f"""
+                        delete from {table_name} where code = '{code}' and date(time) = '{date}';
+                        
+                    """
                     df = pd.read_sql_query( sql_d , self.engine)
                 except:
                     print(f"{date} {code} 已删除")
@@ -152,15 +164,19 @@ class tick(base):
                 if not os.path.exists(path):
                     os.mkdir(path)               
                 df[['time','price','change','volume','amount','type','code']].to_csv(f"{path}{code_jqdata}.csv", encoding = 'utf_8_sig')
+                count = df.shape[0]
                 #print(f"{date} {code} 保存完毕")
-                #删除数据库数据
+                #删除数据库数据并更新tick_status的对应日期和代码的数量
                 try:
-                    sql_d = f"delete from {table_name} where code = '{code}' and date(time) = '{date}'"
+                    sql_d = f"""
+                        delete from {table_name} where code = '{code}' and date(time) = '{date}';
+                        update ts_tick_status set tick_status = {count} where code = '{code}' and date = '{date}';
+                        """
                     df = pd.read_sql_query( sql_d , self.engine)                     
                 except:
                     print(f"{date} {code} 已保存并删除") 
                     
-    def tick数量校验(self,start_date = datetime.datetime(2021,1,1),end_date = datetime.datetime(2021,3,1)):
+    def tick数量校验(self,start_date = datetime.datetime(2021,1,1),end_date = datetime.datetime(2021,12,31)):
         """
         用于数据库导出函数mysql_to_csv处理完毕后重新刷新下数据
         一次性函数
@@ -183,10 +199,56 @@ class tick(base):
                 except:
                     print(f"{date} {code} 数量已更新至{count}")
 
+    def mysql_to_csv_V2(self , table_name = 'ts_tick'):     
+        """
+        将数据库中的数据转成csv格式
+        用于ts_tick数据库，因为一个表有30GB，直接用原来的方法获取更新列表需要20分钟，太耗时了
+        一次性函数，随着数据库清空，此函数将被停止使用
+        """
+        sql_1 = f"select code,date from ts_tick_status where (tick_status is null or tick_status = 0) and date between '2020/10/26' and '2020/12/31' order by date,code asc"
+        df_main = pd.read_sql_query(sql_1, self.engine)
+        for row in df_main.itertuples():
+            code_jqdata = getattr(row, 'code')
+            date = getattr(row, 'date')
+            code = code_jqdata[0:6]
+            #判断路径中是否存在相关数据
+            t = os.path.exists(f".\\data\\tick\\{date}\\{code_jqdata}.csv")
+            if t == True:
+                #存在数据，直接进行删除操作
+                try:
+                    sql_d = f"delete from {table_name} where code = '{code}' and date(time) = '{date}';"                   
+                    df = pd.read_sql_query( sql_d , self.engine)
+                except:
+                    print(f"{date} {code} 已删除")
+            else:
+                #不存在数据
+                #读取并写入数据
+                sql_2 = f"select time,price,`change`,volume,amount,type,`code` from {table_name} where code = '{code}' and date(time) = '{date}'"
+                df = pd.read_sql_query(sql_2 , self.engine)
+                df['code'] = code_jqdata
+                path = f".\\data\\tick\\{date.strftime('%Y-%m-%d')}\\"
+                if not os.path.exists(path):
+                    os.mkdir(path)               
+                df[['time','price','change','volume','amount','type','code']].to_csv(f"{path}{code_jqdata}.csv", encoding = 'utf_8_sig')
+                count = df.shape[0]
+                #print(f"{date} {code} 保存完毕")
+                #删除数据库数据并更新tick_status的对应日期和代码的数量
+                try:
+                    sql_u = f"update ts_tick_status set tick_status = {count} where code = '{code_jqdata}' and date = '{date}';"
+                    df = pd.read_sql_query( sql_u , self.engine)                     
+                except:
+                    pass
+                try:
+                    sql_d = f"delete from {table_name} where code = '{code}' and date(time) = '{date}';"                    
+                    df = pd.read_sql_query( sql_d , self.engine)                     
+                except:
+                    print(f"{date} {code} 已保存并删除") 
 if __name__=="__main__":
     tick = tick(rds_host = base.数据源.localhost , myauth = True)
     #判断文件是否存在
-    #tick.mysql_to_csv()
-    tick.tick数量校验()
+    #tick.tick_status_update(start_date = datetime.datetime(2020,10,26))
+    tick.mysql_to_csv_V2()
+
+    #tick.tick数量校验()
     #tick.daily_update(start_date = datetime.datetime(2021,1,1),end_date = datetime.datetime(2021,2,28))
-    #tick.daily_update(start_date = datetime.datetime(2021,1,1),end_date = datetime.datetime.now())
+    tick.daily_update(start_date = datetime.datetime(2021,4,1),end_date = datetime.datetime.now())
