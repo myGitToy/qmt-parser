@@ -170,12 +170,15 @@ class data(base):
                 if df_jqdata.empty == True:
                     print("%s 进行差集处理后剩余数据为空或者jqdata无数据，跳过上传" % (code))
                 else:
-                    df_jqdata.to_sql(
-                            name = 'jqdata_%s' % (ktype),
-                            con = self.engine,
-                            index = False,
-                            if_exists = 'append')
-                    print("%s 数据已上传完成(%s)" % (code,ktype))  
+                    try:
+                        df_jqdata.to_sql(
+                                name = 'jqdata_%s' % (ktype),
+                                con = self.engine,
+                                index = False,
+                                if_exists = 'append')
+                        print("%s 数据已上传完成(%s)" % (code,ktype))  
+                    except:
+                        print(f"{code} {ktype}更新错误，跳过")
 
     def update_v3(self , code_list = None , start_date = datetime.datetime(2020,1,1,1) , end_date = datetime.datetime.now() , ktype = '1d' ):
         """
