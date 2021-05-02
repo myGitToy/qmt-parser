@@ -10,17 +10,18 @@ class ETF(base):
     """
     专门处理ETF的类
     """
-    def update_fund_share_daily(self , start_date = datetime.datetime(2005,1,1) , end_date = datetime.datetime.now()):
+    def update_fund_share_daily(self , type = 'etf' , start_date = datetime.datetime(2005,1,1) , end_date = datetime.datetime.now()):
         """
         更新每日ETF净值信息
         start_date 开始日期 默认2020/1/1
         end_date 结束日期 默认当前时间
+        type：etf/lof 默认为etf
         """
         #获取更新列表
-        code_list = list(get_all_securities(['etf'] , date = end_date).index)
+        code_list = list(get_all_securities(types = type , date = end_date).index)
         #打印标题
-        print("############正在准备更新ETF每日净值信息###########")
-        print("当前ETF共有%s只基金" % len(code_list))
+        print("############正在准备更新基金（ETF/LOF）每日净值信息###########")
+        print(f"当前{type}共有{len(code_list)}只基金")
         """
         更新逻辑：
             1. 取出所有的ETF列表，进行单代码循环
@@ -49,7 +50,7 @@ class ETF(base):
             #print(df_share)
             #保存至数据库
             if df_share.empty == True:
-                print("%s 进行差集处理后剩余数据为空或者jqdata无数据，跳过上传" % (code))
+                print("%s 区间数据为空，跳过上传" % (code))
             else:
                 df_share.to_sql(
                         name = 'fund_share_daily',
