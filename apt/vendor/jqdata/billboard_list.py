@@ -54,6 +54,31 @@ class billboard_list(base):
                         index = False,
                         if_exists = 'append')
                 print("%s 数据已上传完成billboard_list)" % (day))
+
+    def monitor_code(self , code = None, date = datetime.datetime.now() , N = 5 ):
+        """
+        监控龙虎榜中指定的证券列表在指定日期前N天是否上榜
+        可应用于自选股的监控中
+        输入：
+            code 需要监控的股票代码  
+            date 指定的监控日期 datetime
+            N 指定的天数 比如10天内只要有触发都算
+
+        返回：
+            布林值 True/False 代表是否符合条件
+        """
+
+    def monitor_codelist(self , code_list = None, date = datetime.datetime.now() , N = 5 ):
+        """
+        监控龙虎榜中指定的证券列表在指定日期前N天是否上榜
+        可应用于自选股的监控中
+        输入：
+            code_list 需要监控的股票列表  list
+            date 指定的监控日期 datetime
+            N 指定的天数 比如10天内只要有触发都算
+        输出：
+            print数据 用于监控提醒
+        """
 if __name__=="__main__":
     auth('13817092632','JQ@tushare123')
     #显示所有列
