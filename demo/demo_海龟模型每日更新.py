@@ -34,7 +34,7 @@ code_list1.extend(code_list2)
 code_list = list(set(code_list1))
 
 #更新日线和60分钟线数据
-update_start = datetime.datetime(2021,4,9)
+update_start = datetime.datetime(2021,4,30)
 jq = data(rds_host = data.数据源.localhost , myauth = True )
 jq.update_v2(code_list = code_list , start_date = update_start , end_date = a.end , ktype = '1d' )
 jq.update_v2(code_list = code_list , start_date = update_start , end_date = a.end , ktype = '60m' )

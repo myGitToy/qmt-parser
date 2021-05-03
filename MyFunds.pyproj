@@ -75,12 +75,21 @@
     <Compile Include="apt\vendor\jqdata\ETF.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="apt\vendor\jqdata\finance\__init__.py" />
+    <Compile Include="apt\vendor\jqdata\billboard_list.py" />
+    <Compile Include="apt\vendor\jqdata\hk\STK_HK_HOLD_INFO.py" />
+    <Compile Include="apt\vendor\jqdata\hk\__init__.py" />
+    <Compile Include="apt\vendor\jqdata\stk_hk_hold_info.py" />
     <Compile Include="apt\vendor\jqdata\jqdata.py" />
+    <Compile Include="apt\vendor\jqdata\finance\finance_valuation.py" />
     <Compile Include="apt\vendor\jqdata\money_flow.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="apt\vendor\jqdata\__init__.py" />
     <Compile Include="apt\vendor\tspro\base.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="apt\vendor\tspro\tick.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="apt\vendor\tspro\tspro.py">
@@ -89,6 +98,12 @@
     <Compile Include="apt\vendor\tspro\__init__.py" />
     <Compile Include="apt\vendor\__init__.py" />
     <Compile Include="apt\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_jqdata_其他类数据日常更新.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_stk.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_海龟模型每日更新.py" />
@@ -129,9 +144,6 @@
     <Compile Include="demo\demo_jqdata.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="demo\demo_jqdata_valuation.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="demo\demo_jqdata_财务数据_合并资产负债表.py" />
     <Compile Include="demo\demo_jqdata_市值计算.py" />
     <Compile Include="demo\demo_jqdata_money_flow.py">
@@ -147,9 +159,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_qsp_test.py" />
-    <Compile Include="demo\demo_read_excel.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="demo\demo_tspro_tokon.py">
       <SubType>Code</SubType>
     </Compile>
@@ -193,7 +202,7 @@
     <Compile Include="apt\qsp_jqdata\k.py" />
     <Compile Include="apt\qsp_jqdata\vol.py" />
     <Compile Include="apt\qsp_jqdata\__init__.py" />
-    <Compile Include="tick.py">
+    <Compile Include="demo_ts_测试技术指标模块.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="data_windows.py" />
@@ -216,6 +225,8 @@
     <Folder Include="apt\testA\" />
     <Folder Include="apt\os\" />
     <Folder Include="apt\vendor\jqdata\" />
+    <Folder Include="apt\vendor\jqdata\finance\" />
+    <Folder Include="apt\vendor\jqdata\hk\" />
     <Folder Include="apt\vendor\tspro\" />
     <Folder Include="fund\" />
     <Folder Include="apt\" />

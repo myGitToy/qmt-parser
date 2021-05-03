@@ -43,7 +43,6 @@ class base():
             dataframe ：包含开盘 收盘 最高 最低 成交量 成交额 代码
             注：只返回基础数据，其他类似于MA ATR信息由其他函数进行计算
         """
-        #最后日期为空，则打开数据自动更新功能
         a = jqdata(rds_host = self.server , myauth = self.myauth)
         #此处的get_k_data从vendor.jqdata.data.get_k_data取数据，非tushare
         df = a.get_k_data(code = self.code , start_date = self.start , end_date = self.end , ktype = self.ktype , fq = self.fq)
