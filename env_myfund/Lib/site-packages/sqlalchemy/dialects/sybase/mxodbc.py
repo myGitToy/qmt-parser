@@ -1,5 +1,5 @@
 # sybase/mxodbc.py
-# Copyright (C) 2005-2020 the SQLAlchemy authors and contributors
+# Copyright (C) 2005-2021 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
 #
 # This module is part of SQLAlchemy and is released under
@@ -15,7 +15,6 @@
 .. note::
 
     This dialect is a stub only and is likely non functional at this time.
-
 
 """
 from sqlalchemy.connectors.mxodbc import MxODBCConnector

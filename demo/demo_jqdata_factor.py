@@ -11,14 +11,18 @@ import sqlalchemy
 """
 #显示所有列
 pd.set_option('display.max_columns', None)
+pd.set_option('display.max_rows', None)
 auth('13817092632','JQ@tushare123')
-day = datetime.datetime(2020,9,8,16)
+day = datetime.datetime(2020,12,4,16)
 code = '159949.XSHE'
 df_remain = get_query_count()
 print(df_remain)
 #动态复权
 #df = get_bars(security = code , count = 10, unit = '60m' , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'] , include_now = False , end_dt = day, fq_ref_date = day , df = True)
 #不复权
+df_jqdata = get_bars(security = '511230.XSHG' , count = 30 , unit = '1d' , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'] , include_now = False , end_dt = day , df = True)
+df_jqdata.dropna(inplace = True)
+print(df_jqdata)
 df = get_bars(security = code , count = 60, unit = '60m' , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'] , include_now = False , end_dt = day, df = True)
 
 
