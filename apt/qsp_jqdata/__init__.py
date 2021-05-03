@@ -8,10 +8,8 @@ Quantitative stock picking 量化选股系统
 
 
 """
-from datetime import datetime,timedelta
 import numpy as np
 import pandas as pd
-import tushare as ts
 import logging
 import apt.os
 def print_tree_list():

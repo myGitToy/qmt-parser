@@ -42,9 +42,9 @@ class data(base):
         #设置规则下需要更新的数目（按一天的量进行计算）
         update_num = self.__get_update_count(trade_days = 1 , ktype = ktype)
         for day in trade_days:
-            print("##############正在更新%s数据##############" % day.strftime("%Y-%m-%d"))
+            print(f"##############正在更新%s数据##############" % day.strftime("%Y-%m-%d"))
             df_remain = get_query_count()
-            print("当日数据剩余条目数：%s" % df_remain)
+            #print("当日数据剩余条目数：%s" % df_remain)
             #print(datetime.now())
             for code in code_list:
                 #检查数据库是否存在数据
@@ -170,12 +170,15 @@ class data(base):
                 if df_jqdata.empty == True:
                     print("%s 进行差集处理后剩余数据为空或者jqdata无数据，跳过上传" % (code))
                 else:
-                    df_jqdata.to_sql(
-                            name = 'jqdata_%s' % (ktype),
-                            con = self.engine,
-                            index = False,
-                            if_exists = 'append')
-                    print("%s 数据已上传完成(%s)" % (code,ktype))  
+                    try:
+                        df_jqdata.to_sql(
+                                name = 'jqdata_%s' % (ktype),
+                                con = self.engine,
+                                index = False,
+                                if_exists = 'append')
+                        print("%s 数据已上传完成(%s)" % (code,ktype))  
+                    except:
+                        print(f"{code} {ktype}更新错误，跳过")
 
     def update_v3(self , code_list = None , start_date = datetime.datetime(2020,1,1,1) , end_date = datetime.datetime.now() , ktype = '1d' ):
         """
@@ -291,28 +294,39 @@ class data(base):
         399006.XSHE	创业板指
         """
         #全指数列表 目前暂不启用
-        code_list = list(get_all_securities(['index'] , date = end_date).index)
+        #code_list = list(get_all_securities(['index'] , date = end_date).index)
         #优先更新指数列表
         #备注：399001.XSHG深成指在2019年11月的数据有错误
-        code_list = ['000001.XSHG','000016.XSHG','000010.XSHG','000300.XSHG','000688.XSHG','000905.XSHG','000852.XSHG','399005.XSHE','399006.XSHE']
+        code_list =['399001.XSHE']
+        #code_list = ['000001.XSHG','000016.XSHG','000010.XSHG','000300.XSHG','000688.XSHG','000905.XSHG','000852.XSHG','399001.XSHE','399005.XSHE','399006.XSHE']
             
         #code_list = ['399001.XSHE']
         self.update_v2(code_list = code_list , start_date = start_date , end_date = end_date, ktype = ktype)
 
-    def get_k_data(self , code = None ,  
-                 start_date = datetime.datetime(2020,1,1,1,8) , end_date = datetime.datetime.now()  , 
+    def get_k_data(self , code = None , start_date = datetime.datetime(2020,1,1,1,8) ,end_date = datetime.datetime.now()  , 
+                 count = None ,
                  col = ['code','date','open','close','high','low','volume','money','factor'] , 
-                 ktype = '1d' , fq = base.复权.动态复权):
+                 ktype = '1d' , 
+                 fq = base.复权.动态复权):
         
         """
         jqdata数据加载模块
         start_time：开始时间 最好带上小时参数  比如(2020,12,31,8)
         end_time：结束时间 最好带上小时参数  比如(2020,12,31,16)
+        count : 获取K线条目的个数 默认是全部输出  
         接受前复权 后复权 不复权 动态复权四种复权模式
         成交量、成交额目前未进行复权处理
+        返回的数据按照升序排列（backtrader要求的数据格式）
         """
-        query = "select * from jqdata_%s where code = '%s' and date BETWEEN '%s' and '%s'" % (ktype , code , start_date, end_date)         
+        if code == None :
+            print("证券代码不能为空")
+            return
+        query = "select * from jqdata_%s where code = '%s' and date BETWEEN '%s' and '%s' order by date asc" % (ktype , code , start_date, end_date)         
         df_db = pd.read_sql_query(query , self.engine)
+        #处理需要返回的个数
+        if count == None:
+            #返回全部
+            count = len(df_db)
         if df_db.empty == True:
             #无数据
             print("无数据")
@@ -320,7 +334,7 @@ class data(base):
         else:
             #有数据，进行复权处理
             if fq == self.复权.不复权:
-                return df_db
+                return df_db.iloc[-count:][col]
             elif fq ==self.复权.前复权:
                 #前复权价格 = 当日价格 / 最后一个交易日（非end_date）的复权因子 * 当日复权因子
                 factor = self.__get_last_factor(code = code)
@@ -328,7 +342,7 @@ class data(base):
                 df_db['high'] = df_db['high'] / factor * df_db['factor']
                 df_db['low'] = df_db['low'] / factor * df_db['factor']
                 df_db['close'] = df_db['close'] / factor * df_db['factor']
-                return df_db[col]
+                return df_db.iloc[-count:][col]
             elif fq ==self.复权.后复权:
                 #后复权价格 = 当日价格 / 第一个交易日（start_date）的复权因子 * 当日复权因子    
                 #获取第一一个复权因子的数值
@@ -337,7 +351,7 @@ class data(base):
                 df_db['high'] = df_db['high'] / factor * df_db['factor']
                 df_db['low'] = df_db['low'] / factor * df_db['factor']
                 df_db['close'] = df_db['close'] / factor * df_db['factor']
-                return df_db[col]
+                return df_db.iloc[-count:][col]
             elif fq ==self.复权.动态复权:
                 #动态复权价格 = 当日价格 / 区间最后一天的复权因子 * 当日复权因子
                 #获取最后一个复权因子的数值
@@ -346,11 +360,25 @@ class data(base):
                 df_db['high'] = df_db['high'] / factor * df_db['factor']
                 df_db['low'] = df_db['low'] / factor * df_db['factor']
                 df_db['close'] = df_db['close'] / factor * df_db['factor']
-                return df_db[col]
+                return df_db.iloc[-count:][col]
             else:
                 print("不支持的复权模式，请检查！")
                 return df_db
 
+    def jqdata_to_backtrader(self , df = None):
+        """
+        将jqdata数据格式转换成backtrader格式
+        """
+        if df.empty == True:
+            #无数据
+            print("无有效数据 请检查")
+            return pd.dataframe()
+        else:
+            #有数据
+            df['openinterest'] = 0
+            df['datatime'] = pd.to_datetime(df['date'])
+            df.set_index(['datatime'], inplace=True)
+            return df[['open','high','low','close','volume','openinterest']]
     def __get_last_factor(self , code = None , day = datetime.datetime(2020,12,1)):
         """
         获取指定股票的最后复权因子（内部函数）
@@ -396,3 +424,20 @@ class data(base):
         else:
             #不属于交易日
             return self.交易时段校验.非交易日
+
+    def read_excel(file_name = None , sheet_name = None):
+        """
+        读取excel数据
+        注意事项：
+            1. 默认引擎为xlrd，目前高版本已不支持xlsx文件
+            2. 切换引擎至openpyxl 
+            3. 上述两个引擎都需要额外pip install
+            4. 表的名称和列的名称目前都支持中文
+            5. 读取时excel表格必须处于关闭状态，否则会报错（已通过增加exception做到提示错误信息）
+        """
+        try:
+            df = pd.read_excel( file_name, sheet_name = sheet_name , engine = 'openpyxl' )
+            return df
+        except Exception as e:
+            print(str(e))
+            return pd.DataFrame()

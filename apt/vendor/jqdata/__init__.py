@@ -2,7 +2,7 @@
 
 """
 【vendor系统】
-数据供应商系统 tushare Pro
+数据供应商系统 jqdatasdk本地数据服务
 
 
 

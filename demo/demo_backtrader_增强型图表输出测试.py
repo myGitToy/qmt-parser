@@ -68,7 +68,7 @@ class TestStrategy(bt.Strategy):
 
 def get_k_data():
         engine = sqlalchemy.create_engine('mysql+pymysql://stock_user:a@1#Yy1c@localhost:3306/stock')
-        query = "select date as datatime,open,high,low,close,volume from jqdata_1d where code = '512660.XSHG' and DATE(date) between '2020-2-1' and '2021-02-21'"    
+        query = "select date as datatime,open,high,low,close,volume from jqdata_1d where code = '002292.XSHE' and DATE(date) between '2020-2-1' and '2021-02-21'"    
         df_db = pd.read_sql_query(query , engine)
         if df_db.empty == True:
             #无数据
