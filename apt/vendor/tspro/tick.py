@@ -251,13 +251,13 @@ if __name__=="__main__":
     tick = tick(rds_host = base.数据源.localhost , myauth = True)
 
     #新版的ts_tick导出程序 由于存在bug，start_date需要做动态调整，否则会重复输出
-    #tick.mysql_to_csv_V2(start_date = datetime.datetime(2021,1,13),end_date = datetime.datetime(2021,2,28))
+    tick.mysql_to_csv_V2(start_date = datetime.datetime(2021,1,14),end_date = datetime.datetime(2021,2,28))
     
     #12月
     #tick.mysql_to_csv_V2(start_date = datetime.datetime(2020,12,1),end_date = datetime.datetime(2020,12,31))
    
     #10-11月
-    tick.mysql_to_csv_V2(start_date = datetime.datetime(2020,10,29),end_date = datetime.datetime(2020,11,30))
+    #tick.mysql_to_csv_V2(start_date = datetime.datetime(2020,10,30),end_date = datetime.datetime(2020,11,30))
     #数据校验模块，跑完所有的tick数据导出后可以重新拉一遍校验数据
     #tick.tick数量校验()
     
