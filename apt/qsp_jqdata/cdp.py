@@ -23,8 +23,11 @@ AL = CDP - (最高價 - 最低價
 CDP為當天軋平的超短線操作法，務必當天沖銷(利用融資融卷)軋平。若當天盤中無法達到所設定理想的買賣價位時，亦應以當日的收盤價軋平。
 """
 class CDP(base):
-    #CDP只迁移 没有完成测试
     """
+    使用时请采用以下调用方法：
+    from apt.qsp_jqdata.cdp import CDP
+    a = CDP(code = '159949.XSHE',start = start , end = end , ktype = '60m')
+
     def __init__(self,code=None,start=None,end=None):
         ####这里删除了初始化代码，直接使用父类，下面的代码使用super也是可行的
         #调用父类进行初始化
@@ -35,7 +38,7 @@ class CDP(base):
         #默认CDP计算使用的是前一天的数据，但如果idx_tomorrow=True，则输出预测第二个交易日的数据，且只输出一行
         if idx_tomorrow is False:
             #计算整个矩阵
-            df = super(CDP,self).get_data()
+            df = super(CDP,self).get_k_data()
             #CDP = (最高價 + 最低價 + 2*收盤價) /4
             df['CDP'] = (df['high'].shift(1) + df['low'].shift(1) + 2 * df['close'].shift(1)) / 4 
             #最高值(AH)、(NH)、近低值(NL)及最低值(AL)
@@ -69,7 +72,5 @@ class CDP(base):
             df['AL'] = df['CDP'] - (df['high'] - df['low'])
             df['AL_pct'] = round(((df['AL'] - df['close']) / df['close']) * 100 , 2)
             #计算CDP对应的涨跌幅
-
-            print(df)
         pass
 
