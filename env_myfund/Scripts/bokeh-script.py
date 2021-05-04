@@ -1,10 +1,10 @@
 #!C:\Users\GHUIQ\OneDrive\pythonÏîÄ¿\MyFunds\MyFunds\env_myfund\Scripts\python.exe
-# EASY-INSTALL-ENTRY-SCRIPT: 'bokeh==2.0.2','console_scripts','bokeh'
+# EASY-INSTALL-ENTRY-SCRIPT: 'bokeh==2.3.0','console_scripts','bokeh'
 import re
 import sys
 
 # for compatibility with easy_install; see #2198
-__requires__ = 'bokeh==2.0.2'
+__requires__ = 'bokeh==2.3.0'
 
 try:
     from importlib.metadata import distribution
@@ -30,4 +30,4 @@ globals().setdefault('load_entry_point', importlib_load_entry_point)
 
 if __name__ == '__main__':
     sys.argv[0] = re.sub(r'(-script\.pyw?|\.exe)?$', '', sys.argv[0])
-    sys.exit(load_entry_point('bokeh==2.0.2', 'console_scripts', 'bokeh')())
+    sys.exit(load_entry_point('bokeh==2.3.0', 'console_scripts', 'bokeh')())
