@@ -10,7 +10,7 @@ class base():
     量化选股系统的基类(聚宽数据接口)
     使用jqdata.base作为基类
     """
-    def __init__(self , code = None , start = datetime.datetime(2021,1,1), end = datetime.datetime.now() , ktype = "1d" , fq = jqdata.复权.动态复权 , fwq = jqdata.数据源.localhost , myauth = True , auto_update = True):
+    def __init__(self , code = None , start = datetime.datetime(2021,1,1), end = datetime.datetime.now() , ktype = "1d" , fq = jqdata.复权.动态复权 , fwq = jqdata.数据源.localhost , myauth = True ):
         """
         初始化
         输入：
@@ -28,7 +28,7 @@ class base():
         self.start = start
         self.end = end
         self.ktype = ktype
-        self.auto_update = auto_update
+        #self.auto_update = auto_update
         self.fq = fq
         self.myauth = myauth
         self.server = fwq
