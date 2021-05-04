@@ -318,10 +318,11 @@ class data(base):
         成交量、成交额目前未进行复权处理
         返回的数据按照升序排列（backtrader要求的数据格式）
         """
+        if ktype not in ['1d','1m','5m','30m','60m']:
+            raise ValueError(f'不合规的K线类型: {ktype}')
         if code == None :
-            print("证券代码不能为空")
-            return
-        query = "select * from jqdata_%s where code = '%s' and date BETWEEN '%s' and '%s' order by date asc" % (ktype , code , start_date, end_date)         
+            raise ValueError(f'证券代码不能为空')
+        query = f"select * from jqdata_{ktype} where code = '{code}' and date BETWEEN '{start_date}' and '{end_date}' order by date asc"         
         df_db = pd.read_sql_query(query , self.engine)
         #处理需要返回的个数
         if count == None:
@@ -362,7 +363,7 @@ class data(base):
                 df_db['close'] = df_db['close'] / factor * df_db['factor']
                 return df_db.iloc[-count:][col]
             else:
-                print("不支持的复权模式，请检查！")
+                raise ValueError(f'不支持的复权模式，请检查！')
                 return df_db
 
     def jqdata_to_backtrader(self , df = None):
