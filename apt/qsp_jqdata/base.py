@@ -47,3 +47,24 @@ class base():
         #此处的get_k_data从vendor.jqdata.data.get_k_data取数据，非tushare
         df = a.get_k_data(code = self.code , start_date = self.start , end_date = self.end , ktype = self.ktype , fq = self.fq)
         return df
+
+    def get_rolling_k(self , ktype = "1d"):
+        """
+        抽取出来的总类，用于获取最新的K线数据，含自动更新
+        输入：
+            ktype：K线类型 e.g. D 60 30
+        返回：
+            根据K线类型计算出来的当日K线总条数 
+        """
+        if ktype == "1d":
+            #日线数据
+            return 1
+        elif ktype in ('15m','30m','60m'):
+            #K线数据（文本类型）
+            return 60 / int(ktype[0:2]) * 4
+        elif ktype in ('1m'):
+            #K线数据（数字类型）
+            return 60
+        else:
+            print("K线类型输入无效，按照默认日线数据返回结果")
+            return 1
