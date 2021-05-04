@@ -103,6 +103,9 @@
     <Compile Include="demo\demo_jqdata_其他类数据日常更新.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="demo\demo_qsp迁移模块.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="demo\demo_stk.py">
       <SubType>Code</SubType>
     </Compile>
