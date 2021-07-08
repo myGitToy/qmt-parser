@@ -116,8 +116,15 @@ class data(base):
         #更新时段校验 如果更新的是日线数据且校验为更新时段，则不予以更新
         check = self.get_today_is_trade()
         if (ktype == '1d') and (check == self.交易时段校验.交易时段):
-            print("日线数据不允许在交易时段更新")
-            return 0
+            #新版逻辑可以在盘中更新T-1日前的日线数据
+            #盘中更新日线数据再加一层判断：是否更新当日的数据
+            day_T = datetime.datetime.now()
+            if end_date.date() == day_T.date():
+                end_date = datetime.datetime.now()+datetime.timedelta(days=-1)
+                print("日线数据盘中仅更新至T-1日")
+
+            #print("日线数据不允许在交易时段更新")
+            #return 0
         #获取交易日期
         trade_days = get_trade_days(start_date = start_date , end_date = end_date)
         #获取更新列表
@@ -144,7 +151,7 @@ class data(base):
                 #print(end_day)
                 #日线进行日期偏移，需要特殊处理
                 if ktype == '1d': 
-                    end_date = end_date + datetime.timedelta(days=1)
+                    end_date = end_date + datetime.timedelta(days = 1)
                 df_jqdata = get_bars(security = code , count = count_suppose , unit = ktype , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'] , include_now = False , end_dt = end_date , df = True)
                 df_jqdata['code'] = code
                 #df_jqdata.to_csv('.\\data\\399001_jqdata.csv', encoding = 'utf_8_sig')
@@ -297,8 +304,8 @@ class data(base):
         #code_list = list(get_all_securities(['index'] , date = end_date).index)
         #优先更新指数列表
         #备注：399001.XSHG深成指在2019年11月的数据有错误
-        code_list =['399001.XSHE']
-        #code_list = ['000001.XSHG','000016.XSHG','000010.XSHG','000300.XSHG','000688.XSHG','000905.XSHG','000852.XSHG','399001.XSHE','399005.XSHE','399006.XSHE']
+        #code_list =['399001.XSHE']
+        code_list = ['000001.XSHG','000016.XSHG','000010.XSHG','000300.XSHG','000688.XSHG','000905.XSHG','000852.XSHG','399001.XSHE','399005.XSHE','399006.XSHE']
             
         #code_list = ['399001.XSHE']
         self.update_v2(code_list = code_list , start_date = start_date , end_date = end_date, ktype = ktype)
@@ -331,7 +338,7 @@ class data(base):
         if df_db.empty == True:
             #无数据
             print("无数据")
-            return pd.dataframe()
+            return pd.DataFrame()
         else:
             #有数据，进行复权处理
             if fq == self.复权.不复权:
@@ -417,7 +424,7 @@ class data(base):
         check_valid = get_trade_days(end_date = today, count = 1)
         if check_valid == today.date():
             #属于交易日
-            if  datetime.time(9,0,0) < today.time() < datetime.time(15,30,0):
+            if  datetime.time(9,0,0) < today.time() < datetime.time(15,15,0):
                 #交易时段
                 return self.交易时段校验.交易时段
             else:
