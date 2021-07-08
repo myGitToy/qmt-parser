@@ -251,11 +251,6 @@ class tick(base):
                     print(f"{date} {code} 已保存并删除，条目数{count}") 
 if __name__=="__main__":
     tick = tick(rds_host = base.数据源.localhost , myauth = True)
-
-    code_new = '000001.XSHG'
-    code = code_new[0:6]
-    code_jqdata = normalize_code(str(code))
-    print(code_jqdata)
     #旧版ts_tick导出程序
     #tick.mysql_to_csv()
 
@@ -263,12 +258,12 @@ if __name__=="__main__":
     #tick.mysql_to_csv_V2(start_date = datetime.datetime(2021,1,14),end_date = datetime.datetime(2021,2,28))
     
     #12月
-    #tick.mysql_to_csv_V2(start_date = datetime.datetime(2020,12,1),end_date = datetime.datetime(2020,12,31))
+    #tick.mysql_to_csv_V2(start_date = datetime.datetime(2020,12,31),end_date = datetime.datetime(2020,12,31))
    
     #10-11月
-    tick.mysql_to_csv_V2(start_date = datetime.datetime(2020,11,2),end_date = datetime.datetime(2020,11,30))
+    #tick.mysql_to_csv_V2(start_date = datetime.datetime(2020,11,30),end_date = datetime.datetime(2020,11,30))
     #数据校验模块，跑完所有的tick数据导出后可以重新拉一遍校验数据
     #tick.tick数量校验()
     
     #日常更新模块
-    #tick.daily_update(start_date = datetime.datetime(2021,4,1),end_date = datetime.datetime.now())
+    tick.daily_update(start_date = datetime.datetime(2021,6,1),end_date = datetime.datetime.now())
