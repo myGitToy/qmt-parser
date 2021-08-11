@@ -13,6 +13,7 @@
     <RootNamespace>MyFunds</RootNamespace>
     <InterpreterId>MSBuild|env_myfund|$(MSBuildProjectFullPath)</InterpreterId>
     <TestFramework>Pytest</TestFramework>
+    <SuppressEnvironmentCreationPrompt>True</SuppressEnvironmentCreationPrompt>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -109,6 +110,12 @@
     <Compile Include="demo\demo_stk.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="demo\demo_市值相对强弱VSI测试.py">
+      <Publish>True</Publish>
+    </Compile>
+    <Compile Include="demo\demo_海龟模型文件合并测试.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="demo\demo_海龟模型每日更新.py" />
     <Compile Include="demo\demo_atr_index.py">
       <SubType>Code</SubType>
@@ -170,6 +177,9 @@
     </Compile>
     <Compile Include="demo\demo_历史分笔.py" />
     <Compile Include="demo\demo_绘图2.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_远程读取网易tick数据.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="fund\class1.py">

@@ -17,7 +17,7 @@ from apt.vendor.jqdata.hk.stk_hk_hold_info import STK_HK_HOLD_INFO as hk
 开始日期不需要频繁更新，每半年或每季度重置即可
 """
 ######初始化######
-start = datetime.datetime(2021,5,1)
+start = datetime.datetime(2021,8,1)
 end = datetime.datetime.now()
 #数据授权和数据库指定
 base = base(rds_host = base.数据源.localhost , myauth = True)
