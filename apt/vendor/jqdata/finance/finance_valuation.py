@@ -47,10 +47,10 @@ class finance_valuation(base):
                 print("%s 数据已上传完成valuation)" % (day))
 
 if __name__=="__main__":
-    #此模块用于历史数据的更新，目前未进行数据更新
+    #此模块用于历史数据的更新，目前已完成历史数据更新
     #测试数据
     val = finance_valuation()
     #val.daily_update()
-    start = datetime.datetime(2013,1,1)
+    start = datetime.datetime(2019,1,1)
     end = datetime.datetime.now()
     val.daily_update(start_date = start , end_date = end)
