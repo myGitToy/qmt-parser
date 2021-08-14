@@ -8,6 +8,7 @@ Prank数据
 """
 import pandas as pd
 import datetime
+from jqdatasdk import *
 from backtrader import talib
 from apt.qsp_jqdata.atr import ATR
 from apt.qsp_jqdata.k import k
@@ -19,6 +20,7 @@ pd.set_option('display.max_columns', None)
 a = ATR()
 rank = prank()
 a.myauth = False
+auth('13817092632','JQ@tushare123')
 #a.code = '601318.XSHG'
 a.ktype = '1d'
 a.start = datetime.datetime(2020,11,1)
@@ -31,7 +33,19 @@ code_list2 = data.read_excel(file_name = '.\\data\\海龟模型\\自选股列表
 
 #######2. 合并自选股列表并去重
 code_list1.extend(code_list2)
+#获取代码列表
 code_list = list(set(code_list1))
+
+#名字列表初始化并且获取数据
+df_list_tmp = {'code':code_list}
+df_name_list = pd.DataFrame(df_list_tmp)
+#增加代码列
+df_name_list['name']=0
+#设定DataFrame，用于储存代码和名称
+for code in code_list:
+    name = get_security_info(code).display_name
+    #给指定单元格赋值
+    df_name_list.loc[df_name_list['code']==code,'name'] = name
 
 #更新日线和60分钟线数据
 update_start = datetime.datetime(2021,7,20)
@@ -41,6 +55,8 @@ jq.update_v2(code_list = code_list , start_date = update_start , end_date = a.en
 
 #######3. 获取ATR数据
 df_atr = a.daily_update(code_list = code_list , N = 14 , to_csv = False)
+#ATR数据增加一个证券名称task:232(ps:加错地方了，但是考虑到excel文件已经修改，因此保留)
+df_atr = pd.merge(df_atr,df_name_list,how='left',on = 'code')
 
 #######4. ATR数据存盘
 #df_atr.to_excel('.\\data\\海龟模型\\海龟模型JQDATA.xlsx', sheet_name='RAW_ATR',  header=True, index=False)
@@ -64,6 +80,9 @@ df_prank = pd.merge(df_prank , df_atr[['day','code','ATR']] , on = ['day','code'
 print(f"更新后数据行数：{df_prank.shape[0]}；列数：{df_prank.shape[1]}")
 #df_prank['p75ATR'] = df_prank['p75'] / df_prank['ATR']
 df_prank['p75ATR'] = (df_prank['close'] - df_prank['p75'] ) / df_prank['ATR']
+#prank数据增加一个证券名称task:232
+df_prank = pd.merge(df_prank,df_name_list,how='left',on = 'code')
+
 #######6. PRANK数据存盘(新版本加入P75ATR列)
 #df_prank.to_csv('.\\data\\海龟模型\\prank_jqdata_tmp.csv', encoding = 'utf_8_sig')
 df_prank.to_csv('.\\data\\海龟模型\\prank_jqdata.csv', encoding = 'utf_8_sig')
