@@ -62,9 +62,11 @@ class base():
         elif ktype in ('15m','30m','60m'):
             #K线数据（文本类型）
             return 60 / int(ktype[0:2]) * 4
+        elif ktype in ('5m'):
+            return 48
         elif ktype in ('1m'):
             #K线数据（数字类型）
-            return 60
+            return 240
         else:
             print("K线类型输入无效，按照默认日线数据返回结果")
             return 1
