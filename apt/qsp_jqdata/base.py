@@ -32,7 +32,13 @@ class base():
         self.fq = fq
         self.myauth = myauth
         self.server = fwq
-
+        #数据校验环节：
+        #1. 证券代码不能为空
+        #if code == None:
+            #raise ValueError(f'证券代码不能为空')
+        #2. 开始日期必须早于结束日期  (这里的校验实际没有进行)      
+        if start  > end:
+            raise ValueError(f'开始日期必须早于结束日期')
 
     def get_k_data(self):
         """

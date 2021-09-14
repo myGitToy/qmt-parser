@@ -310,7 +310,7 @@ class data(base):
         #code_list = ['399001.XSHE']
         self.update_v2(code_list = code_list , start_date = start_date , end_date = end_date, ktype = ktype)
 
-    def get_k_data(self , code = None , start_date = datetime.datetime(2020,1,1,1,8) ,end_date = datetime.datetime.now()  , 
+    def get_k_data(self , code = None , start_date = datetime.datetime(2005,1,1,1,8) ,end_date = datetime.datetime.now()  , 
                  count = None ,
                  col = ['code','date','open','close','high','low','volume','money','factor'] , 
                  ktype = '1d' , 
@@ -325,6 +325,8 @@ class data(base):
         成交量、成交额目前未进行复权处理
         返回的数据按照升序排列（backtrader要求的数据格式）
         """
+        if start_date  > end_date:
+            raise ValueError(f'开始日期必须早于结束日期')
         if ktype not in ['1d','1m','5m','30m','60m']:
             raise ValueError(f'不合规的K线类型: {ktype}')
         if code == None :
