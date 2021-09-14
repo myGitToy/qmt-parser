@@ -16,5 +16,5 @@ a.myauth = False
 #print(vol_amt)
 
 #vol异常值筛选
-vol_abnormal = a.money_abnormal_change(criteria = 2 ,count = 5)
+vol_abnormal = a.money_abnormal_change(criteria = 2 ,count = 5 , N=4)
 print(vol_abnormal)

@@ -41,8 +41,7 @@ class vol(base):
     def money_abnormal_change(self , vol_ma = 20 , criteria = 2 , N = 5 , count = 1 ):
         """
         计算区间是否存在成交量异动
-        HIGH LOW 成交额 1e8 = 1亿 1e6 = 100万
-        ma 需要回滚ma根均线的成交量均值作为比较基准，默认是20天均值
+        vol_ma 需要回滚ma根均线的成交量均值作为比较基准，默认是20天均值
         criteria 异动的标准 默认为均值ma的两倍
         N 几天内出现这种情况算是符合条件 默认为一周内，即5天。如需计算当天的情况，则N = 1
         count N周期内出现几次算符合条件 count <= N
@@ -50,11 +49,13 @@ class vol(base):
             计算某代码是否在3天内有2次超过平均成交量3倍以上的情况
         【返回值】 DataFrame：证券代码 日期 成交量异动？？？？？暂定 目前不确定  也可能是T/F形式
         """   
+        #数据校验
+        if count > N:
+            raise ValueError(f'无法计算{N}天内出现{count}次的情况，请检查逻辑')
         #获取数据
         df = self.get_k_data()
         if df.empty == True:
             raise ValueError(f'数据为空，请检查！')
-
         #返回rolling数
         x_rolling = int(self.get_rolling_k(self.ktype))
         #截断函数，减少工作量
@@ -66,7 +67,7 @@ class vol(base):
         df = df.fillna(0)
         df['abnormal_amout'] = df['abnormal'].rolling(count).sum()
         #print(df)        
-        if df.iloc[-1].at['abnormal_amout'] >= 1 :
+        if df.iloc[-1].at['abnormal_amout'] >= count :
             return True
         else:
             return False
