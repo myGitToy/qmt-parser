@@ -47,7 +47,8 @@ class vol(base):
         count N周期内出现几次算符合条件 count <= N
         【例】money_abnormal_change(range = 20 ,criteria = 3 , N = 3 , count = 2 )
             计算某代码是否在3天内有2次超过平均成交量3倍以上的情况
-        【返回值】 DataFrame：证券代码 日期 成交量异动？？？？？暂定 目前不确定  也可能是T/F形式
+        【返回值】 T/F
+        暂存，已无用 DataFrame：证券代码 日期 成交量异动？？？？？暂定 目前不确定  也可能是T/F形式
         """   
         #数据校验
         if count > N:
