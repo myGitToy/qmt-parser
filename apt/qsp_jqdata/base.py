@@ -36,7 +36,10 @@ class base():
         #1. 证券代码不能为空
         #if code == None:
             #raise ValueError(f'证券代码不能为空')
-        #2. 开始日期必须早于结束日期  (这里的校验实际没有进行)      
+        #2. 开始日期必须早于结束日期（两个日期start end 必须是同一类型）
+        #start和end数据类型统一成datetime(对应bug id：244 未实装)
+        #if (isinstance(start , str) == True and :
+            #start = datetime.datetime(start)
         if start  > end:
             raise ValueError(f'开始日期必须早于结束日期')
         #3. K线类型校验
