@@ -39,6 +39,9 @@ class base():
         #2. 开始日期必须早于结束日期  (这里的校验实际没有进行)      
         if start  > end:
             raise ValueError(f'开始日期必须早于结束日期')
+        #3. K线类型校验
+        if ktype not in ('1d','60m','30m','15m','5m','1m'):
+            raise ValueError(f'不支持的K线类型：{ktype}')
 
     def get_k_data(self):
         """
