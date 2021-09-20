@@ -104,10 +104,14 @@
     <Compile Include="demo\demo_apply_test.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="demo\demo_backtrader_夏普比率.py" />
     <Compile Include="demo\demo_jqdata_其他类数据日常更新.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_stk.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_vol_test.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_市值相对强弱VSI测试.py">
