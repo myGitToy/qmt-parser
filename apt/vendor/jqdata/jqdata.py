@@ -447,3 +447,72 @@ class data(base):
         except Exception as e:
             print(str(e))
             return pd.DataFrame()
+
+
+    def get_all_code(self , end_date = datetime.datetime.now() , type = "'stock','etf'", local = True , min_cap = 0 , max_cap = 10000):
+        """
+        读取所有证券代码列表
+        本函数提供下游K线形态、量价分析使用
+        【输入】
+            end_date 取代码的基准日期 默认为当天
+            local 是否脱机查询 默认为脱机
+            type 数据类型 "'stock','index','fund','etf','lof','fja','fjb'" 默认为stock+etf
+            include_ETF 包含ETF数据 默认为否
+            min_cap 最小市值(总市值)要求(单位：亿) 100亿则输入 默认为0
+            max_cap 最大市值(总市值)要求(单位：亿) 10000万亿则输入 默认为10000亿
+            min_daily_money_etf 最小交易量要求（ETF专用）1000万则输入 默认为0
+            max_daily_money_etf 最大交易量要求（ETF专用）1000亿则输入 默认1000亿 
+            N_daliy_money_etf 交易量为N天的均值（ETF专用） 默认为5天均值
+        【输出】
+            dataframe:date|code|ETF|cap|money
+        """
+        #第一步：进行是否脱机查询的判断，在线查询比较简单，直接调取jqdata相关代码即可
+        if local == True:
+            #脱机查询
+            #定位数据库中的最后日期(这里默认使用510300进行查询)
+            df_day = pd.read_sql_query(f"select * from jqdata_1d where date(date)<='{end_date.date()}' and code = '510300.XSHG' order by date desc limit 1" , self.engine)
+            if df_day.empty == True:
+                #数据库不存在数据
+                raise ValueError(f'输入错误，请检查')
+            else:
+                #数据库存在数据，新定义开始日期
+                last_day =  df_day.loc[0 , 'date']
+                sql2 = f"select * from jqdata_security where start_date<='{end_date.date()}' and end_date >='{end_date.date()}' and type in({type})"
+                try:
+                    df_db = pd.read_sql_query(sql2 , self.engine)
+                except:
+                    print("数据读取失败")  
+                #print(df_db)
+                return df_db
+            #【【【目前到这一步就直接返回结果，后面的代码暂时没有实装】】】
+            #如果后面要去除下面代码的话，还要考虑valuation对应新增的几个索引，可以考虑删除以释放数据库空间
+
+            #——————————————————————————————————————
+            #按照条件，对所选代码进行筛选
+            #1. stock 股票类数据
+            #1.1 市值筛选
+            #取市值表数据的最后一天
+            df_val_day = pd.read_sql_query(f"select * from valuation where date(date)<='{end_date.date()}' and code = '601012.XSHG' order by date desc limit 1" , self.engine)
+            if df_val_day.empty == True:
+                #数据库不存在数据
+                raise ValueError(f'输入错误，请检查')
+            else:
+                #数据库存在数据，新定义开始日期
+                valuation_last_day=  df_val_day.loc[0 , 'date']
+            sql_val = f"select code , date , market_cap from valuation where market_cap between {min_cap * 1e8} and {max_cap * 1e8}  and date(date) = '{valuation_last_day}'"
+            print(sql_val)
+            try:
+                df_val = pd.read_sql_query(sql_val , self.engine)
+            except:
+                print("数据读取失败")  
+            print(df_val)
+            df_stock = df_db[(df_db['type'] == 'stock')]
+                             #[( df_trans['证券代码'] == code )]
+            df_stock = pd.merge(df_stock , df_val , on = ['code'], how = 'left') 
+            print(df_stock)
+
+        else:
+            #在线查询，调取jqdata
+            pass
+           
+        
