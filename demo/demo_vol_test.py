@@ -25,8 +25,7 @@ print(1e2 / 100)
 m = money(myauth = False)
 
 m.get_money_flow(code = '688002.XSHG')
-v = valuation(myauth = False)
-print(v.get_code_type('510300.XSHG'))
+
 
 #vol异常值筛选
 vol_abnormal = a.money_abnormal_change(criteria = 2 ,count = 4 , N=4)

@@ -71,4 +71,34 @@ class ETF(base):
             
         """
 
-
+    def get_etf_daily(self , code = None , day = datetime.datetime.now() , min_money = 0 , min_share = 0):
+        """
+        获取指定日期的ETF场内交易基金的成交量情况
+        输入：
+            code 证券代码
+            day 取数据的基准日期 默认是当天
+            min_money ETF基金当日成交量的最小值
+            min_share ETF基金当日份额的最小值
+        返回：
+            
+        """
+        #选取基金份额大于2亿 每日成交额大于5千万的场内ETF基金
+        sql = f("""
+                SELECT
+	            sr. CODE,
+	            sr. NAME,
+	            sr.date,
+	            d.close,
+	            convert(sr.shares / 1e8, decimal(12,1))  as "基金份额(亿)",
+	            convert(d.money / 1e8, decimal(12,1)) as "成交额(亿)"
+            FROM
+	            fund_share_daily sr,
+	            jqdata_1d d
+            WHERE
+	            d.date = sr.date
+            AND d. CODE = sr. CODE
+            AND sr.date = '2021/9/24'
+            AND d.money >= 5e7
+            and sr.shares >=2e8
+        """)
+        print(sql)

@@ -80,16 +80,16 @@ class money_flow(base):
             code 证券代码
             start_date 开始日期
             end_date 结束日期
-            column_name 资金类型（主力、大中小 散户等） 默认net_amount_main主力资金
             ma 资金流向需要取N天的平均数据
-
-
         返回：
             DataFrame
         """
         #获取基础信息
 
         #判断是否是stock类型 且有数据
+        if  data.get_code_type(self , code = code) !='stock':
+            raise ValueError(f'请检查证券代码{code}')
+
         #获取K线数据
         df =data.get_k_data(self , code = code , start_date = start_date, end_date = end_date , ktype  = '1d' )
         #获取流通市值信息

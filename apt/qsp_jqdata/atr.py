@@ -83,3 +83,33 @@ class ATR(base):
             df_main.to_csv('.\\trade\\ATR_jqdata.csv', encoding = 'utf_8_sig')
         return df_main
 
+    def abnormal_atr(self , atr_ma = 14 , criteria = 2 , N = 5 , count = 1 , flag_std = True):
+        """
+        异常的ATR波动值
+        atr_ma ATR的计算周期 默认使用14天的atr
+        criteria 异动的标准（当天TR值和ATR的比率/或者是X倍标准差） 默认为ATR/STD的两倍
+        N 几天内出现这种情况算是符合条件 默认为一周内，即5天。如需计算当天的情况，则N = 1
+        count N周期内出现几次算符合条件 count <= N
+        flag_std 使用TR或者标准差作为判断依据，默认是使用标准差
+        小技巧：
+            计算成交额小于N： LOW = 0 ; HIGH = N
+            计算成交额大于N： LOW = N； HIGH = 1e12
+        x_rolling ：比如60m就需要计算连续4天的值做汇总，否则数据是不准确的
+        【例】abnormal_atr(atr_ma = 20 ,criteria = 2 , N = 3 , count = 2 , flag_std = False)
+            计算某代码是否在3天内有2次当日TR值超过20天连续ATR值2倍以上的情况，使用TR标准，非STD
+        【返回值】 T/F
+        """ 
+        #数据校验
+        if count > N:
+            raise ValueError(f'无法计算{N}天内出现{count}次的情况，请检查逻辑')
+        #1. 默认使用日线 目前暂不受理非日线的计算
+        if self.ktype != '1d':
+            raise ValueError(f'目前暂不受理非日线ATR的计算 {ktype}')
+        #获取数据
+        df = self.get_atr(N = atr_ma)[['date','close','TR','ATR']]
+        df['tr_ratial'] = df['TR'] / df['ATR']
+
+        df['std'] = df['TR'].rolling(atr_ma).std()
+        df['std_dev'] = df['TR'] - ( df['ATR'] + 2 * df['std'] )
+        print(df[['date','close','TR','ATR','tr_ratial','std_dev']].tail(60))
+

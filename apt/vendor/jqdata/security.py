@@ -44,7 +44,31 @@ class security(base):
                     if_exists = 'replace',
                     index_label='code' , #设置主键(设置未成功)
                     dtype=dtypedict) #映射列的数据类型
-            #设置主键
+
             with self.engine.connect() as con:
+                #设置主键
                 con.execute('ALTER TABLE `jqdata_security` ADD PRIMARY KEY (`code`);')
+                #设置索引（其实主键和索引一致的话，是可以不需要设置索引的）
+                con.execute('CREATE INDEX index `jqdata_security` (`code`);')
             print("数据已上传完成(security)")
+
+    def get_security(self , code = None , day = datetime.datetime.now()):
+        """
+        获取单代码的security信息（需要满足）
+        【输入】
+            code 证券代码 默认为空
+        【输出】
+            dataframe:code|display_name|name|start_date|end_date|type|valid
+        """
+        if code != None:
+            #脱机查询
+            #定位数据库中的最后日期(这里默认使用510300进行查询)
+            df = pd.read_sql_query(f"select * from jqdata_security where code = '{code}' and start_date<='{day.date()}' and end_date >='{day.date()}'" , self.engine)
+            if df.empty == True:
+                #数据库不存在数据
+                return pd.DataFrame()
+            else:
+                #数据库存在数据，返回
+                return df
+        else:
+            raise ValueError(f'证券代码不能为空，请检查')
