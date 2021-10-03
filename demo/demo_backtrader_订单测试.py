@@ -1,8 +1,12 @@
 from __future__ import (absolute_import, division, print_function,
                         unicode_literals)
+#导入analyzers
+import backtrader.analyzers as btanalyzers
+
 #使用增强型图形输出
 from backtrader_plotting import Bokeh
 from backtrader_plotting.schemes import Tradimo
+
 import datetime  # For datetime objects
 import os.path  # To manage paths
 import sys  # To find out the script name (in argv[0])
@@ -28,13 +32,13 @@ from apt.vendor.jqdata.jqdata import data as jqdata
 """
 class TestStrategy(bt.Strategy):
     params=(('high_period',25),     #最高价的计算周期（日线默认25 小时线默认100）
-            ('atr_period',25),      #ATR的计算周期（日线默认14）
+            ('atr_period',14),      #ATR的计算周期（日线默认14）
             ('prank_period',25),    #分位数的计算周期（日线默认25 小时线默认100）
-            ('R',0.25),             #风险值R设定
+            ('R',0.5),             #风险值R设定
             ('atr_size',0.5),         #ATR间隔 默认1个ATR间隔下订单
-            ('unit_size',0.5),        #头寸大小 默认每次下单进行1个头寸
+            ('unit_size',1),        #头寸大小 默认每次下单进行1个头寸
             ('open_separation',5),#清仓以后的再次开仓间隔（用来控制反复止损的参数）
-            ('printlog',True),)     #是否输出日志 默认True
+            ('printlog',False),)     #是否输出日志 默认True
     def log(self, txt, dt=None):
         ''' Logging function fot this strategy'''
         dt = dt or self.datas[0].datetime.date(0)
@@ -119,7 +123,8 @@ class TestStrategy(bt.Strategy):
         for num in range(0 , self.params.high_period):
             s.append(self.dataclose[-num])
             
-
+    def stop(self):
+        self.log("最大回撤:-%.2f%%" % self.stats.drawdown.maxdrawdown[-1])
 
     def next(self):
         #设置头寸
@@ -250,9 +255,9 @@ class TestStrategy(bt.Strategy):
         '''
 if __name__ == '__main__':
     #自定义参数
-    code = '000333.XSHE'
-    start = datetime.datetime(2019,1,1)
-    end = datetime.datetime(2021,4,7)
+    code = '300015.XSHE'
+    start = datetime.datetime(2016,1,1)
+    end = datetime.datetime(2021,12,31)
     ktype = '1d'
     d = jqdata(rds_host = jqdata.数据源.localhost , myauth= False)
     df_db = d.get_k_data(code = code  , start_date = start , end_date = end, ktype = ktype , fq = d.复权.前复权)
@@ -262,13 +267,17 @@ if __name__ == '__main__':
     df_db.set_index(["datatime"], inplace=True)
     print(df_db)
     # Create a cerebro entity
-    cerebro = bt.Cerebro()
+    #在这里设定是否静默输出（貌似无效）
+    cerebro = bt.Cerebro(optreturn=True)
 
     # Add a strategy
     cerebro.addstrategy(TestStrategy)
-
+    #增加最大回撤观察窗口
+    cerebro.addobserver(bt.observers.DrawDown)
     # Create a Data Feed
     data = bt.feeds.PandasData(dataname = df_db)
+
+
 
     # Add the Data Feed to Cerebro
     cerebro.adddata(data)
@@ -281,8 +290,18 @@ if __name__ == '__main__':
     cerebro.addanalyzer(bt.analyzers.SharpeRatio,_name = 'SharpeRatio')
     cerebro.addanalyzer(bt.analyzers.DrawDown, _name='DW')
     # Run over everything
-    cerebro.run()
+    #cerebro.run()
+    #cerebro.plot()
+
+    #增加Analyzers模块
+    cerebro.addanalyzer(btanalyzers.SharpeRatio_A, _name='mysharpe')
+    thestrats = cerebro.run()
+    
+    thestrat = thestrats[0]
+    print('夏普比率:', thestrat.analyzers.mysharpe.get_analysis())
+
     cerebro.plot()
+
     #使用增强型图形输出
     #b = Bokeh(style="bar", tabs="multi", scheme=Tradimo())
     #cerebro.plot(b)

@@ -32,5 +32,5 @@ class VSI(base):
 if __name__ == '__main__':    
     start = datetime.datetime(2021,1,1)
     end = datetime.datetime.now()
-    vsi = VSI()
+    vsi = VSI(myauth = False)
     vsi.test(start = start , end = end)

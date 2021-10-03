@@ -1,3 +1,9 @@
+"""
+多参数调优测试模块
+"""
+
+
+
 from __future__ import (absolute_import, division, print_function, unicode_literals)
 import datetime  
 import os.path  
@@ -73,6 +79,8 @@ class TestStrategy(bt.Strategy):
     def stop(self):       
             self.log('(MA Period %2d) Ending Value %.2f' %
             (self.params.maperiod, self.broker.getvalue()), doprint=True)
+            #增加最大回撤计算
+            self.log("最大回撤:-%.2f%%" % self.stats.drawdown.maxdrawdown[-1])
 def get_k_data():
         engine = sqlalchemy.create_engine('mysql+pymysql://stock_user:a@1#Yy1c@localhost:3306/stock')
         query = "select date as datatime,open,high,low,close,volume from jqdata_1d where code = '159949.XSHE' and DATE(date) between '2020-1-1' and '2021-02-21'"    
@@ -98,7 +106,8 @@ if __name__ == '__main__':
         dataframe =  get_k_data()   
         print(dataframe)
         data = bt.feeds.PandasData(dataname=dataframe)
-  
+        #增加最大回撤观察窗口
+        cerebro.addobserver(bt.observers.DrawDown)  
         cerebro.adddata(data)
         #broker设置资金、手续费
         cerebro.broker.setcash(100000.0)           
