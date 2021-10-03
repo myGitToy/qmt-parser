@@ -80,6 +80,9 @@
     <Compile Include="apt\vendor\jqdata\billboard_list.py" />
     <Compile Include="apt\vendor\jqdata\hk\STK_HK_HOLD_INFO.py" />
     <Compile Include="apt\vendor\jqdata\hk\__init__.py" />
+    <Compile Include="apt\vendor\jqdata\security.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="apt\vendor\jqdata\stk_hk_hold_info.py" />
     <Compile Include="apt\vendor\jqdata\jqdata.py" />
     <Compile Include="apt\vendor\jqdata\finance\finance_valuation.py" />
@@ -106,6 +109,9 @@
     </Compile>
     <Compile Include="demo\demo_backtrader_夏普比率.py" />
     <Compile Include="demo\demo_jqdata_其他类数据日常更新.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_moudle_资金流向.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_stk.py">
