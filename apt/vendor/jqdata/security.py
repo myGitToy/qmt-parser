@@ -49,7 +49,7 @@ class security(base):
                 #设置主键
                 con.execute('ALTER TABLE `jqdata_security` ADD PRIMARY KEY (`code`);')
                 #设置索引（其实主键和索引一致的话，是可以不需要设置索引的）
-                con.execute('CREATE INDEX index `jqdata_security` (`code`);')
+                #con.execute('CREATE INDEX index `jqdata_security` (`code`);')
             print("数据已上传完成(security)")
 
     def get_security(self , code = None , day = datetime.datetime.now()):
