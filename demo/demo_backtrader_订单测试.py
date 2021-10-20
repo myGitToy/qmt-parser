@@ -33,7 +33,7 @@ from apt.vendor.jqdata.jqdata import data as jqdata
 class TestStrategy(bt.Strategy):
     params=(('high_period',25),     #最高价的计算周期（日线默认25 小时线默认100）
             ('atr_period',14),      #ATR的计算周期（日线默认14）
-            ('prank_period',25),    #分位数的计算周期（日线默认25 小时线默认100）
+            ('prank_period',60),    #分位数的计算周期（日线默认25 小时线默认100）
             ('R',0.5),             #风险值R设定
             ('atr_size',0.5),         #ATR间隔 默认1个ATR间隔下订单
             ('unit_size',1),        #头寸大小 默认每次下单进行1个头寸
@@ -41,7 +41,7 @@ class TestStrategy(bt.Strategy):
             ('printlog',False),)     #是否输出日志 默认True
     def log(self, txt, dt=None):
         ''' Logging function fot this strategy'''
-        dt = dt or self.datas[0].datetime.date(0)
+        dt = dt or self.datas[0].datetime.date(0) 
         print('%s, %s' % (dt.isoformat(), txt))
 
     def __init__(self):
@@ -56,20 +56,17 @@ class TestStrategy(bt.Strategy):
         self.last_price = None      #最后的买入价格，用来计算后续每个挡位的买入价格
         # 记录以往订单，在再平衡日要全部取消未成交的订单
         #self.order_list = []
-        self.prank = bt.ind.PctRank(period = self.p.prank_period , plot = True ,subplot=True)
+        #self.prank = bt.ind.PctRank(period = self.p.prank_period , plot = True ,subplot=True)
+        self.prank = bt.indicators.PercentRank(self.datas[0].close, period = self.p.prank_period , plot = True , subplot = True )
         
         #设置ATR指标
-        self.atr = bt.indicators.AverageTrueRange(self.datas[0] , period = self.params.atr_period , plot =True , subplot= True , movav = bt.ind.MovAv.EMA)
+        self.atr = bt.indicators.AverageTrueRange(self.datas[0] , period = self.params.atr_period , plot = True , subplot= True , movav = bt.ind.MovAv.EMA)
         #设置头寸指标
-        self.unit = self.cerebro.broker.getvalue() * self.params.R /100  / self.atr
-
-
-
-        
+        self.unit = self.cerebro.broker.getvalue() * self.params.R /100  / self.atr        
         #设置止损指标
         self.high_cut = bt.indicators.Highest(self.datas[0].close - self.atr * 3 , period = self.params.high_period , plot = True , subplot= False) 
         #副图叠加ATR指标并作图（增强型图表无法进行叠加）
-        #bt.indicators.ATR(self.datas[0] , plot=False , period = 25)
+        #bt.indicators.ATR(self.datas[0] , plot= False , period = 25) #这条这条有作用，但是不如self.atr = bt.indicators.AverageTrueRange ，且无法设置EMA类型
     def notify_order(self, order):
         if order.status in [order.Submitted]:
             # Buy/Sell order submitted/accepted to/by broker - Nothing to do , 
@@ -78,6 +75,8 @@ class TestStrategy(bt.Strategy):
             return
         if order.status in [order.Accepted]:
             #交易所已接受订单
+            #打印目前现有订单
+            self.log(f"交易所现存订单有：")
             pass         
         # Check if an order has been completed
         # Attention: broker could reject order if not enough cash
@@ -172,7 +171,7 @@ class TestStrategy(bt.Strategy):
         # Check if we are in the market
         if not self.position:
             #初始阶段进行下单，挂一个高价格，无法成交的
-            #self.order = self.buy(size=100, exectype = bt.Order.StopLimit   )
+            #self.order = self.buy(size=100, exectype = bt.Order.StopLimit)
 
 
             # Not yet ... we MIGHT BUY if ...
@@ -255,8 +254,8 @@ class TestStrategy(bt.Strategy):
         '''
 if __name__ == '__main__':
     #自定义参数
-    code = '300015.XSHE'
-    start = datetime.datetime(2016,1,1)
+    code = '588080.XSHG'
+    start = datetime.datetime(2016,6,1)
     end = datetime.datetime(2021,12,31)
     ktype = '1d'
     d = jqdata(rds_host = jqdata.数据源.localhost , myauth= False)
@@ -295,11 +294,13 @@ if __name__ == '__main__':
 
     #增加Analyzers模块
     cerebro.addanalyzer(btanalyzers.SharpeRatio_A, _name='mysharpe')
+    cerebro.addanalyzer(btanalyzers.DrawDown, _name='mydrawdown')
     thestrats = cerebro.run()
     
     thestrat = thestrats[0]
     print('夏普比率:', thestrat.analyzers.mysharpe.get_analysis())
-
+    print('最打回撤' , thestrat.analyzers.mydrawdown.get_analysis())
+    print(thestrat.analyzers.mydrawdown.get_analysis()['max']['drawdown'])
     cerebro.plot()
 
     #使用增强型图形输出
