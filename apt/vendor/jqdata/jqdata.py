@@ -372,6 +372,18 @@ class data(base):
             else:
                 raise ValueError(f'不支持的复权模式，请检查！')
                 return df_db
+    def get_close_range(self , code = None , start_date = datetime.datetime(2005,1,1,1,8) , end_date = datetime.datetime.now() , ktype = '1d' , fq = base.复权.动态复权):     
+        """
+        获取指定代码在日期区间的收盘价
+        start_time：开始时间比如(2020,12,31)
+        end_time：结束时间比如(2020,12,31
+        接受前复权 后复权 不复权 动态复权四种复权模式
+        成交量、成交额目前未进行复权处理
+        返回：
+            dict : {'beginning_close , ending_close'} 期初收盘价 期末收盘价
+        """
+        df = self.get_k_data(code = code , start_date = start_date , end_date = end_date , ktype = ktype , fq = fq)
+        return {'beginning_close': df.iloc[0].at['close'] , 'ending_close': df.iloc[-1].at['close']}
 
     def jqdata_to_backtrader(self , df = None):
         """
