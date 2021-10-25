@@ -54,7 +54,7 @@ jq.update_v2(code_list = code_list , start_date = update_start , end_date = a.en
 jq.update_v2(code_list = code_list , start_date = update_start , end_date = a.end , ktype = '60m' )
 
 #######3. 获取ATR数据
-df_atr = a.daily_update(code_list = code_list , N = 14 , to_csv = False)
+df_atr = a.daily_update(code_list = code_list , N = 25 , to_csv = False)
 #ATR数据增加一个证券名称task:232(ps:加错地方了，但是考虑到excel文件已经修改，因此保留)
 df_atr = pd.merge(df_atr,df_name_list,how='left',on = 'code')
 
