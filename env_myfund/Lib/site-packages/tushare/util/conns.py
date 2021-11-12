@@ -6,12 +6,11 @@ Created on 2017/09/23
 @group : waditu
 @contact: jimmysoa@sina.cn
 """
-from pytdx.hq import TdxHq_API
-from pytdx.exhq import TdxExHq_API
 from tushare.stock import cons as ct
 
 
 def api(retry_count=3):
+    from pytdx.hq import TdxHq_API
     for _ in range(retry_count):
         try:
             api = TdxHq_API(heartbeat=True)
@@ -24,6 +23,7 @@ def api(retry_count=3):
 
 
 def xapi(retry_count=3):
+    from pytdx.exhq import TdxExHq_API
     for _ in range(retry_count):
         try:
             api = TdxExHq_API(heartbeat=True)
@@ -36,6 +36,7 @@ def xapi(retry_count=3):
 
 
 def xapi_x(retry_count=3):
+    from pytdx.exhq import TdxExHq_API
     for _ in range(retry_count):
         try:
             api = TdxExHq_API(heartbeat=True)
