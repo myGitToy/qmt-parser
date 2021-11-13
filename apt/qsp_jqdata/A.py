@@ -30,17 +30,16 @@ class A(base):
 
     def A04B02_EMA均线多头排列(self , ma_list = ['10','20','60','120']):
         """
-        EXPMA选股系统
+        EMA均线多头排列
         输入：
             证券代码，起止日期按照默认
             ma_list：需计算的均线 ['10','30','60','120']
         输出：T/F
         """
         df = self.A04B01_EMA均线数据(ma_list = ma_list)
-        #多头排列 bear market
+        #多头排列 Bull Market
         #判断ma均线的个数        
         count = len(ma_list)
-        print(df)
         for n in range(0,count - 1):
             short = df.iloc[-1].at[f'EMA{ma_list[n]}']
             long = df.iloc[-1].at[f'EMA{ma_list[n+1]}']
@@ -48,5 +47,21 @@ class A(base):
                 return False
         return True
         
-
-
+    def A04B03_EMA均线空头排列(self , ma_list = ['10','20','60','120']):
+        """
+        EMA均线空头排列
+        输入：
+            证券代码，起止日期按照默认
+            ma_list：需计算的均线 ['10','30','60','120']
+        输出：T/F
+        """
+        df = self.A04B01_EMA均线数据(ma_list = ma_list)
+        #空头排列 Bear Market
+        #判断ma均线的个数        
+        count = len(ma_list)
+        for n in range(0,count - 1):
+            short = df.iloc[-1].at[f'EMA{ma_list[n]}']
+            long = df.iloc[-1].at[f'EMA{ma_list[n+1]}']
+            if  short > long:
+                return False
+        return True
