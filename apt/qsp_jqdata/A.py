@@ -28,12 +28,12 @@ class A(base):
             df[f'EMA{ma}'] = ta.EMA(df['close'] ,  timeperiod = int(ma))
         return df
 
-    def A04B02_EMA均线多头排列(self , ma_list = ['10','20','30','60','120']):
+    def A04B02_EMA均线多头排列(self , ma_list = ['10','20','60','120']):
         """
         EXPMA选股系统
         输入：
             证券代码，起止日期按照默认
-            ma_list：需计算的均线 ['10','20','30','60','120']
+            ma_list：需计算的均线 ['10','30','60','120']
         输出：T/F
         """
         #df = self.get_k_data( code = self.code , start_date= self.start , end_date= self.end , ktype= self.ktype)
