@@ -5,12 +5,14 @@ import sqlalchemy
 from apt.vendor.jqdata.jqdata import data as jqdata
 from apt.qsp_jqdata.atr import ATR as atr
 #显示所有列
-pd.set_option('display.max_columns', None)  
+pd.set_option('display.max_columns', None)
+pd.set_option('display.max_rows', None)  
 #测试jqdata获取数据模块
-d = jqdata(myauth = False)
+d = jqdata(myauth =True)
 start = datetime.datetime(2020,1,1,8)
 end = datetime.datetime(2021,1,4,16)
 code = '515030.XSHG'
+k_code = jqdata.get_k_data()
 atr = atr(code = code ,start = start , end = end , ktype = "1d" ,fq = jqdata.复权.动态复权 ,myauth = False)
 #dl = atr.get_k_data()
 at = atr.get_atr()

@@ -15,8 +15,8 @@ day = datetime.datetime(2020,9,15,16)
 #在不复权数据中，复权因子均为1
 #df = get_price(security = '512760.XSHG',start_date='2020-09-01' ,end_date = '2020-09-15 16:00:00',frequency='1d',fields=['open', 'close', 'high', 'low', 'volume', 'money','paused','factor'], skip_paused=True, fq='pre',  fill_paused=False)
 df = get_bars(security = '512760.XSHG' , count = 10, unit = '1d' , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'] , include_now = False , end_dt = day, fq_ref_date = day , df = True)
-
-print(df)
+mm = get_index_stocks('000016.XSHG')
+print(mm)
 
 code = '512760.XSHG'
 df = get_bars(security = code , count = 30, unit = '60m' , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'] , include_now = False , end_dt = day, fq_ref_date = day , df = True)
