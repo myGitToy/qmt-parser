@@ -59,6 +59,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="apt\qsp\__init__.py" />
+    <Compile Include="apt\qsp_jqdata\A.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="apt\qsp_jqdata\prank.py">
       <SubType>Code</SubType>
     </Compile>
@@ -104,10 +107,14 @@
     <Compile Include="apt\__init__.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="demo\demo_A04.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="demo\demo_apply_test.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_backtrader_夏普比率.py" />
+    <Compile Include="demo\demo_backtrader_订单测试.py" />
     <Compile Include="demo\demo_jqdata_其他类数据日常更新.py">
       <SubType>Code</SubType>
     </Compile>
@@ -136,7 +143,7 @@
     <Compile Include="demo\demo_backtrader_testfile1.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="demo\demo_backtrader_订单测试.py" />
+    <Compile Include="demo\demo_backtrader_多代码单一测试.py" />
     <Compile Include="demo\demo_backtrader_均线种类测试.py" />
     <Compile Include="demo\demo_backtrader_分位数模型测试.py" />
     <Compile Include="demo\demo_backtrader_增强型图表输出测试.py" />
