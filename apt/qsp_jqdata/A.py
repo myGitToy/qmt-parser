@@ -20,7 +20,7 @@ class A(base):
         输入：
             证券代码，起止日期按照默认
             ma_list：需计算的均线 ['5','10','20','30','60','120']
-        输出：DataFrame 各均线价格 列的规范：ema5|ema60|ema120
+        输出：DataFrame 各均线价格 列的规范：EMA5|EMA60|EMA120
         """
         #df = self.get_k_data( code = self.code , start_date= self.start , end_date= self.end , ktype= self.ktype)
         df = self.get_k_data()
