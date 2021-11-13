@@ -36,8 +36,17 @@ class A(base):
             ma_list：需计算的均线 ['10','30','60','120']
         输出：T/F
         """
-        #df = self.get_k_data( code = self.code , start_date= self.start , end_date= self.end , ktype= self.ktype)
-        df = self.get_k_data()
-        df['ema5'] = ta.EMA(df['close'] ,  timeperiod=60)
+        df = self.A04B01_EMA均线数据(ma_list = ma_list)
+        #多头排列 bear market
+        #判断ma均线的个数        
+        count = len(ma_list)
         print(df)
+        for n in range(0,count - 1):
+            short = df.iloc[-1].at[f'EMA{ma_list[n]}']
+            long = df.iloc[-1].at[f'EMA{ma_list[n+1]}']
+            if  short < long:
+                return False
+        return True
+        
+
 
