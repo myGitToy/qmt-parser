@@ -48,6 +48,8 @@ class TestStrategy(bt.Strategy):
         # Keep a reference to the "close" line in the data[0] dataseries
         self.dataclose = self.datas[0].close
         self.datahigh = self.datas[0].high
+        self.datalow = self.datas[0].low
+        self.dataopen = self.datas[0].open
         self.orefs = list()         #订单列表
         # To keep track of pending orders and buy price/commission
         self.order = None
@@ -58,6 +60,8 @@ class TestStrategy(bt.Strategy):
         #self.order_list = []
         #self.prank = bt.ind.PctRank(period = self.p.prank_period , plot = True ,subplot=True)
         self.prank = bt.indicators.PercentRank(self.datas[0].close, period = self.p.prank_period , plot = True , subplot = True )
+        #self.whiteSoldier = bt.talib.talib.CDL3WHITESOLDIERS(self.data.open,self.data.high,self.data.low,self.data.close )
+        self.cdl = bt.talib.CDL3WHITESOLDIERS(self.data.open, self.data.high, self.data.low, self.data.close)
         
         #设置ATR指标
         self.atr = bt.indicators.AverageTrueRange(self.datas[0] , period = self.params.atr_period , plot = True , subplot= True , movav = bt.ind.MovAv.EMA)
@@ -254,7 +258,7 @@ class TestStrategy(bt.Strategy):
         '''
 if __name__ == '__main__':
     #自定义参数
-    code = '588080.XSHG'
+    code = '601318.XSHG'
     start = datetime.datetime(2016,6,1)
     end = datetime.datetime(2021,12,31)
     ktype = '1d'
