@@ -80,7 +80,7 @@ class billboard_list(base):
             print数据 用于监控提醒
         """
 if __name__=="__main__":
-    auth('13817092632','JQ@tushare123')
+    auth('18621899367','Qq19840207')
     #显示所有列
     pd.set_option('display.max_columns', None)
     pd.set_option('display.max_rows', None)
