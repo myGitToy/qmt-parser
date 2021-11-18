@@ -14,6 +14,7 @@ from apt.qsp_jqdata.atr import ATR
 from apt.qsp_jqdata.k import k
 from apt.vendor.jqdata.jqdata import data
 from apt.qsp_jqdata.prank import prank
+from apt.qsp_jqdata.expma import expma as EXP
 
 pd.set_option('display.max_rows',   None)
 pd.set_option('display.max_columns', None)
@@ -48,7 +49,7 @@ for code in code_list:
     df_name_list.loc[df_name_list['code']==code,'name'] = name
 
 #更新日线和60分钟线数据
-update_start = datetime.datetime(2021,9,10)
+update_start = datetime.datetime(2021,11,10)
 jq = data(rds_host = data.数据源.localhost , myauth = True )
 jq.update_v2(code_list = code_list , start_date = update_start , end_date = a.end , ktype = '1d' )
 jq.update_v2(code_list = code_list , start_date = update_start , end_date = a.end , ktype = '60m' )
@@ -87,5 +88,9 @@ df_prank = pd.merge(df_prank,df_name_list,how='left',on = 'code')
 #df_prank.to_csv('.\\data\\海龟模型\\prank_jqdata_tmp.csv', encoding = 'utf_8_sig')
 df_prank.to_csv('.\\data\\海龟模型\\prank_jqdata.csv', encoding = 'utf_8_sig')
 
-
-
+#######7. 更新EXPMA数据
+exp = EXP()
+exp.start = a.start
+exp.end = a.end
+exp.ktype ='1d'
+df_exp = exp.daily_update(code_list = code_list)
