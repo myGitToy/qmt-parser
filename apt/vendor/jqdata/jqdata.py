@@ -281,66 +281,19 @@ class data(base):
                 2.2 没有数据则直接写入操作
                 2.3 存在数据，则去重后写入
         """
-        #更新时段校验 如果更新的是日线数据且校验为更新时段，则不予以更新
-        check = self.get_today_is_trade()
-        if check == self.交易时段校验.交易时段:
-            raise ValueError(f'update_V1规则不允许在交易时段进行更新')
-        #获取交易日期
-        trade_days = get_trade_days(start_date = start_date , end_date = end_date)
-        #获取更新列表
-        if code_list == None:
-            #更新列表未填写，则默认为空，即全部更新
-            code_list = list(get_all_securities(['stock','etf'],date = end_date).index)
-        #设置规则下需要更新的数目（按一天的量进行计算）
-        update_num = self.__get_update_count(trade_days = 1 , ktype = ktype)
-        for ktype in ktype_list:
-            print(f"##############正在更新{ktype}数据##############")
-            for code in code_list:
-                #检查数据库是否存在数据
-                query = "select count(code) as num from jqdata_%s where code = '%s' and date(date) = '%s'" % (ktype , code , day)
-                df_old = pd.read_sql_query(query , self.engine)
-                count = df_old.loc[0 , 'num']
-                if count > 0 :
-                    #此处存在数据，不进入更新序列，直接跳过
-                    print("%s存在数据，跳过更新" % code)
-                else:
-                    #不存在数据，进行更新
-                    #此处使用该方法进行日期重定位的原因：
-                        #1. day的数据格式为datetime.date，无法进行+timedelta(hours=16)这样的操作
-                        #2. 如果仅输入day参数，则时间默认为当天零点，所以实际更新的是前一天的数据
-                    end_day = datetime.datetime(day.year,day.month,day.day,16)
-                    #print(end_day)
-                    if  ktype == '1d':
-                        #1. 日线数据需要进行偏移处理
-                        #2. 筛选作业
-                        dday = day + datetime.timedelta(days=1)
-                        df = get_bars(security = code , count = update_num , unit = ktype , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'] , include_now = False , end_dt = dday , df = True)
-                        df['code']= code
-                        #日线数据特殊处理，因为数据库中的格式是date，不是datetime
-                        df = df[(df.date == day)]
-                    else:
-                        #分时数据正常处理
-                        #############这里留一个问题，是否可以用df.date.date() == day的形式进行筛选
-                        #进行当天数据的筛选，因为比如取5m数据，当天有48根，但可能上午停牌，因此48根数据就包含了昨天下午的，此时写入数据库会造成唯一索引约束错误
-                        df = get_bars(security = code , count = update_num , unit = ktype , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'] , include_now = False , end_dt = end_day , df = True)
-                        if df.empty == True:
-                            #增加一个判断和筛选，因为正常情况下不会出错，但是如果代码未上市，此时df不会取到前面几天，而是直接返回空值
-                            #PS 日线部分竟然不影响，挺神奇的
-                            pass
-                        else:
-                            df['code']= code
-                            df = df[(df.date.dt.date == day)]
-                            #df = df[(df.date >= datetime.datetime(day.year,day.month,day.day,1)) & (df.date <= datetime.datetime(day.year,day.month,day.day,16))]
-                    #保存至数据库
-                    if df.empty == True:
-                        print("%s 当日数据为空，跳过上传" % (code))
-                    else:
-                        df.to_sql(
-                                name = 'jqdata_%s' % (ktype),
-                                con = self.engine,
-                                index = False,
-                                if_exists = 'append')
-                        print("%s 数据已上传完成(%s)" % (code,ktype))
+        for type in ktype_list:
+            ####1. 删除数据库相关
+            sql_delete =f"delete from jqdata_{type} where code = '{code}' and date(date) between '{start_date}' and '{end_date}'"
+            try:
+                tt = pd.read_sql_query(sql_delete , self.engine)
+            except:
+                pass
+            ####2. 更新数据
+            print(f'更新{code}|{type}数据')
+            lst = []
+            lst.append(code)
+            self.update_v2(code_list = lst , start_date = start_date , end_date = end_date , ktype = type)
+            
     def check_validation(self , code_list = None , start_date = datetime.datetime(2020,1,1,1) , end_date = datetime.datetime.now()):
         """
         通过对比日线数据，检查分时线或者tick数据是否有缺失
