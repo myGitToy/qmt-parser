@@ -117,3 +117,85 @@ class A(base):
             if  short > long:
                 return False
         return True
+
+    def A04B04_EMA均线_收盘价大于均线(self , ma= '10' , adjust_N = 1 , count = 1):
+        """
+        收盘价大于某条EMA均线
+        输入：
+            证券代码，起止日期按照默认
+            ma：某条均线 默认为10日均线
+            adjust_N : N天内符合条件就返回T 默认为当天
+            count: N天内符合count次就返回True 默认为1
+            例子：最后一个交易日收盘价大于EMA均线  adjust_ N = 1 ; count = 1
+                    最后5个交易日出现2次大于EMA均线 adjust_ N = 5 ; count = 2
+                    最后7个交易日每日收盘价均高于EMA均线 adjust_ N = 7 ; count = 7
+        输出：T/F
+        """
+        lst = []
+        lst.append(ma)
+        df = self.A04B01_EMA均线数据(ma_list = lst)
+        #丢弃NA数据，如果该列为NA，则返回是B 即收盘价小于EMA的NA数据
+        df.dropna(how = 'any' , inplace = True)
+        #如果数据量不足，返回False
+        if df.empty == True:
+            return False
+        #A代表收盘价大于EMA均线，B代表收盘价小于EMA均线
+        df['position'] = np.where(df['close'] >= df[f'EMA{ma}'] , 'A' , 'B')
+        #下面这个方法也是可以的
+        #df.loc[df['close'] >= df['EMA120'],['position2']] = 'A'
+        #截取最后adjust_N的矩阵
+        df = df[-adjust_N :]
+        #print(df)
+        #print(df['position'].isin(['A']))  返回是否包含A T/F
+        #获取A出现的次数
+        try:
+            cc = df['position'].value_counts()['A']
+        except:
+            cc = 0
+        #如果A次数大于目标值(count) 返回True
+        if cc >= count:
+            return True
+        else:
+            return False
+
+    def A04B05_EMA均线_收盘价小于均线(self , ma= '10' , adjust_N = 1 , count = 1):
+        """
+        收盘价小于某条EMA均线
+        输入：
+            证券代码，起止日期按照默认
+            ma：某条均线 默认为10日均线
+            adjust_N : N天内符合条件就返回T 默认为当天
+            count: N天内符合count次就返回True 默认为1
+            例子：最后一个交易日收盘价小于EMA均线  adjust_ N = 1 ; count = 1
+                    最后5个交易日出现2次小于EMA均线 adjust_ N = 5 ; count = 2
+                    最后7个交易日每日收盘价均小于EMA均线 adjust_ N = 7 ; count = 7
+        输出：T/F
+        """
+        lst = []
+        lst.append(ma)
+        df = self.A04B01_EMA均线数据(ma_list = lst)
+        #丢弃NA数据，如果该列为NA，则返回是B 即收盘价小于EMA的NA数据
+        df.dropna(how = 'any' , inplace = True)
+        #如果数据量不足，返回False
+        if df.empty == True:
+            return False
+        #A代表收盘价大于EMA均线，B代表收盘价小于EMA均线
+        df['position'] = np.where(df['close'] >= df[f'EMA{ma}'] , 'A' , 'B')
+        #下面这个方法也是可以的
+        #df.loc[df['close'] >= df['EMA120'],['position2']] = 'A'
+        #截取最后adjust_N的矩阵
+        df = df[-adjust_N :]
+        #print(df)
+        #print(df['position'].isin(['A']))  返回是否包含A T/F
+        #获取B出现的次数
+        try:
+            cc = df['position'].value_counts()['B']
+        except:
+            cc = 0
+        #如果A次数大于目标值(count) 返回True
+        if cc >= count:
+            return True
+        else:
+            return False
+
+
