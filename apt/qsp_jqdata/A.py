@@ -235,7 +235,7 @@ class A(base):
         #df['result'] = np.where((df['EMA_ANGLE'] >= low_value) and (df['EMA_ANGLE'] <= upper_value) , 1 , 0)
         #对结果进行求和
         df['result_sum'] = df['result'].rolling(adjust_N).sum()
-        print(df.tail(20))
+        #print(df.tail(20))
         #返回结果
         if df.iloc[-1].at['result_sum'] >= count :
             return True
