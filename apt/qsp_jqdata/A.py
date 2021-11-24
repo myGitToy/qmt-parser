@@ -76,6 +76,9 @@ class A(base):
         """
         #df = self.get_k_data( code = self.code , start_date= self.start , end_date= self.end , ktype= self.ktype)
         df = self.get_k_data()
+        if df.empty == True:
+            #无数据
+            return pd.DataFrame()
         for ma in ma_list:
             df[f'EMA{ma}'] = ta.EMA(df['close'] ,  timeperiod = int(ma))
         return df
@@ -89,6 +92,9 @@ class A(base):
         输出：T/F
         """
         df = self.A04B01_EMA均线数据(ma_list = ma_list)
+        #如果数据量不足，返回False
+        if df.empty == True:
+            return False
         #多头排列 Bull Market
         #判断ma均线的个数        
         count = len(ma_list)
@@ -217,6 +223,9 @@ class A(base):
         lst = []
         lst.append(ma)
         df = self.A04B01_EMA均线数据(ma_list = lst)
+        #如果数据为空，返回False
+        if df.empty == True:
+            return False
         #talib的斜率和角度计算公式因为归一化的原因，暂时无法使用，因此采用传统的计算方法
         #df['EMA_ANGLE'] = ta.LINEARREG_SLOPE(df[f'EMA{ma}'] , timeperiod = period)
         #使用当前值与前值的比率关系（传统的ma_positive处理方法）
