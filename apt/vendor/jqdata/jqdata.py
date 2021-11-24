@@ -369,7 +369,7 @@ class data(base):
             count = len(df_db)
         if df_db.empty == True:
             #无数据
-            print("无数据")
+            #print("无数据")
             return pd.DataFrame()
         else:
             #有数据，进行复权处理
