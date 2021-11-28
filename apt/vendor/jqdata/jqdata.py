@@ -426,12 +426,12 @@ class data(base):
         if df.empty == True:
             #无数据
             print("无有效数据 请检查")
-            return pd.dataframe()
+            return pd.DataFrame()
         else:
             #有数据
             df['openinterest'] = 0
-            df['datatime'] = pd.to_datetime(df['date'])
-            df.set_index(['datatime'], inplace=True)
+            df['datetime'] = pd.to_datetime(df['date'])
+            df.set_index(['datetime'], inplace=True)
             return df[['open','high','low','close','volume','openinterest']]
     def __get_last_factor(self , code = None , day = datetime.datetime(2020,12,1)):
         """
