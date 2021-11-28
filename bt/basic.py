@@ -1,7 +1,10 @@
 import backtrader as bt # 导入 Backtrader
 import backtrader.indicators as btind # 导入策略分析模块
 import backtrader.feeds as btfeeds # 导入数据模块
-import bt.Data.Data as Data #
+from datetime import datetime
+from bt.Data import Data as Data #导入bt本地数据模块
+from apt.vendor.jqdata.base import base #导入jqta base模块
+from apt.vendor.jqdata.jqdata import data as jqdata #导入jqta jqdata模块
 
 # 创建策略
 class TestStrategy(bt.Strategy):
@@ -34,8 +37,15 @@ if __name__ == '__main__':
     # 实例化 cerebro #########
     cerebro = bt.Cerebro()
     ######### 通过 feeds 读取数据 #########
-
-    data = btfeeds.BacktraderCSVData(...)
+    d = Data()
+    d.code = '002594.XSHE'
+    d.start = datetime(2021,1,1)
+    d.end = datetime(2021,12,31)
+    d.ktype = '1d'
+    d.myauth = False
+    df_db = d.get_bt_data()
+    data = bt.feeds.PandasData(dataname = df_db)
+    
     # 将数据传递给 “大脑” #########
     cerebro.adddata(data)
     ######### 通过经纪商设置初始资金 #########
@@ -53,4 +63,14 @@ if __name__ == '__main__':
     # 启动回测 #########
     cerebro.run()
     # 可视化回测结果 #########
-    cerebro.plot()
+    colors = ['#729ece', '#ff9e4a', '#67bf5c', '#ed665d', '#ad8bc9', '#a8786e', '#ed97ca', '#a2a2a2', '#cdcc5d', '#6dccda']
+    tab10_index = [3, 0, 2, 1, 2, 4, 5, 6, 7, 8, 9]
+    cerebro.plot(iplot=False, 
+                  style='lines', # 绘制线型价格走势，可改为 'candel' 样式
+                  lcolors=colors,
+                  plotdist=0.1, 
+                  bartrans=0.2, 
+                  volup='#ff9896', 
+                  voldown='#98df8a', 
+                  loc='#5f5a41',
+                  grid=False) # 删除水平网格
