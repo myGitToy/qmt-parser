@@ -205,6 +205,53 @@ class A(base):
             return False
 
     def A04B06_EMA均线_线性回归角度(self , ma= '20' , period = 2 , low_value = - 0.005 , upper_value = 0.005 , adjust_N = 1 , count = 1):
+            """
+            计算EMA均线的斜率角度
+            备注：此方法对斜率角做了均一化处理。但不同周期下的数据略有不同，但是趋势是可以标准化的
+            输入：
+                证券代码，起止日期按照默认
+                ma：某条均线 默认为10日均线
+                period：talib必要参数，默认计算相邻两根 = 2
+                low_value: 线性回归角度的下限值
+                upper_value：线性回归角度的上限值 默认为-5至5的区间，定义为平台整理
+                adjust_N : N天内符合条件就返回T 默认为当天 如果要计算平台整理，建议设置N = 20
+                count: N天内符合count次就返回True 默认为1；如果要计算平台整理，建议设置count >=15
+                例子：要计算最近20天内是否存在平台整理的情况  adjust_ N = 20 ; count = 15 ，value取值区间为（-5，5）
+                        要计算最近20天内存在向上突破的情况  adjust_ N = 20 ; count = 8 ，value取值区间为（8，100）
+            输出：T/F
+            """
+            lst = []
+            lst.append(ma)
+            df = self.A04B01_EMA均线数据(ma_list = lst)
+            #如果数据为空，返回False
+            if df.empty == True:
+                return False
+            #talib的斜率和角度计算公式因为归一化的原因，暂时无法使用，因此采用传统的计算方法
+            #df['EMA_ANGLE'] = ta.LINEARREG_SLOPE(df[f'EMA{ma}'] , timeperiod = period)
+            #使用当前值与前值的比率关系（传统的ma_positive处理方法）
+            df['EMA_SLOPE'] = (df[f'EMA{ma}'] - df[f'EMA{ma}'].shift(1)) / df[f'EMA{ma}']
+            #使用偏离度(检测下来也是不能用的)
+            #df['EMA_CLOSE_RATE'] = (df['close'] - df[f'EMA{ma}'] ) / df[f'EMA{ma}']
+            #df['EMA_ANGLE'] = ta.LINEARREG_SLOPE(df['EMA_CLOSE_RATE'] , timeperiod = period)
+            #丢弃NA数据，如果该列为NA，则返回是B 即收盘价小于EMA的NA数据
+            df.dropna(how = 'any' , inplace = True)
+            #如果数据量不足，返回False
+            if df.empty == True:
+                return False
+            #对均线斜率在low和upper区间的赋值1，不再区间的用0来填充NAN
+            df.loc[(df['EMA_SLOPE'] >= low_value) & (df['EMA_SLOPE'] <= upper_value),'result'] = 1
+            df.fillna({'result':0} , inplace = True)
+            #df['result'] = np.where((df['EMA_ANGLE'] >= low_value) and (df['EMA_ANGLE'] <= upper_value) , 1 , 0)
+            #对结果进行求和
+            df['result_sum'] = df['result'].rolling(adjust_N).sum()
+            #print(df.tail(20))
+            #返回结果
+            if df.iloc[-1].at['result_sum'] >= count :
+                return True
+            else:
+                return False
+
+    def A04B07_EMA均线_线性回归角度_传统计算方法(self , ma= '20' , period = 2 , low_value = - 0.005 , upper_value = 0.005 , adjust_N = 1 , count = 1):
         """
         计算EMA均线的斜率角度
         备注：对于EMA均线的话，其实使用收盘价与均线的偏离度也可以解释均线的斜率，并且和ATR数据结合，可以做到均一化处理
