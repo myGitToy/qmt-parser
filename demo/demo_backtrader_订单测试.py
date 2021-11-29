@@ -33,7 +33,7 @@ from apt.vendor.jqdata.jqdata import data as jqdata
 class TestStrategy(bt.Strategy):
     params=(('high_period',25),     #最高价的计算周期（日线默认25 小时线默认100）
             ('atr_period',14),      #ATR的计算周期（日线默认14）
-            ('prank_period',60),    #分位数的计算周期（日线默认25 小时线默认100）
+            ('prank_period',25),    #分位数的计算周期（日线默认25 小时线默认100）
             ('R',0.5),             #风险值R设定
             ('atr_size',0.5),         #ATR间隔 默认1个ATR间隔下订单
             ('unit_size',1),        #头寸大小 默认每次下单进行1个头寸
@@ -61,7 +61,7 @@ class TestStrategy(bt.Strategy):
         #self.prank = bt.ind.PctRank(period = self.p.prank_period , plot = True ,subplot=True)
         self.prank = bt.indicators.PercentRank(self.datas[0].close, period = self.p.prank_period , plot = True , subplot = True )
         #self.whiteSoldier = bt.talib.talib.CDL3WHITESOLDIERS(self.data.open,self.data.high,self.data.low,self.data.close )
-        self.cdl = bt.talib.CDL3WHITESOLDIERS(self.data.open, self.data.high, self.data.low, self.data.close)
+        self.cdl = bt.talib.CDL3INSIDE(self.data.open, self.data.high, self.data.low, self.data.close)
         
         #设置ATR指标
         self.atr = bt.indicators.AverageTrueRange(self.datas[0] , period = self.params.atr_period , plot = True , subplot= True , movav = bt.ind.MovAv.EMA)
@@ -258,8 +258,8 @@ class TestStrategy(bt.Strategy):
         '''
 if __name__ == '__main__':
     #自定义参数
-    code = '601318.XSHG'
-    start = datetime.datetime(2016,6,1)
+    code = '002594.XSHE'
+    start = datetime.datetime(2021,1,1)
     end = datetime.datetime(2021,12,31)
     ktype = '1d'
     d = jqdata(rds_host = jqdata.数据源.localhost , myauth= False)
