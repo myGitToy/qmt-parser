@@ -538,8 +538,15 @@ class data(base):
         【返回】
         DataFrame/
         """
-        pass
-
+        #获取数据库中存在的数据最后更新日期（加入强制使用索引的内容）
+        query2 = f"select date FROM jqdata_trader_days where date BETWEEN '{start_date.date()}' and '{end_date.date()}' ORDER BY date asc" 
+        df_db = pd.read_sql_query(query2 , self.engine)
+        if df_db.empty == True:
+            #数据库不存在数据
+            return pd.DataFrame()
+        else:
+            #数据库存在数据，新定义开始日期（数据库最后一天+1）
+            return df_db
 
 
 
