@@ -62,6 +62,9 @@
     <Compile Include="apt\qsp_jqdata\A.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="apt\qsp_jqdata\expma.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="apt\qsp_jqdata\prank.py">
       <SubType>Code</SubType>
     </Compile>
@@ -107,6 +110,14 @@
     <Compile Include="apt\__init__.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="bt\basic.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="bt\Data.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_新多条件测试.py" />
+    <Compile Include="demo\demo_tbl_斜率角.py" />
     <Compile Include="demo\demo_A04.py">
       <SubType>Code</SubType>
     </Compile>
@@ -116,6 +127,9 @@
     <Compile Include="demo\demo_backtrader_夏普比率.py" />
     <Compile Include="demo\demo_backtrader_订单测试.py" />
     <Compile Include="demo\demo_jqdata_其他类数据日常更新.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_jqdata_删除并更新.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_moudle_资金流向.py">
@@ -262,6 +276,7 @@
     <Folder Include="apt\" />
     <Folder Include="demo\" />
     <Folder Include="apt\qsp_jqdata\" />
+    <Folder Include="bt\" />
     <Folder Include="VB\" />
   </ItemGroup>
   <ItemGroup>
