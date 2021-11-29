@@ -499,29 +499,28 @@ class data(base):
         """
         更新交易日数据，无需参数输入
         更新逻辑：
-        1. 取出开始和结束日期
-        2. 查询数据库中的最后更新日期
-        3. 在此基础上+1 ，得到中间的交易天数
-        4. 数据写入数据库
+        1. 查询数据库中的最后更新日期
+        2. 在此基础上+1 ，得到中间的交易天数
+        3. 数据写入数据库
+        交易日历提供自2005年起的数据
         """
         #获取数据库中存在的数据最后更新日期
-
-        query2 = f"select date FROM jqdata_trader_days  WHERE date(date) BETWEEN '{start_date.date()}' and '{end_date.date()}'  ORDER BY date DESC LIMIT 1" 
+        query2 = f"select date FROM jqdata_trader_days ORDER BY date DESC LIMIT 1" 
         df_db = pd.read_sql_query(query2 , self.engine)
         if df_db.empty == True:
             #数据库不存在数据
-            new_start_date = start_date
+            new_start_date = datetime.datetime(2005,1,1)
         else:
             #数据库存在数据，新定义开始日期（数据库最后一天+1）
             new_start_date =  df_db.loc[0 , 'date']  + datetime.timedelta(days=1)   
         #获取修正后的日期间隔里的交易日期
-        day_list = get_trade_days(start_date = new_start_date , end_date = end_date)
+        day_list = get_trade_days(start_date = new_start_date , end_date = datetime.datetime.now().date())
         #对数据进行处理，转换为DataFrame及重命名列
         trader_day = pd.DataFrame(day_list)
         trader_day.columns = ['date']    
         #保存至数据库 
         if trader_day.empty == True:
-            print("当天数据为空（不太可能，程序可能出错）")
+            print("交易日历已是最新版本，跳过更新")
         else:
             trader_day.to_sql(
                     name = 'jqdata_trader_days',
