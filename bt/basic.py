@@ -1,6 +1,7 @@
 import backtrader as bt # 导入 Backtrader
 import backtrader.indicators as btind # 导入策略分析模块
 import backtrader.feeds as btfeeds # 导入数据模块
+import pandas as pd
 from datetime import datetime
 from bt.Data import Data as Data #导入bt本地数据模块
 from apt.vendor.jqdata.base import base #导入jqta base模块
@@ -45,24 +46,45 @@ if __name__ == '__main__':
     d.myauth = False
     df_db = d.get_bt_data()
     data = bt.feeds.PandasData(dataname = df_db)
-    
+    #测试数据查询功能
+    print(df_db.query("index >= '2021/11/20' & index <='2021/11/29'"))
     # 将数据传递给 “大脑” #########
     cerebro.adddata(data)
     ######### 通过经纪商设置初始资金 #########
-    #cerebro.broker.setcash(...)
+    # 初始资金 100,000,000
+    cerebro.broker.setcash(100000000.0)
+    # 佣金，双边各 0.0003
+    cerebro.broker.setcommission(commission=0.0003)
+    # 滑点：双边各 0.0001
+    cerebro.broker.set_slippage_perc(perc=0.0001)
     # 设置单笔交易的数量 #########
     #cerebro.addsizer(...)
-    # 设置交易佣金 #########
-    #cerebro.broker.setcommission(...)
     # 添加策略 #########
     cerebro.addstrategy(TestStrategy)
     # 添加策略分析指标 #########
-    #cerebro.addanalyzer(...)
+    cerebro.addanalyzer(bt.analyzers.TimeReturn, _name='pnl') # 返回收益率时序数据
+    cerebro.addanalyzer(bt.analyzers.AnnualReturn, _name='_AnnualReturn') # 年化收益率
+    cerebro.addanalyzer(bt.analyzers.SharpeRatio, _name='_SharpeRatio') # 夏普比率
+    cerebro.addanalyzer(bt.analyzers.DrawDown, _name='_DrawDown') # 回撤
     # 添加观测器 #########
     #cerebro.addobserver(...)
     # 启动回测 #########
-    cerebro.run()
+    # 启动回测
+    result = cerebro.run()
+    # 从返回的 result 中提取回测结果
+    strat = result[0]
+    # 返回日度收益率序列
+    daily_return = pd.Series(strat.analyzers.pnl.get_analysis())
+    # 打印评价指标
+    print("--------------- AnnualReturn -----------------")
+    print(strat.analyzers._AnnualReturn.get_analysis())
+    print("--------------- SharpeRatio -----------------")
+    print(strat.analyzers._SharpeRatio.get_analysis())
+    print("--------------- DrawDown -----------------")
+    print(strat.analyzers._DrawDown.get_analysis())
     # 可视化回测结果 #########
+    cerebro.plot()
+    """
     colors = ['#729ece', '#ff9e4a', '#67bf5c', '#ed665d', '#ad8bc9', '#a8786e', '#ed97ca', '#a2a2a2', '#cdcc5d', '#6dccda']
     tab10_index = [3, 0, 2, 1, 2, 4, 5, 6, 7, 8, 9]
     cerebro.plot(iplot=False, 
@@ -74,3 +96,4 @@ if __name__ == '__main__':
                   voldown='#98df8a', 
                   loc='#5f5a41',
                   grid=False) # 删除水平网格
+    """
