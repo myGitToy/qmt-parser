@@ -37,6 +37,11 @@ end = datetime.datetime.now()
 jq = jqdata(rds_host = jqdata.数据源.localhost , myauth = True )
 df_remain = get_query_count()
 print(df_remain)
+#更新交易日历
+jq.update_trader_days()
+#获取交易日历
+cal = jq.get_trader_days(start_date = datetime.datetime(2021,11,1))
+print(cal)
 #dd = get_bars('399001.XSHE', end_dt = '2009-11-25',count =24,unit='5m' , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'])
 #print(dd)
 #更新5分钟线

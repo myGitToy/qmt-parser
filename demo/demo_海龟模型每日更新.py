@@ -26,6 +26,12 @@ auth('18621899367','Qq19840207')
 a.ktype = '1d'
 a.start = datetime.datetime(2020,11,1)
 a.end = datetime.datetime.now()
+
+
+#######00. 前置更新 更新交易日历
+#更新交易日历
+cal = data()
+cal.update_trader_days()
 #df = a.k_new_high_count()
 #print(df[['date','close','new_high','new_high_count']])
 #######1. 加载不同的自选股列表（数据更新时不能打开相关的excel文件，否则读取权限会显示失败）
