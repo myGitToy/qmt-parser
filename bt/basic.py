@@ -6,6 +6,16 @@ from datetime import datetime
 from bt.Data import Data as Data #导入bt本地数据模块
 from apt.vendor.jqdata.base import base #导入jqta base模块
 from apt.vendor.jqdata.jqdata import data as jqdata #导入jqta jqdata模块
+from bt.Data import CustomData_PEPB as pe
+
+class PandasData_more(bt.feeds.PandasData):
+    lines = ('pe', 'pb', ) # 要添加的线
+    # 设置 line 在数据源上的列位置
+    params=(
+        ('pe', -1),
+        ('pb', -1),
+           )
+    # -1表示自动按列明匹配数据，也可以设置为线在数据源中列的位置索引 (('pe',6),('pb',7),)
 
 # 创建策略
 class TestStrategy(bt.Strategy):
@@ -45,11 +55,17 @@ if __name__ == '__main__':
     d.ktype = '1d'
     d.myauth = False
     df_db = d.get_bt_data()
-    data = bt.feeds.PandasData(dataname = df_db)
-    #测试数据查询功能
+    ####标准的数据投喂
+    #data = bt.feeds.PandasData(dataname = df_db)
+    ####自定义数据投喂
+    df_db['pe'] = 2 # 给原先的data1新增pe指标（简单的取值为2）
+    df_db['pb'] = 3 # 给原先的data1新增pb指标（简单的取值为3）
+    data = pe(dataname = df_db)
+    #data = PandasData_more(dataname = df_db )
+    #测试数据查询功能 
     print(df_db.query("index >= '2021/11/20' & index <='2021/11/29'"))
     # 将数据传递给 “大脑” #########
-    cerebro.adddata(data)
+    cerebro.adddata(data , name = d.code) #自定义数据集的名称（用证券代码）
     ######### 通过经纪商设置初始资金 #########
     # 初始资金 100,000,000
     cerebro.broker.setcash(100000000.0)
@@ -97,3 +113,6 @@ if __name__ == '__main__':
                   loc='#5f5a41',
                   grid=False) # 删除水平网格
     """
+
+    #返回自定义的输出内容
+    
