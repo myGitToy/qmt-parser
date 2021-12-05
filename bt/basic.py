@@ -40,8 +40,6 @@ class TestStrategy(bt.Strategy):
         self.dataclose = self.datas[0].close
         # 用于记录订单状态
         self.order = None
-        self.pending = list()
-        self.orefs = list()         #订单列表
         #设置ATR指标
         self.atr = bt.indicators.AverageTrueRange(self.datas[0] , period = self.params.atr_period , plot = True , subplot= True , movav = bt.ind.MovAv.EMA)
         #设置头寸指标
@@ -62,7 +60,7 @@ class TestStrategy(bt.Strategy):
             #交易所已接受订单
             #打印目前现有订单
             self.log(f"#########交易所接收到新订单，现存有效订单有：#######")
-            for o in self.orefs:
+            for o in self.broker.get_orders_open():
                 self.log(f"订单编号{o.ref}；订单价格{o.price:.3f}；订单数量{o.size};")
                 
         if order.status in [order.Completed]:
@@ -76,26 +74,19 @@ class TestStrategy(bt.Strategy):
                 self.log(f"###有订单成交，订单编号：{order.ref}###")
                 self.log(f"###成交价格：{order.executed.price}；成交数量：{order.size};税费：{order.executed.comm:.2f}###")   
                 self.log("##################################################################")
-                self.orefs.remove(order)
                 #交易已完成，执行新的止损单
-                for o in self.orefs:
+                for o in self.broker.get_orders_open():
                     if o.ordtype == 1:
-                        #取消卖出单并从队列中移除
-                        #这里需要指出的是：从orefs中移除的只是自定义队列，实际并没有从broker中删除对应的订单，因此必须通知broker删除，否则就会出现持仓为负的情况
+                        #由于有新的买入单子，所以原有的止损单数量不对了，设定新的止损单
                         self.broker.cancel(o)
-                        self.orefs.remove(o)
                 #设立新的止损单
                 self.order = self.sell(exectype = bt.Order.StopLimit , price = 180 , size = self.getposition(self.data).size )
                 #加入队列
-                self.orefs.append(self.order)
+                #self.orefs.append(self.order)
             else:  # Sell
-                #self.log('SELL EXECUTED, Price: %.3f, Cost: %.2f, Comm %.2f' %(order.executed.price,order.executed.value,order.executed.comm))
-                #删除卖出单并移除队列
-                self.log(f"准备删除的编号{order.ref}")
-                self.orefs.remove(order)
+                self.log('SELL EXECUTED, Price: %.3f, Cost: %.2f, Comm %.2f' %(order.executed.price,order.executed.value,order.executed.comm))
+                pass
                 #self.bar_executed = len(self)
-                #关闭最后买入价格，逻辑清零
-                #self.last_price = None
                 
         elif order.status in [order.Canceled, order.Margin, order.Rejected]:
             #订单被交易所取消，判断是否需要重新下单
@@ -115,28 +106,24 @@ class TestStrategy(bt.Strategy):
         sma = btind.SimpleMovingAverage(...) # 计算均线
         ######获取仓位情况
         pos = self.getposition(self.data)
-
-        if pos.size == 0  and len(self.orefs) == 0:
+        ######获取交易所委托单情况
+        #broker_order = self.broker.get_orders_open()
+        if pos.size == 0  and len(self.broker.get_orders_open()) == 0:
             #持仓为0 且交易所订单列表为0，则进行下单
             #print(f'{self.datas[0].datetime.date()}:当前持仓量:{self.getposition(self.data).size}；收盘价{self.datas[0].close}' )
             #print(f"{self.datas[0].datetime.date():}无订单正在处理")
             #下单
             self.order = self.buy(exectype = bt.Order.StopLimit , price = 100 , size = 500 )
-            #加入队列
-            self.orefs.append(self.order)
             self.order = self.buy(exectype = bt.Order.StopLimit , price = 150 , size = 500 )
-            #加入队列
-            self.orefs.append(self.order)
         else:
             #有持仓，或者交易所有未成交订单，则显示当前未成交的订单
             #######使用自定义的队列来获取订单列表
-            for o in self.orefs:
+            #for o in self.orefs:
                 #订单状态：订单状态：{order.Status[order.status]}
-                self.log(f"订单编号{o.ref}；订单类型0买入1卖出：{o.ordtype}；订单价格{o.price:.3f}；订单数量{o.size};")
+                #self.log(f"订单编号{o.ref}；订单类型0买入1卖出：{o.ordtype}；订单价格{o.price:.3f}；订单数量{o.size};")
             #######使用broker来获取订单列表
-            odr = self.broker.get_orders_open()
-            for o1 in odr:
-                self.log(f"[Broker]订单编号{o1.ref}；订单类型：{o1.ordtype}；订单价格{o1.price:.3f}；订单数量{o1.size};订单类型{o1.Status[o1.status]}")
+            for o in self.broker.get_orders_open():
+                self.log(f"[Broker]订单编号{o.ref}；订单类型：{o.ordtype}；订单价格{o.price:.3f}；订单数量{o.size};订单类型{o.Status[o.status]}")
 
 if __name__ == '__main__':
     # 实例化 cerebro #########
