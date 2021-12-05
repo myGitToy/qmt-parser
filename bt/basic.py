@@ -2,12 +2,13 @@ import backtrader as bt # 导入 Backtrader
 import backtrader.indicators as btind # 导入策略分析模块
 import backtrader.feeds as btfeeds # 导入数据模块
 import pandas as pd
+import sqlalchemy
 from datetime import datetime
 from bt.Data import Data as Data #导入bt本地数据模块
 from apt.vendor.jqdata.base import base #导入jqta base模块
 from apt.vendor.jqdata.jqdata import data as jqdata #导入jqta jqdata模块
 from bt.Data import CustomData_PEPB as pe
-
+from datetime import timedelta
 class PandasData_more(bt.feeds.PandasData):
     lines = ('pe', 'pb', ) # 要添加的线
     # 设置 line 在数据源上的列位置
@@ -20,8 +21,14 @@ class PandasData_more(bt.feeds.PandasData):
 # 创建策略
 class TestStrategy(bt.Strategy):
     # 可选，设置回测的可变参数：如移动均线的周期
-    params = (('high_period',25),     #最高价的计算周期（日线默认25 小时线默认100）
-            ('atr_period',14),)
+    params=(('high_period',25),     #最高价的计算周期（日线默认25 小时线默认100）
+            ('atr_period',14),      #ATR的计算周期（日线默认14）
+            ('prank_period',25),    #分位数的计算周期（日线默认25 小时线默认100）
+            ('R',0.5),             #风险值R设定
+            ('atr_size',0.5),         #ATR间隔 默认1个ATR间隔下订单
+            ('unit_size',1),        #头寸大小 默认每次下单进行1个头寸
+            ('open_separation',5),#清仓以后的再次开仓间隔（用来控制反复止损的参数）
+            ('printlog',False),)     #是否输出日志 默认True
     def log(self, txt, dt=None):
         '''可选，构建策略打印日志的函数：可用于打印订单记录或交易记录等'''
         dt = dt or self.datas[0].datetime.date(0)
@@ -29,11 +36,69 @@ class TestStrategy(bt.Strategy):
 
     def __init__(self):
         '''必选，初始化属性、计算指标等'''
-        pass
+        self.dataclose = self.datas[0].close
+        # 用于记录订单状态
+        self.order = None
+        self.pending = list()
+        self.orefs = list()         #订单列表
+        #设置ATR指标
+        self.atr = bt.indicators.AverageTrueRange(self.datas[0] , period = self.params.atr_period , plot = True , subplot= True , movav = bt.ind.MovAv.EMA)
+        #设置头寸指标
+        self.unit = self.cerebro.broker.getvalue() * self.params.R /100  / self.atr        
+        #设置止损指标
+        self.high_cut = bt.indicators.Highest(self.datas[0].close - self.atr * 2 , period = self.params.high_period , plot = True , subplot= False) 
+        #设置EMA均线
+        #self.ema = bt.talib.ema(self.datas[0].close , timeperiod = 5)
+        #self.ema = bt.talib.talib.EMA(self.datas[0].close)
 
     def notify_order(self, order):
         '''可选，打印订单信息'''
-        pass
+        if order.status in [order.Submitted]:
+            #cerebro已提交订单
+            self.log(f"订单已提交，订单号：{order.ref}；提交价格：{order.price}；提交数量：{order.size}；订单状态：{order.Status[order.status]}"   )
+
+        if order.status in [order.Accepted]:
+            #交易所已接受订单
+            #打印目前现有订单
+            self.log(f"#########交易所接收到新订单，现存有效订单有：#######")
+            for o in self.orefs:
+                self.log(f"订单编号{o.ref}；订单价格{o.price:.3f}；订单数量{o.size};")
+                
+        if order.status in [order.Completed]:
+            if order.isbuy():
+                #self.log('BUY EXECUTED, Price: %.3f, Cost: %.3f, Comm %.2f' % (,order.executed.value,order.executed.comm))
+                self.last_price = order.executed.price
+                self.buyprice = order.executed.price
+                self.buycomm = order.executed.comm
+                #输出订单信息,并从有效订单中删除该笔订单
+                self.log("##################################################################")
+                self.log(f"###有订单成交，订单编号：{order.ref}###")
+                self.log(f"###成交价格：{order.executed.price}；成交数量：{order.size};税费：{order.executed.comm:.2f}###")   
+                self.log("##################################################################")
+                self.orefs.remove(order)
+                #交易已完成，执行新的止损单
+                for o in self.orefs:
+                    if o.ordtype ==1:
+                        #取消卖出单
+                        self.orefs.remove(o)
+                #设立新的止损单
+                self.order = self.sell(exectype = bt.Order.StopLimit , price = 80 , size = self.getposition(self.data).size )
+                #加入队列
+                self.orefs.append(self.order)
+            else:  # Sell
+                #self.log('SELL EXECUTED, Price: %.3f, Cost: %.2f, Comm %.2f' %(order.executed.price,order.executed.value,order.executed.comm))
+
+                self.bar_executed = len(self)
+                #关闭最后买入价格，逻辑清零
+                #self.last_price = None
+
+        elif order.status in [order.Canceled, order.Margin, order.Rejected]:
+            #订单被交易所取消，判断是否需要重新下单
+            pass
+            self.log('****************************************Order Canceled/Margin/Rejected')
+
+        #订单处理完成
+        self.order = None
 
     def notify_trade(self, trade):
         '''可选，打印交易信息'''
@@ -41,8 +106,27 @@ class TestStrategy(bt.Strategy):
 
     def next(self):
         '''必选，编写交易策略逻辑'''
+        print(f"{self.datas[0].datetime.date()}:当前持仓量:{self.getposition(self.data).size}；持仓成本{self.getposition(self.data).price}；收盘价{self.datas[0].close[0]:.3f}")
         sma = btind.SimpleMovingAverage(...) # 计算均线
-        pass
+        ######获取仓位情况
+        pos = self.getposition(self.data)
+
+        if pos.size == 0  and len(self.orefs) == 0:
+            #持仓为0 且交易所订单列表为0，则进行下单
+            #print(f'{self.datas[0].datetime.date()}:当前持仓量:{self.getposition(self.data).size}；收盘价{self.datas[0].close}' )
+            #print(f"{self.datas[0].datetime.date():}无订单正在处理")
+            #下单
+            self.order = self.buy(exectype = bt.Order.StopLimit , price = 100 , size = 500 )
+            #加入队列
+            self.orefs.append(self.order)
+            self.order = self.buy(exectype = bt.Order.StopLimit , price = 150 , size = 500 )
+            #加入队列
+            self.orefs.append(self.order)
+        else:
+            #有持仓，或者交易所有未成交订单，则显示当前未成交的订单
+            for o in self.orefs:
+                #订单状态：订单状态：{order.Status[order.status]}
+                self.log(f"订单编号{o.ref}；订单类型0买入1卖出：{o.ordtype}；订单价格{o.price:.3f}；订单数量{o.size};")
 
 if __name__ == '__main__':
     # 实例化 cerebro #########
@@ -50,17 +134,19 @@ if __name__ == '__main__':
     ######### 通过 feeds 读取数据 #########
     d = Data()
     d.code = '002594.XSHE'
-    d.start = datetime(2021,1,1)
-    d.end = datetime(2021,12,31)
+    d.start = datetime(2020,2,1)
+    d.end = datetime(2021,10,9)
     d.ktype = '1d'
     d.myauth = False
     df_db = d.get_bt_data()
     ####标准的数据投喂
-    #data = bt.feeds.PandasData(dataname = df_db)
+    data = bt.feeds.PandasData(dataname = df_db)
     ####自定义数据投喂
-    df_db['pe'] = 2 # 给原先的data1新增pe指标（简单的取值为2）
-    df_db['pb'] = 3 # 给原先的data1新增pb指标（简单的取值为3）
-    data = pe(dataname = df_db)
+    #df_db['pe'] = 2 # 给原先的data1新增pe指标（简单的取值为2）
+    #df_db['pb'] = 3 # 给原先的data1新增pb指标（简单的取值为3）
+    #p = pe()
+    #df_db = p.add_data(code = d.code , df = df_db)
+    #data = pe(dataname = df_db)
     #data = PandasData_more(dataname = df_db )
     #测试数据查询功能 
     print(df_db.query("index >= '2021/11/20' & index <='2021/11/29'"))
@@ -68,7 +154,7 @@ if __name__ == '__main__':
     cerebro.adddata(data , name = d.code) #自定义数据集的名称（用证券代码）
     ######### 通过经纪商设置初始资金 #########
     # 初始资金 100,000,000
-    cerebro.broker.setcash(100000000.0)
+    cerebro.broker.setcash(1000000.0)
     # 佣金，双边各 0.0003
     cerebro.broker.setcommission(commission=0.0003)
     # 滑点：双边各 0.0001
