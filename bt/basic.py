@@ -28,6 +28,7 @@ class TestStrategy(bt.Strategy):
             ('R',0.5),             #风险值R设定
             ('atr_size',0.5),         #ATR间隔 默认1个ATR间隔下订单
             ('unit_size',1),        #头寸大小 默认每次下单进行1个头寸
+            ('cut_atr',3),          #从最高点收盘价下跌N个ATR则进行清仓
             ('open_separation',5),#清仓以后的再次开仓间隔（用来控制反复止损的参数）
             ('printlog',False),)     #是否输出日志 默认True
     def log(self, txt, dt=None):
@@ -37,17 +38,23 @@ class TestStrategy(bt.Strategy):
 
     def __init__(self):
         '''必选，初始化属性、计算指标等'''
-        self.dataclose = self.datas[0].close
+        #self.dataclose = self.datas[0].close
         # 用于记录订单状态
         self.order = None
+
+        #设置prank指标
+        self.prank = bt.indicators.PercentRank(self.datas[0].close, period = self.p.prank_period , plot = True , subplot = True )
         #设置ATR指标
         self.atr = bt.indicators.AverageTrueRange(self.datas[0] , period = self.params.atr_period , plot = True , subplot= True , movav = bt.ind.MovAv.EMA)
         #设置头寸指标
         self.unit = self.cerebro.broker.getvalue() * self.params.R /100  / self.atr        
         #设置止损指标
-        self.high_cut = bt.indicators.Highest(self.datas[0].close - self.atr * 2 , period = self.params.high_period , plot = True , subplot= False) 
+        self.high_cut = bt.indicators.Highest(self.datas[0].close - self.atr * self.params.cut_atr , period = self.params.high_period , plot = True , subplot= False) 
         #设置EMA均线
-        #self.ema = bt.talib.ema(self.datas[0].close , timeperiod = 5)
+        self.ema = bt.talib.EMA(self.datas[0], timeperiod = 14)
+        #talib技术指标
+        self.doji = bt.talib.CDL3STARSINSOUTH(self.data.open, self.data.high,self.data.low, self.data.close)       
+        #self.ema = bt.talib.EMA(self.datas[0].close , timeperiod = 5)
         #self.ema = bt.talib.talib.EMA(self.datas[0].close)
 
     def notify_order(self, order):
@@ -81,8 +88,6 @@ class TestStrategy(bt.Strategy):
                         self.broker.cancel(o)
                 #设立新的止损单
                 self.order = self.sell(exectype = bt.Order.StopLimit , price = 180 , size = self.getposition(self.data).size )
-                #加入队列
-                #self.orefs.append(self.order)
             else:  # Sell
                 self.log('SELL EXECUTED, Price: %.3f, Cost: %.2f, Comm %.2f' %(order.executed.price,order.executed.value,order.executed.comm))
                 pass
@@ -106,21 +111,13 @@ class TestStrategy(bt.Strategy):
         sma = btind.SimpleMovingAverage(...) # 计算均线
         ######获取仓位情况
         pos = self.getposition(self.data)
-        ######获取交易所委托单情况
-        #broker_order = self.broker.get_orders_open()
         if pos.size == 0  and len(self.broker.get_orders_open()) == 0:
             #持仓为0 且交易所订单列表为0，则进行下单
-            #print(f'{self.datas[0].datetime.date()}:当前持仓量:{self.getposition(self.data).size}；收盘价{self.datas[0].close}' )
             #print(f"{self.datas[0].datetime.date():}无订单正在处理")
             #下单
             self.order = self.buy(exectype = bt.Order.StopLimit , price = 100 , size = 500 )
             self.order = self.buy(exectype = bt.Order.StopLimit , price = 150 , size = 500 )
         else:
-            #有持仓，或者交易所有未成交订单，则显示当前未成交的订单
-            #######使用自定义的队列来获取订单列表
-            #for o in self.orefs:
-                #订单状态：订单状态：{order.Status[order.status]}
-                #self.log(f"订单编号{o.ref}；订单类型0买入1卖出：{o.ordtype}；订单价格{o.price:.3f}；订单数量{o.size};")
             #######使用broker来获取订单列表
             for o in self.broker.get_orders_open():
                 self.log(f"[Broker]订单编号{o.ref}；订单类型：{o.ordtype}；订单价格{o.price:.3f}；订单数量{o.size};订单类型{o.Status[o.status]}")
