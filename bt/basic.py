@@ -3,6 +3,7 @@ import backtrader.indicators as btind # 导入策略分析模块
 import backtrader.feeds as btfeeds # 导入数据模块
 import pandas as pd
 import sqlalchemy
+import numpy as np
 from datetime import datetime
 from bt.Data import Data as Data #导入bt本地数据模块
 from apt.vendor.jqdata.base import base #导入jqta base模块
@@ -38,10 +39,12 @@ class TestStrategy(bt.Strategy):
 
     def __init__(self):
         '''必选，初始化属性、计算指标等'''
-        #self.dataclose = self.datas[0].close
+        #设置百分位数指标
+        self.quantile_value = None
         # 用于记录订单状态
         self.order = None
-
+        #设置百分位数指标
+        #self.sma = bt.indicators.SimpleMovingAverage(self.datas[0], period = 25).get(size=25)
         #设置prank指标
         self.prank = bt.indicators.PercentRank(self.datas[0].close, period = self.p.prank_period , plot = True , subplot = True )
         #设置ATR指标
@@ -52,6 +55,8 @@ class TestStrategy(bt.Strategy):
         self.high_cut = bt.indicators.Highest(self.datas[0].close - self.atr * self.params.cut_atr , period = self.params.high_period , plot = True , subplot= False) 
         #设置EMA均线
         self.ema = bt.talib.EMA(self.datas[0], timeperiod = 14)
+        #####设置EMA均线SLOPE指标
+
         #talib技术指标
         self.doji = bt.talib.CDL3STARSINSOUTH(self.data.open, self.data.high,self.data.low, self.data.close)       
         #self.ema = bt.talib.EMA(self.datas[0].close , timeperiod = 5)
@@ -108,7 +113,12 @@ class TestStrategy(bt.Strategy):
     def next(self):
         '''必选，编写交易策略逻辑'''
         print(f"{self.datas[0].datetime.date()}:当前持仓量:{self.getposition(self.data).size}；持仓成本{self.getposition(self.data).price}；收盘价{self.datas[0].close[0]:.3f}")
+        
         sma = btind.SimpleMovingAverage(...) # 计算均线
+        #计算百分比
+        #lose_rolling
+        self.quantile_value  = np.quantile(self.datas[0].close.get(size = 20), [0.25, 0.5, 0.75], interpolation='linear')
+        print(f"当前P75值为：{self.quantile_value[1]}")
         ######获取仓位情况
         pos = self.getposition(self.data)
         if pos.size == 0  and len(self.broker.get_orders_open()) == 0:
@@ -120,8 +130,7 @@ class TestStrategy(bt.Strategy):
         else:
             #######使用broker来获取订单列表
             for o in self.broker.get_orders_open():
-                self.log(f"[Broker]订单编号{o.ref}；订单类型：{o.ordtype}；订单价格{o.price:.3f}；订单数量{o.size};订单类型{o.Status[o.status]}")
-
+                self.log(f"[Broker]订单编号{o.ref}；订单类型：{o.OrdTypes[o.ordtype]}；订单价格{o.price:.3f}；订单数量{o.size};订单类型{o.Status[o.status]}")
 if __name__ == '__main__':
     # 实例化 cerebro #########
     cerebro = bt.Cerebro()
@@ -129,7 +138,7 @@ if __name__ == '__main__':
     d = Data()
     d.code = '002594.XSHE'
     d.start = datetime(2020,2,1)
-    d.end = datetime(2021,10,9)
+    d.end = datetime(2021,12,9)
     d.ktype = '1d'
     d.myauth = False
     df_db = d.get_bt_data()
