@@ -39,12 +39,8 @@ class TestStrategy(bt.Strategy):
 
     def __init__(self):
         '''必选，初始化属性、计算指标等'''
-        #设置百分位数指标
-        self.quantile_value = None
         # 用于记录订单状态
         self.order = None
-        #设置百分位数指标
-        #self.sma = bt.indicators.SimpleMovingAverage(self.datas[0], period = 25).get(size=25)
         #设置prank指标
         self.prank = bt.indicators.PercentRank(self.datas[0].close, period = self.p.prank_period , plot = True , subplot = True )
         #设置ATR指标
@@ -54,7 +50,10 @@ class TestStrategy(bt.Strategy):
         #设置止损指标
         self.high_cut = bt.indicators.Highest(self.datas[0].close - self.atr * self.params.cut_atr , period = self.params.high_period , plot = True , subplot= False) 
         #设置EMA均线
-        self.ema = bt.talib.EMA(self.datas[0], timeperiod = 14)
+        self.ema_short = bt.talib.EMA(self.datas[0], timeperiod = 14)
+        self.ema_long = bt.talib.EMA(self.datas[0], timeperiod = 120)
+        #设置交易信号
+        self.signal_abv_ema_long = bt.And(self.datas[0] > self.ema_long)
         #####设置EMA均线SLOPE指标
 
         #talib技术指标
@@ -113,10 +112,9 @@ class TestStrategy(bt.Strategy):
     def next(self):
         '''必选，编写交易策略逻辑'''
         print(f"{self.datas[0].datetime.date()}:当前持仓量:{self.getposition(self.data).size}；持仓成本{self.getposition(self.data).price}；收盘价{self.datas[0].close[0]:.3f}")
-        
+        #print(self.rolling_data[:0])
         sma = btind.SimpleMovingAverage(...) # 计算均线
         #计算百分比
-        #lose_rolling
         self.quantile_value  = np.quantile(self.datas[0].close.get(size = 20), [0.25, 0.5, 0.75], interpolation='linear')
         print(f"当前P75值为：{self.quantile_value[1]}")
         ######获取仓位情况
