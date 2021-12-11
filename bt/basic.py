@@ -23,13 +23,14 @@ class PandasData_more(bt.feeds.PandasData):
 # 创建策略
 class TestStrategy(bt.Strategy):
     # 可选，设置回测的可变参数：如移动均线的周期
-    params=(('high_period',25),     #最高价的计算周期（日线默认25 小时线默认100）
-            ('atr_period',14),      #ATR的计算周期（日线默认14）
+    params=(('max_unit',6),        #最大交易头寸
+            ('high_period',25),     #最高价的计算周期（日线默认25 小时线默认100）
+            ('atr_period',25),      #ATR的计算周期（日线默认14）
             ('prank_period',25),    #分位数的计算周期（日线默认25 小时线默认100）
-            ('R',0.5),             #风险值R设定
-            ('atr_size',0.5),         #ATR间隔 默认1个ATR间隔下订单
+            ('R',0.25),             #风险值R设定
+            ('atr_size',1),         #ATR间隔 默认1个ATR间隔下订单
             ('unit_size',1),        #头寸大小 默认每次下单进行1个头寸
-            ('cut_atr',3),          #从最高点收盘价下跌N个ATR则进行清仓
+            ('cut_atr',3.5),          #从最高点收盘价下跌N个ATR则进行清仓
             ('open_separation',5),#清仓以后的再次开仓间隔（用来控制反复止损的参数）
             ('printlog',False),)     #是否输出日志 默认True
     def log(self, txt, dt=None):
@@ -39,14 +40,21 @@ class TestStrategy(bt.Strategy):
 
     def __init__(self):
         '''必选，初始化属性、计算指标等'''
+        #########记录海龟模型的状态变量#############
+        #设置上一次买入的价格
+        self.last_price = None
+        #初始买入点
+        self.init_price = None
         # 用于记录订单状态
         self.order = None
+        #记录理论头寸
+        self.t_unit = None
         #设置prank指标
         self.prank = bt.indicators.PercentRank(self.datas[0].close, period = self.p.prank_period , plot = True , subplot = True )
         #设置ATR指标
         self.atr = bt.indicators.AverageTrueRange(self.datas[0] , period = self.params.atr_period , plot = True , subplot= True , movav = bt.ind.MovAv.EMA)
         #设置头寸指标
-        self.unit = self.cerebro.broker.getvalue() * self.params.R /100  / self.atr        
+        self.unit = self.cerebro.broker.getvalue() * self.params.R /100  / self.atr 
         #设置止损指标
         self.high_cut = bt.indicators.Highest(self.datas[0].close - self.atr * self.params.cut_atr , period = self.params.high_period , plot = True , subplot= False) 
         #设置EMA均线
@@ -65,26 +73,30 @@ class TestStrategy(bt.Strategy):
         '''可选，打印订单信息'''
         if order.status in [order.Submitted]:
             #cerebro已提交订单
-            self.log(f"订单已提交，订单号：{order.ref}；提交价格：{order.price}；提交数量：{order.size}；订单状态：{order.Status[order.status]}"   )
+            #self.log(f"订单已提交，订单号：{order.ref}；提交价格：{order.price}；提交数量：{order.size}；订单状态：{order.Status[order.status]}"   )
+            pass
 
         if order.status in [order.Accepted]:
             #交易所已接受订单
             #打印目前现有订单
+            """
             self.log(f"#########交易所接收到新订单，现存有效订单有：#######")
             for o in self.broker.get_orders_open():
                 self.log(f"订单编号{o.ref}；订单价格{o.price:.3f}；订单数量{o.size};")
-                
+            """    
         if order.status in [order.Completed]:
             if order.isbuy():
                 #self.log('BUY EXECUTED, Price: %.3f, Cost: %.3f, Comm %.2f' % (,order.executed.value,order.executed.comm))
                 self.last_price = order.executed.price
                 self.buyprice = order.executed.price
                 self.buycomm = order.executed.comm
+                '''
                 #输出订单信息,并从有效订单中删除该笔订单
                 self.log("##################################################################")
                 self.log(f"###有订单成交，订单编号：{order.ref}###")
                 self.log(f"###成交价格：{order.executed.price}；成交数量：{order.size};税费：{order.executed.comm:.2f}###")   
                 self.log("##################################################################")
+
                 #交易已完成，执行新的止损单
                 for o in self.broker.get_orders_open():
                     if o.ordtype == 1:
@@ -92,6 +104,7 @@ class TestStrategy(bt.Strategy):
                         self.broker.cancel(o)
                 #设立新的止损单
                 self.order = self.sell(exectype = bt.Order.StopLimit , price = 180 , size = self.getposition(self.data).size )
+                '''
             else:  # Sell
                 self.log('SELL EXECUTED, Price: %.3f, Cost: %.2f, Comm %.2f' %(order.executed.price,order.executed.value,order.executed.comm))
                 pass
@@ -100,7 +113,7 @@ class TestStrategy(bt.Strategy):
         elif order.status in [order.Canceled, order.Margin, order.Rejected]:
             #订单被交易所取消，判断是否需要重新下单
             pass
-            self.log('****************************************Order Canceled/Margin/Rejected')
+            #self.log('****************************************Order Canceled/Margin/Rejected')
 
         #订单处理完成
         self.order = None
@@ -111,22 +124,67 @@ class TestStrategy(bt.Strategy):
 
     def next(self):
         '''必选，编写交易策略逻辑'''
+        self.log("##########当日委托单#############")
+        for o in self.broker.get_orders_open():
+            self.log(f"订单编号{o.ref}；订单价格{o.price:.3f}；订单数量{o.size};")
         print(f"{self.datas[0].datetime.date()}:当前持仓量:{self.getposition(self.data).size}；持仓成本{self.getposition(self.data).price}；收盘价{self.datas[0].close[0]:.3f}")
         #print(self.rolling_data[:0])
         sma = btind.SimpleMovingAverage(...) # 计算均线
         #计算百分比
-        self.quantile_value  = np.quantile(self.datas[0].close.get(size = 20), [0.25, 0.5, 0.75], interpolation='linear')
-        print(f"当前P75值为：{self.quantile_value[1]}")
+        
+        
         ######获取仓位情况
         pos = self.getposition(self.data)
-        if pos.size == 0  and len(self.broker.get_orders_open()) == 0:
-            #持仓为0 且交易所订单列表为0，则进行下单
-            #print(f"{self.datas[0].datetime.date():}无订单正在处理")
-            #下单
-            self.order = self.buy(exectype = bt.Order.StopLimit , price = 100 , size = 500 )
-            self.order = self.buy(exectype = bt.Order.StopLimit , price = 150 , size = 500 )
+        if pos.size == 0 :
+            #未开仓状态，下面有两种可能性：
+            #1. 未开仓 未挂单：新建挂单
+            #2. 未开仓 有挂单：修改挂单
+            #计算75分位数的买入价格
+            self.quantile_value  = np.quantile(self.datas[0].close.get(size = 20), [0.25, 0.5, 0.75 , 0.85], interpolation = 'linear')
+            #print(f"当前P75值为：{self.quantile_value[1]}")
+            #买入价格的基准线是75分位数和EMA120均线取高者
+            base_price = round(max(self.quantile_value[2] , self.ema_long[0]) , 3)
+            if len(self.broker.get_orders_open()) == 0:
+                #对应上面情况1
+                #挂单2个头寸
+                self.order = self.buy(exectype = bt.Order.StopLimit , price = base_price ,  size = int(self.unit[0] /100) * 100 )
+                self.order = self.buy(exectype = bt.Order.StopLimit , price = base_price + self.atr[0] ,  size = int(self.unit[0] /100) * 100 )
+            else:
+                #对应上面的情况2
+                #删除挂单并下2个订单
+                for o in self.broker.get_orders_open():
+                    self.broker.cancel(o)
+                self.order = self.buy(exectype = bt.Order.StopLimit , price = base_price , size = int(self.unit[0] /100) * 100 )
+                self.order = self.buy(exectype = bt.Order.StopLimit , price = base_price + self.atr[0] ,  size = int(self.unit[0] /100) * 100 )
+            #持仓为0 且交易所订单列表为0，则进入
+            #print(f"{self.datas[0].datetime.date():}无订单正在处理")3
+
         else:
-            #######使用broker来获取订单列表
+            #######有开仓的仓位
+            ###修改委托单
+            for o in self.broker.get_orders_open():
+                self.broker.cancel(o)
+            if pos.size <= self.unit[0] * 4.5:
+                #当前持仓头寸小于4个，正常添加两个头寸
+                self.order = self.buy(exectype = bt.Order.StopLimit , price = self.last_price , size = int(self.unit[0] /100) * 100 )
+                self.order = self.buy(exectype = bt.Order.StopLimit , price = self.last_price + self.atr[0] ,  size = int(self.unit[0] /100) * 100 )
+            elif (pos.size > self.unit[0] * 4.5) and (pos.size < self.unit[0] * 6.5):
+                #添加一个头寸
+                self.order = self.buy(exectype = bt.Order.StopLimit , price = self.last_price + self.atr[0] ,  size = int(self.unit[0] /100) * 100 )
+
+
+            ###修改止损单
+            #止损单计数器，如果有止损单，则置1，如果全部读取完毕仍无止损单，则后续会添加一笔止损
+            sell_count = 0 
+            for s in self.broker.get_orders_open():
+
+                if s.ordtype == 1:
+                    self.broker.cancel(s)
+                    self.order = self.sell(exectype = bt.Order.StopLimit , price = round(self.high_cut[0] , 3), size = pos.size )
+            if sell_count == 0:
+                #委托单中无止损单，主动添加一笔止损单
+                self.order = self.sell(exectype = bt.Order.StopLimit , price = round(self.high_cut[0] , 3), size = pos.size )
+            ##使用broker来获取订单列表
             for o in self.broker.get_orders_open():
                 self.log(f"[Broker]订单编号{o.ref}；订单类型：{o.OrdTypes[o.ordtype]}；订单价格{o.price:.3f}；订单数量{o.size};订单类型{o.Status[o.status]}")
 if __name__ == '__main__':
@@ -134,9 +192,9 @@ if __name__ == '__main__':
     cerebro = bt.Cerebro()
     ######### 通过 feeds 读取数据 #########
     d = Data()
-    d.code = '002594.XSHE'
-    d.start = datetime(2020,2,1)
-    d.end = datetime(2021,12,9)
+    d.code = '600036.XSHG'
+    d.start = datetime(2019,6,1)
+    d.end = datetime(2021,12,10)
     d.ktype = '1d'
     d.myauth = False
     df_db = d.get_bt_data()
@@ -186,8 +244,8 @@ if __name__ == '__main__':
     print("--------------- DrawDown -----------------")
     print(strat.analyzers._DrawDown.get_analysis())
     # 可视化回测结果 #########
-    cerebro.plot()
-    """
+    #cerebro.plot()
+
     colors = ['#729ece', '#ff9e4a', '#67bf5c', '#ed665d', '#ad8bc9', '#a8786e', '#ed97ca', '#a2a2a2', '#cdcc5d', '#6dccda']
     tab10_index = [3, 0, 2, 1, 2, 4, 5, 6, 7, 8, 9]
     cerebro.plot(iplot=False, 
@@ -199,7 +257,7 @@ if __name__ == '__main__':
                   voldown='#98df8a', 
                   loc='#5f5a41',
                   grid=False) # 删除水平网格
-    """
+
 
     #返回自定义的输出内容
     
