@@ -7,10 +7,10 @@ import pandas as pd
 【ATR技术分析系统】
 """
 class ATR(base):
-    def get_atr(self , N = 20 , MAHR_100_HIGH = 25, MAHR_20 = 5 ,MAHR_30 = 8):
+    def get_atr(self , N = 25 , MAHR_100_HIGH = 25, MAHR_20 = 5 ,MAHR_30 = 8):
         """计算ATR
         输入：
-            ATR_MA ATR的计算周期 默认20天移动平均线（2021/1/6修改到14天）
+            ATR_MA ATR的计算周期 默认25天移动平均线（2021/1/6修改到14天）
             MAHR_100_HIGH 小时线100小时最高价格 对应到日线为25天线最高价格 正常情况下无需更改（2021/1/6修改到20天）
             MAHR_20: 小时线20小时均线价格 对应到日线为5天线 正常情况下无需更改
             MAHR_30: 小时线30小时均线价格 对应到日线为7.5天，近似成8天线 正常情况下无需更改
@@ -63,7 +63,7 @@ class ATR(base):
         #print(df[['date','close','ATR']])
         return df
 
-    def daily_update(self , code_list = [] , N = 20 , MAHR_100_HIGH = 25, MAHR_20 = 5 ,MAHR_30 = 8 , to_csv = True):
+    def daily_update(self , code_list = [] , N = 25 , MAHR_100_HIGH = 25, MAHR_20 = 5 ,MAHR_30 = 8 , to_csv = True):
         #ATR模块每日更新
         df_main=pd.DataFrame()
         for code in code_list:
@@ -83,10 +83,10 @@ class ATR(base):
             df_main.to_csv('.\\trade\\ATR_jqdata.csv', encoding = 'utf_8_sig')
         return df_main
 
-    def abnormal_atr(self , atr_ma = 14 , criteria = 2 , N = 5 , count = 1 , flag_std = True):
+    def abnormal_atr(self , atr_ma = 25 , criteria = 2 , N = 5 , count = 1 , flag_std = True):
         """
         异常的ATR波动值
-        atr_ma ATR的计算周期 默认使用14天的atr
+        atr_ma ATR的计算周期 默认使用25天的atr
         criteria 异动的标准（当天TR值和ATR的比率/或者是X倍标准差） 默认为ATR/STD的两倍
         N 几天内出现这种情况算是符合条件 默认为一周内，即5天。如需计算当天的情况，则N = 1
         count N周期内出现几次算符合条件 count <= N
