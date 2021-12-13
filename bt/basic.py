@@ -187,13 +187,19 @@ class TestStrategy(bt.Strategy):
             ##使用broker来获取订单列表
             for o in self.broker.get_orders_open():
                 self.log(f"[Broker]订单编号{o.ref}；订单类型：{o.OrdTypes[o.ordtype]}；订单价格{o.price:.3f}；订单数量{o.size};订单类型{o.Status[o.status]}")
+
+    def stop(self):
+        '''策略结束，对应最后一根bar'''
+        # 告知系统回测已完成，可以进行策略重置和回测结果整理了
+        pass
+
 if __name__ == '__main__':
     # 实例化 cerebro #########
     cerebro = bt.Cerebro()
     ######### 通过 feeds 读取数据 #########
     d = Data()
     d.code = '600036.XSHG'
-    d.start = datetime(2019,6,1)
+    d.start = datetime(2005,6,1)
     d.end = datetime(2021,12,10)
     d.ktype = '1d'
     d.myauth = False
