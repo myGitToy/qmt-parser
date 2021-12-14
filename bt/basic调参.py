@@ -50,7 +50,7 @@ class TestStrategy(bt.Strategy):
         #记录理论头寸
         self.t_unit = None
         #设置prank指标
-        self.prank = bt.indicators.PercentRank(self.datas[0].close, period = self.p.prank_period , plot = True , subplot = True )
+        #self.prank = bt.indicators.PercentRank(self.datas[0].close, period = self.params.prank_period , plot = True , subplot = True )
         #设置ATR指标
         self.atr = bt.indicators.AverageTrueRange(self.datas[0] , period = self.params.atr_period , plot = True , subplot= True , movav = bt.ind.MovAv.EMA)
         #设置头寸指标
@@ -147,15 +147,15 @@ class TestStrategy(bt.Strategy):
             if len(self.broker.get_orders_open()) == 0:
                 #对应上面情况1
                 #挂单2个头寸
-                self.order = self.buy(exectype = bt.Order.StopLimit , price = base_price ,  size = int(self.unit[0] /100) * 100 )
-                self.order = self.buy(exectype = bt.Order.StopLimit , price = base_price + self.atr[0] ,  size = int(self.unit[0] /100) * 100 )
+                self.order = self.buy(exectype = bt.Order.StopLimit , price = base_price ,  size = int(self.unit[0] * self.params.unit_size /100) * 100 )
+                self.order = self.buy(exectype = bt.Order.StopLimit , price = base_price + self.atr[0] * self.params.atr_size,  size = int(self.unit[0]  * self.params.unit_size /100) * 100 )
             else:
                 #对应上面的情况2
                 #删除挂单并下2个订单
                 for o in self.broker.get_orders_open():
                     self.broker.cancel(o)
-                self.order = self.buy(exectype = bt.Order.StopLimit , price = base_price , size = int(self.unit[0] /100) * 100 )
-                self.order = self.buy(exectype = bt.Order.StopLimit , price = base_price + self.atr[0] ,  size = int(self.unit[0] /100) * 100 )
+                self.order = self.buy(exectype = bt.Order.StopLimit , price = base_price , size = int(self.unit[0]  * self.params.unit_size /100) * 100 )
+                self.order = self.buy(exectype = bt.Order.StopLimit , price = base_price + self.atr[0] * self.params.atr_size ,  size = int(self.unit[0]  * self.params.unit_size /100) * 100 )
             #持仓为0 且交易所订单列表为0，则进入
             #print(f"{self.datas[0].datetime.date():}无订单正在处理")3
 
@@ -166,11 +166,11 @@ class TestStrategy(bt.Strategy):
                 self.broker.cancel(o)
             if pos.size <= self.unit[0] * 4.5:
                 #当前持仓头寸小于4个，正常添加两个头寸
-                self.order = self.buy(exectype = bt.Order.StopLimit , price = self.last_price , size = int(self.unit[0] /100) * 100 )
-                self.order = self.buy(exectype = bt.Order.StopLimit , price = self.last_price + self.atr[0] ,  size = int(self.unit[0] /100) * 100 )
+                self.order = self.buy(exectype = bt.Order.StopLimit , price = self.last_price , size = int(self.unit[0]  * self.params.unit_size /100) * 100 )
+                self.order = self.buy(exectype = bt.Order.StopLimit , price = self.last_price + self.atr[0] * self.params.atr_size ,  size = int(self.unit[0]  * self.params.unit_size  /100) * 100 )
             elif (pos.size > self.unit[0] * 4.5) and (pos.size < self.unit[0] * 6.5):
                 #添加一个头寸
-                self.order = self.buy(exectype = bt.Order.StopLimit , price = self.last_price + self.atr[0] ,  size = int(self.unit[0] /100) * 100 )
+                self.order = self.buy(exectype = bt.Order.StopLimit , price = self.last_price + self.atr[0] * self.params.atr_size ,  size = int(self.unit[0]  * self.params.unit_size /100) * 100 )
 
 
             ###修改止损单
@@ -195,12 +195,17 @@ class TestStrategy(bt.Strategy):
 
 if __name__ == '__main__':
     # 实例化 cerebro #########
-    cerebro = bt.Cerebro()
+    #不需要调参的实例化
+    #cerebro = bt.Cerebro()
+    #调参实例化
+    #optdatas=True：在处理数据时会采用相对节省时间的方式，进而提高优化速度；
+    #optreturn=True：在返回回测结果时，为了节省时间，只返回与参数优化最相关的内容（params 和 analyzers），而不会返回参数优化不关心的数据（比如 datas, indicators, observers …等）；
+    cerebro = bt.Cerebro(optdatas=True, optreturn=True)
     ######### 通过 feeds 读取数据 #########
     d = Data()
-    d.code = '600036.XSHG'
-    d.start = datetime(2005,6,1)
-    d.end = datetime(2021,12,10)
+    d.code = '159967.XSHE'
+    d.start = datetime(2019,6,1)
+    d.end = datetime(2021,12,31)
     d.ktype = '1d'
     d.myauth = False
     df_db = d.get_bt_data()
@@ -227,12 +232,18 @@ if __name__ == '__main__':
     # 设置单笔交易的数量 #########
     #cerebro.addsizer(...)
     # 添加策略 #########
-    cerebro.addstrategy(TestStrategy)
+    #cerebro.addstrategy(TestStrategy)
+    # 或者是添加调参策略（list用法）
+    #cerebro.optstrategy(TestStrategy, cut_atr = [2,3,4,5])
+    # 或者是添加调参策略（range用法）
+    cerebro.optstrategy(TestStrategy, cut_atr = [2,2.5,3,3.5,4,4.5,5,5.5,6] , atr_size = [0.5,1] , unit_size = [0.5,1])
     # 添加策略分析指标 #########
     cerebro.addanalyzer(bt.analyzers.TimeReturn, _name='pnl') # 返回收益率时序数据
-    cerebro.addanalyzer(bt.analyzers.AnnualReturn, _name='_AnnualReturn') # 年化收益率
-    cerebro.addanalyzer(bt.analyzers.SharpeRatio, _name='_SharpeRatio') # 夏普比率
-    cerebro.addanalyzer(bt.analyzers.DrawDown, _name='_DrawDown') # 回撤
+    cerebro.addanalyzer(bt.analyzers.AnnualReturn, _name='_AnnualReturn') # 返回年初至年末的年度收益率
+    cerebro.addanalyzer(bt.analyzers.Returns, _name='_Returns', tann=252)   #计算年化收益
+    cerebro.addanalyzer(bt.analyzers.SharpeRatio_A, _name='_SharpeRatio_A') # 计算年化夏普比率
+    cerebro.addanalyzer(bt.analyzers.DrawDown, _name='_DrawDown') # 计算最大回撤相关指标
+    cerebro.addanalyzer(bt.analyzers.TimeReturn, _name='_TimeReturn')    # 返回收益率时序
     # 添加观测器 #########
     #cerebro.addobserver(...)
     # 启动回测 #########
@@ -240,6 +251,7 @@ if __name__ == '__main__':
     result = cerebro.run()
     # 从返回的 result 中提取回测结果
     strat = result[0]
+    """ #策略调优时需要注释掉
     # 返回日度收益率序列
     daily_return = pd.Series(strat.analyzers.pnl.get_analysis())
     # 打印评价指标
@@ -249,9 +261,10 @@ if __name__ == '__main__':
     print(strat.analyzers._SharpeRatio.get_analysis())
     print("--------------- DrawDown -----------------")
     print(strat.analyzers._DrawDown.get_analysis())
+    """
     # 可视化回测结果 #########
     #cerebro.plot()
-
+    '''
     colors = ['#729ece', '#ff9e4a', '#67bf5c', '#ed665d', '#ad8bc9', '#a8786e', '#ed97ca', '#a2a2a2', '#cdcc5d', '#6dccda']
     tab10_index = [3, 0, 2, 1, 2, 4, 5, 6, 7, 8, 9]
     cerebro.plot(iplot=False, 
@@ -266,4 +279,30 @@ if __name__ == '__main__':
 
 
     #返回自定义的输出内容
+    '''
+    #######多参数回测模块
+    # 打印结果
+    def get_my_analyzer(result):
+        analyzer = {}
+        # 返回参数
+        analyzer['cut_atr'] = result.params.cut_atr
+        analyzer['atr_size'] = result.params.atr_size
+        analyzer['unit_size'] = result.params.unit_size
+        #analyzer['period2'] = result.params.period2
+        # 提取年化收益
+        #analyzer['年化收益率'] = result.analyzers._Returns.get_analysis()['rnorm']
+        analyzer['年化收益率（%）'] = round(result.analyzers._Returns.get_analysis()['rnorm100'],1)
+        # 提取最大回撤(习惯用负的做大回撤，所以加了负号)
+        analyzer['最大回撤（%）'] = round(result.analyzers._DrawDown.get_analysis()['max']['drawdown'] * (-1),1)
+        # 提取夏普比率
+        analyzer['年化夏普比率'] = round(result.analyzers._SharpeRatio_A.get_analysis()['sharperatio'],1)
+        analyzer['2020'] = round(result.analyzers._AnnualReturn.get_analysis()[2020]*100,2)
+        analyzer['2021'] = round(result.analyzers._AnnualReturn.get_analysis()[2021]*100,2)
+        return analyzer
+
+    ret = []
+    for i in result:
+        ret.append(get_my_analyzer(i[0]))
     
+    df_rst = pd.DataFrame(ret)
+    print(df_rst)
