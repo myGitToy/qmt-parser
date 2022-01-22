@@ -18,7 +18,7 @@ from apt.vendor.jqdata.security import security as info
 开始日期不需要频繁更新，每半年或每季度重置即可
 """
 ######初始化######
-start = datetime.datetime(2021,10,1)
+start = datetime.datetime(2022,1,1)
 end = datetime.datetime.now()
 #数据授权和数据库指定
 base = base(rds_host = base.数据源.localhost , myauth = True)

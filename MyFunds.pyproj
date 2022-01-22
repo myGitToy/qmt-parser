@@ -110,7 +110,10 @@
     <Compile Include="apt\__init__.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="bt\basic.py">
+    <Compile Include="bt\basic选股池测试版本.py" />
+    <Compile Include="bt\basic非调参（海龟模型改进版）.py" />
+    <Compile Include="bt\basic非调参（海龟模型版本）.py" />
+    <Compile Include="bt\basic调参（海龟模型版本）.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="bt\Data.py">
