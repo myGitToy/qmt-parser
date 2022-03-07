@@ -28,7 +28,7 @@ class finance_valuation(base):
             new_start_date = start_date
         else:
             #数据库存在数据，新定义开始日期（数据库最后一天+1）
-            new_start_date =  df_db.loc[0 , 'date']  + datetime.timedelta(days=1)   
+            new_start_date =  df_db.loc[0 , 'date']  + datetime.timedelta(days = 1)   
         #获取修正后的日期间隔里的交易日期
         day_list = get_trade_days(start_date = new_start_date , end_date = end_date)
         for day in day_list:
@@ -46,11 +46,29 @@ class finance_valuation(base):
                         if_exists = 'append')
                 print("%s 数据已上传完成valuation)" % (day))
 
+    def get_code_type(self , code = None):
+        """
+        获取代码类型
+        输入：
+            code 证券代码
+        返回：
+            type 代码类型 例如stock etf
+                0:不存在该代码
+                其他：stock etf
+        """
+        query2 = f"select type FROM jqdata_security WHERE code = '{code}'" 
+        df_db = pd.read_sql_query(query2 , self.engine)
+        if df_db.empty == True:
+            return 0
+        else:
+            #数据库存在数据，新定义开始日期（数据库最后一天+1）
+            return df_db.loc[0 , 'type']
+
 if __name__=="__main__":
-    #此模块用于历史数据的更新，目前未进行数据更新
+    #此模块用于历史数据的更新，目前已完成历史数据更新
     #测试数据
     val = finance_valuation()
     #val.daily_update()
-    start = datetime.datetime(2013,1,1)
+    start = datetime.datetime(2019,1,1)
     end = datetime.datetime.now()
     val.daily_update(start_date = start , end_date = end)

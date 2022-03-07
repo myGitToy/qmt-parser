@@ -8,13 +8,13 @@ from apt.vendor.jqdata.ETF import ETF as ETF
 #显示所有列
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
-auth('13817092632','JQ@tushare123')
+auth('18621899367','Qq19840207')
 
-start = datetime.datetime(2019,1,1)
-end = datetime.datetime(2020,12,31)
+start = datetime.datetime(2021,11,1)
+end = datetime.datetime(2021,12,31)
 print(start)
 print(start.date())
-code = '300869.XSHE'
+code = '002472.XSHE'
 #df_share = finance.run_query(query(finance.FUND_SHARE_DAILY).filter(finance.FUND_SHARE_DAILY.date >= '2020/12/8' , finance.FUND_SHARE_DAILY.date <= '2020/12/10' , finance.FUND_SHARE_DAILY.code == '159949.XSHE' ))
 #print(df_share)
 #获取全部

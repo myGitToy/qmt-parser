@@ -138,7 +138,7 @@ class tick(base):
         将数据库中的数据转成csv格式
         一次性函数，随着数据库清空，此函数将被停止使用
         """
-        sql_1 = f"select code,date(time) as date from {table_name} where date(time) >= '2020/10/1' group by code,date(time)"
+        sql_1 = f"select code,date(time) as date from {table_name} where date(time) >= '2021/1/1' group by code,date(time)"
         df_main = pd.read_sql_query(sql_1, self.engine)
         for row in df_main.itertuples():
             code = getattr(row, 'code')
@@ -149,11 +149,8 @@ class tick(base):
             if t == True:
                 #存在数据，直接进行删除操作
                 try:
-                    sql_d = f"""
-                        delete from {table_name} where code = '{code}' and date(time) = '{date}';
-                        
-                    """
-                    df = pd.read_sql_query( sql_d , self.engine)
+                    sql_d1 = f"delete from {table_name} where code = '{code}' and date(time) = '{date}'"
+                    df = pd.read_sql_query( sql_d1 , self.engine)
                 except:
                     print(f"{date} {code} 已删除")
             else:
@@ -170,13 +167,16 @@ class tick(base):
                 #print(f"{date} {code} 保存完毕")
                 #删除数据库数据并更新tick_status的对应日期和代码的数量
                 try:
-                    sql_d = f"""
-                        delete from {table_name} where code = '{code}' and date(time) = '{date}';
-                        update ts_tick_status set tick_status = {count} where code = '{code}' and date = '{date}';
-                        """
-                    df = pd.read_sql_query( sql_d , self.engine)                     
+                    sql_u = f"update ts_tick_status set tick_status = {count} where code = '{code_jqdata}' and date = '{date}'"                                            
+                    df3 = pd.read_sql_query( sql_u , self.engine)                     
+                except:
+                    pass 
+                try:
+                    sql_d2 = f"delete from {table_name} where code = '{code}' and date(time) = '{date}'"
+                    df2 = pd.read_sql_query( sql_d2 , self.engine)                     
                 except:
                     print(f"{date} {code} 已保存并删除") 
+               
                     
     def tick数量校验(self,start_date = datetime.datetime(2021,1,1),end_date = datetime.datetime(2021,12,31)):
         """
@@ -192,6 +192,8 @@ class tick(base):
             t = os.path.exists(f".\\data\\tick\\{date}\\{code}.csv")
             if t == True:
                 #存在文件但数量显示0 ，因此不是合理的数量，需要更新
+                #备注：此处需要探讨
+                #如果不存在文件，则可能有两种情况：1.没有更新过来，则需要更新 2. 文件已移除，则不需要更新
                 #加载文件并计算数量
                 df = pd.read_csv(f".\\data\\tick\\{date}\\{code}.csv")
                 count = df.shape[0]
@@ -249,17 +251,19 @@ class tick(base):
                     print(f"{date} {code} 已保存并删除，条目数{count}") 
 if __name__=="__main__":
     tick = tick(rds_host = base.数据源.localhost , myauth = True)
+    #旧版ts_tick导出程序
+    #tick.mysql_to_csv()
 
     #新版的ts_tick导出程序 由于存在bug，start_date需要做动态调整，否则会重复输出
-    #tick.mysql_to_csv_V2(start_date = datetime.datetime(2021,1,13),end_date = datetime.datetime(2021,2,28))
+    #tick.mysql_to_csv_V2(start_date = datetime.datetime(2021,1,14),end_date = datetime.datetime(2021,2,28))
     
     #12月
-    #tick.mysql_to_csv_V2(start_date = datetime.datetime(2020,12,1),end_date = datetime.datetime(2020,12,31))
+    #tick.mysql_to_csv_V2(start_date = datetime.datetime(2020,12,31),end_date = datetime.datetime(2020,12,31))
    
     #10-11月
-    tick.mysql_to_csv_V2(start_date = datetime.datetime(2020,10,29),end_date = datetime.datetime(2020,11,30))
+    #tick.mysql_to_csv_V2(start_date = datetime.datetime(2020,11,30),end_date = datetime.datetime(2020,11,30))
     #数据校验模块，跑完所有的tick数据导出后可以重新拉一遍校验数据
     #tick.tick数量校验()
     
     #日常更新模块
-    #tick.daily_update(start_date = datetime.datetime(2021,4,1),end_date = datetime.datetime.now())
+    tick.daily_update(start_date = datetime.datetime(2021,6,1),end_date = datetime.datetime.now())

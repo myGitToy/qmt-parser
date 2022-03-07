@@ -5,6 +5,7 @@ import sqlalchemy
 import datetime
 from jqdatasdk import *
 from apt.vendor.jqdata.base import base as base
+from apt.vendor.jqdata.jqdata import data
 
 class money_flow(base):
     """
@@ -71,6 +72,58 @@ class money_flow(base):
             print("校验通过，没有需要删除的数据")
 
         #print(df_db)
+    def get_money_flow(self , code =  None , start_date = datetime.datetime(2010,1,1) , end_date = datetime.datetime.now() , column_name = '' , ma = 5 , to_excel = True):
+        """
+        获取资金流向(本地数据库) 
+        只能按照日线数据获取
+        输入：
+            code 证券代码
+            start_date 开始日期
+            end_date 结束日期
+            ma 资金流向需要取N天的平均数据
+        返回：
+            DataFrame
+        """
+        #获取基础信息
+
+        #判断是否是stock类型 且有数据
+        if  data.get_code_type(self , code = code) !='stock':
+            raise ValueError(f'请检查证券代码{code}')
+
+        #获取K线数据
+        df =data.get_k_data(self , code = code , start_date = start_date, end_date = end_date , ktype  = '1d' )
+        #获取流通市值信息
+        df_val = pd.read_sql_query(f"select code,date,circulating_market_cap from valuation where code = '{code}' order BY date" , self.engine)
+        df = pd.merge(df,df_val,on = ['code','date']) 
+
+        #获取资金流向
+        df_money_flow = pd.read_sql_query(f"select code,date,net_amount_main as main,net_amount_xl as xl,net_amount_l as l,net_amount_m as m,net_amount_s as s from jqdata_money_flow where code = '{code}' order BY date" , self.engine)
+        df = pd.merge(df,df_money_flow,on = ['code','date']) 
+
+        #资金流向N日平均值
+        df[f'main{ma}'] = df['main'].rolling(ma).mean()
+        df[f'xl{ma}'] = df['xl'].rolling(ma).mean()
+        df[f'l{ma}'] = df['l'].rolling(ma).mean()
+        df[f'm{ma}'] = df['m'].rolling(ma).mean()
+        df[f's{ma}'] = df['s'].rolling(ma).mean()
+
+        #N资金与流通市值占比
+        df[f'main{ma}_cap'] = df[f'main{ma}'] / df['circulating_market_cap'] / 10000
+        df[f'xl{ma}_cap'] = df[f'xl{ma}'] / df['circulating_market_cap'] / 10000
+        df[f'l{ma}_cap'] = df[f'l{ma}'] / df['circulating_market_cap'] / 10000
+        df[f'm{ma}_cap'] = df[f'm{ma}'] / df['circulating_market_cap'] / 10000
+        df[f's{ma}_cap'] = df[f's{ma}'] / df['circulating_market_cap'] / 10000
+
+        if to_excel ==True:
+            #输出EXCEL
+            df.to_excel(f'.\\data\\测试数据\\资金流向{code}.xlsx', sheet_name = f'sheet1' ,  header=True, index=False)
+
+        #返回DataFrame
+        return df
+        #合并文件
+        df_main = pd.concat([df_main, df],sort = False)
+
+
 if __name__=="__main__":
     #此模块用于历史数据的更新，目前2021年前的数据已完成更新，因此模块下架停止使用
     money = money_flow()
