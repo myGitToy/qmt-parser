@@ -5,7 +5,10 @@ import sqlalchemy
 import datetime
 from jqdatasdk import *
 from apt.vendor.jqdata.base import base as base
-
+#应对[Errno 11003] getaddrinfo failed) 好像目前没什么用，先留着
+#上述错误是因为更新sqlacademy包所引起的，目前已恢复原文件，暂时不进行升级
+#import socket
+#socket.getaddrinfo('localhost', 25)
 
 class data(base):
     def update_v1(self , code_list = None , start_date = datetime.datetime(2020,1,1,1) , end_date = datetime.datetime.now() , ktype = '5m' ):
