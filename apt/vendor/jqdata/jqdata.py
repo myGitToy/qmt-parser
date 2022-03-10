@@ -11,6 +11,12 @@ from apt.vendor.jqdata.base import base as base
 #socket.getaddrinfo('localhost', 25)
 
 class data(base):
+    """
+    数据接口 基类
+    所有需要从jqdata获取数据的都需要从此处引用
+    引用规范：from apt.vendor.jqdata.jqdata import data as jqdata
+    例：量化选股 qsp_jqdata就是从这里作为基类引用的
+    """
     def update_v1(self , code_list = None , start_date = datetime.datetime(2020,1,1,1) , end_date = datetime.datetime.now() , ktype = '5m' ):
         """
         聚宽数据日常更新的主入口 第一版本 使用双循环策略，判断简单但数据库操作偏多，每天每代码都要执行一遍读取、判断、写入
@@ -350,7 +356,7 @@ class data(base):
                  fq = base.复权.动态复权):
         
         """
-        jqdata数据加载模块
+        jqdata数据加载模块（目前不支持输出N日后的X条数据，详见https://huiqiao.visualstudio.com/MyFunds/_workitems/edit/296）
         start_time：开始时间 最好带上小时参数  比如(2020,12,31,8)
         end_time：结束时间 最好带上小时参数  比如(2020,12,31,16)
         count : 获取K线条目的个数 默认是全部输出  
