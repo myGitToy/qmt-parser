@@ -353,6 +353,7 @@ class data(base):
                  count = None ,
                  col = ['code','date','open','close','high','low','volume','money','factor'] , 
                  ktype = '1d' , 
+                 flag_forward = False , 
                  fq = base.复权.动态复权):
         
         """
@@ -360,6 +361,10 @@ class data(base):
         start_time：开始时间 最好带上小时参数  比如(2020,12,31,8)
         end_time：结束时间 最好带上小时参数  比如(2020,12,31,16)
         count : 获取K线条目的个数 默认是全部输出  
+        flag_forward：用于获取N日之后X条数据，类似于后复权数据 默认为False
+            在这种模式下，start_date为基准日期，先后输出count条数据
+            其余模式end_date均为基准日期
+            详见https://huiqiao.visualstudio.com/MyFunds/_workitems/edit/296
         接受前复权 后复权 不复权 动态复权四种复权模式
         成交量、成交额目前未进行复权处理
         返回的数据按照升序排列（backtrader要求的数据格式）
@@ -383,7 +388,12 @@ class data(base):
         else:
             #有数据，进行复权处理
             if fq == self.复权.不复权:
-                return df_db.iloc[-count:][col]
+                if flag_forward == False:
+                    #正常模式
+                    return df_db.iloc[-count:][col]
+                else:
+                    #非正常模式，以start_date为基准输出向后的count条记录
+                    return df_db.iloc[:count][col]
             elif fq ==self.复权.前复权:
                 #前复权价格 = 当日价格 / 最后一个交易日（非end_date）的复权因子 * 当日复权因子
                 factor = self.__get_last_factor(code = code)
@@ -391,7 +401,12 @@ class data(base):
                 df_db['high'] = df_db['high'] / factor * df_db['factor']
                 df_db['low'] = df_db['low'] / factor * df_db['factor']
                 df_db['close'] = df_db['close'] / factor * df_db['factor']
-                return df_db.iloc[-count:][col]
+                if flag_forward == False:
+                    #正常模式
+                    return df_db.iloc[-count:][col]
+                else:
+                    #非正常模式，以start_date为基准输出向后的count条记录
+                    return df_db.iloc[:count][col]
             elif fq ==self.复权.后复权:
                 #后复权价格 = 当日价格 / 第一个交易日（start_date）的复权因子 * 当日复权因子    
                 #获取第一一个复权因子的数值
@@ -400,7 +415,12 @@ class data(base):
                 df_db['high'] = df_db['high'] / factor * df_db['factor']
                 df_db['low'] = df_db['low'] / factor * df_db['factor']
                 df_db['close'] = df_db['close'] / factor * df_db['factor']
-                return df_db.iloc[-count:][col]
+                if flag_forward == False:
+                    #正常模式
+                    return df_db.iloc[-count:][col]
+                else:
+                    #非正常模式，以start_date为基准输出向后的count条记录
+                    return df_db.iloc[:count][col]
             elif fq ==self.复权.动态复权:
                 #动态复权价格 = 当日价格 / 区间最后一天的复权因子 * 当日复权因子
                 #获取最后一个复权因子的数值
@@ -409,7 +429,12 @@ class data(base):
                 df_db['high'] = df_db['high'] / factor * df_db['factor']
                 df_db['low'] = df_db['low'] / factor * df_db['factor']
                 df_db['close'] = df_db['close'] / factor * df_db['factor']
-                return df_db.iloc[-count:][col]
+                if flag_forward == False:
+                    #正常模式
+                    return df_db.iloc[-count:][col]
+                else:
+                    #非正常模式，以start_date为基准输出向后的count条记录
+                    return df_db.iloc[:count][col]
             else:
                 raise ValueError(f'不支持的复权模式，请检查！')
                 return df_db
