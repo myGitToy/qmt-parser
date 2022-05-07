@@ -7,7 +7,7 @@ class momentum(jqdata):
     """
     【动量模型】
     """
-    def get_mtm(self , time = datetime.now() , ktype = '1d' , code_list = [] , N_list = [5,10,20] , flag_forward = False , column = ['date','code','close']):
+    def get_mtm(self , time = datetime.now() , ktype = '1d' , code_list = [] , base_code = '000300.XSHG', N_list = [5,10,20] , flag_forward = False , column = ['date','code','close']):
         """
         获取动量模型的基础数据
         以沪深300为标的（可自选），列出N日内与指数的相对强弱关系
@@ -44,6 +44,42 @@ class momentum(jqdata):
             else:
                 #正常模式；N日向前采集X个数据
                 a = self.get_k_data( code = code , ktype = ktype , end_date = time , count = max_N , flag_forward =  flag_forward , col = column)
-            df_main = pd.concat([df_main,a])
+            if len(a) == max_N:
+                #对于返回结果行数的要求，必须要等于T+-N日中的最大值，否则表明数据不完整，整个数据丢弃
+                df_main = pd.concat([df_main,a])
+            else:
+                print("数据结果不完整，丢弃数据集")
         #输出最终拼接的结果
         print(df_main)
+        #初始化需要输出的DataFrame，设定index值，初始化列
+        group = df_main.groupby('code')
+        df_rst = pd.DataFrame(index = group.size().index)
+        for N in N_list:
+            #根据groupby的数据对每个证券代码进行数据转换
+            if flag_forward == True:
+                #向后检索，非正常模式
+                pass
+            else:
+                #向前检索，正常模式
+                #df_N = pd.DataFrame()
+                print(f"T minus N")               
+                df_N = group.nth(max_N - N)                
+                #重命名列
+                df_N = df_N.rename(columns = {'close':f'Tm{N}','date':f'Dm{N}','high':f'Hm{N}','open':f'Om{N}','low':f'Lm{N}'})
+                #print(df_N)
+                df_rst = pd.merge(df_rst , df_N , right_index = True , left_index = True)
+                print(df_rst)
+                #print(df_main.groupby('code').nth(N-1))
+        
+
+        #print(df_rst)
+        #
+        #df = df_main.groupby('code').nth(4)
+        #print(df)
+        ########对拼接后的数据进行处理
+        #1. 按照证券代码进行分类
+        #2. 
+
+if __name__=="__main__":
+    a = momentum()
+    a.get_mtm(time = datetime(2022,1,1) , ktype = '60m' , code_list = ['601318.XSHG','002059.XSHE'])

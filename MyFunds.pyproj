@@ -65,6 +65,12 @@
     <Compile Include="apt\qsp_jqdata\expma.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="apt\qsp_jqdata\momentum.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="apt\qsp_jqdata\m2.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="apt\qsp_jqdata\prank.py">
       <SubType>Code</SubType>
     </Compile>
@@ -117,6 +123,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="bt\Data.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_mtm.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_新多条件测试.py" />
