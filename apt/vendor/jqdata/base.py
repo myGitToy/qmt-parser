@@ -3,7 +3,9 @@ import sqlalchemy
 from enum import Enum
 class base():
     """
-    jqdata中的一些基础数据
+    jqdata基类
+    如果需要脱机使用，需初始化如下参数：
+    dt = base(myauth = False)
     """
     class 复权(Enum):
         """
