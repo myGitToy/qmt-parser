@@ -24,6 +24,9 @@ class A(base):
         """
         #df = self.get_k_data( code = self.code , start_date= self.start , end_date= self.end , ktype= self.ktype)
         df = self.get_k_data()
+        if df.empty == True:
+            #无数据
+            return pd.DataFrame()        
         for ma in ma_list:
             df[f'MA{ma}'] = ta.MA(df['close'] ,  timeperiod = int(ma))
         return df
@@ -34,12 +37,36 @@ class A(base):
         输入：
             证券代码，起止日期按照默认
             ma_list：需计算的均线 ['10','30','60','120']
-        输出：T/F
+        输出：元组
+            data[0]：DataFrame 包含日期 证券代码 结果
+            data[1]：T/F值
         """
         df = self.A01B01_MA均线数据(ma_list = ma_list)
+        if df.empty == True:
+            #数据为空，需要返回空值
+            ##大代码量下进行滚动查询，不适合直接返回错误信息
+            return pd.DataFrame() , False
+            raise ValueError(f'数据为空，请检查！')
         #多头排列 Bull Market
         #判断ma均线的个数        
         count = len(ma_list)
+        #判断基准是两两比较，始终是前一个ma与后一个ma比较
+        #如果均线多头排列 ['10','20','60','120']，则只需10>20;20>60;60>120则可以确认多头排列成立
+        df['result'] = 1
+        for n in range(0 , count -1):
+            df.loc[df[f'MA{ma_list[n]}'] >= df[f'MA{ma_list[n+1]}'] , f'compare'] = 1
+            df['result'] = df['result'] * df['compare']
+            #重置df['compare']
+            df['compare'] = np.nan
+        #设置最后一行参数，用于返回T/F值
+        if df.iloc[-1].at['result'] == 1:
+            last_row = True
+        else:
+            last_row = False
+        #返回最后的结果 目前为元组类型，第一列为DataFrame 第二列为T/F值       
+        return df[['code','date','result']] , last_row    
+
+        print(df)
         for n in range(0 , count - 1):
             short = df.iloc[-1].at[f'MA{ma_list[n]}']
             long = df.iloc[-1].at[f'MA{ma_list[n+1]}']
@@ -298,4 +325,14 @@ class A(base):
         else:
             return False
 
+
+if __name__ == "__main__":
+    dd = data(myauth = False)
+    dd.get_all_code(end_date =  datetime(2022,5,1) )
+    pd.set_option('display.max_rows', None)
+    demo = A(myauth = False)
+    demo.code = '600509.XSHG'
+    demo.start = datetime(2021,1,1)
+    demo.end = datetime(2022,3,11)
+    a = demo.A01B02_MA均线多头排列(ma_list = ['10','20','60','120'])
 
