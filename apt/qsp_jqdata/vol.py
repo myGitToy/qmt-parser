@@ -64,6 +64,9 @@ class vol(base):
         #获取数据
         df = self.get_k_data()
         if df.empty == True:
+            #数据为空，需要返回空值
+            ##大代码量下进行滚动查询，不适合直接返回错误信息
+            return pd.DataFrame() , False
             raise ValueError(f'数据为空，请检查！')
         #返回rolling数
         x_rolling = int(self.get_rolling_k(self.ktype))
