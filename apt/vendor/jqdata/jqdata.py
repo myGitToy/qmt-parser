@@ -590,7 +590,7 @@ class data(base):
         本函数提供下游K线形态、量价分析使用
         【输入】
             end_date 取代码的基准日期 默认为当天
-            local 是否脱机查询 默认为脱机
+            local 是否脱机查询 默认为脱机（此条暂时未实装，用self.myauth做等效替代）
             type 数据类型 "'stock','index','fund','etf','lof','fja','fjb'" 默认为stock+etf
             include_ETF 包含ETF数据 默认为否
             min_cap 最小市值(总市值)要求(单位：亿) 100亿则输入 默认为0
@@ -602,7 +602,7 @@ class data(base):
             dataframe:date|code|ETF|cap|money
         """
         #第一步：进行是否脱机查询的判断，在线查询比较简单，直接调取jqdata相关代码即可
-        if local == True:
+        if self.myauth == False:
             #脱机查询
             #定位数据库中的最后日期(这里默认使用510300进行查询)
             df_day = pd.read_sql_query(f"select * from jqdata_1d where date(date)<='{end_date.date()}' and code = '510300.XSHG' order by date desc limit 1" , self.engine)

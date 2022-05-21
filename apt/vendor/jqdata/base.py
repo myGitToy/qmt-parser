@@ -41,7 +41,7 @@ class base():
         rds_host: 数据源的选择 默认为本地数据
         auth: jqdata授权 默认是授权的，False应对某些特殊情况 比如脱机对数据库进行读取操作
         """
-
+        self.myauth = myauth
         if rds_host == self.数据源.aliyun:
             print("aliyun 暂不支持")
             auth('18621899367','Qq19840207')
