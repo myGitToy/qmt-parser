@@ -45,12 +45,13 @@ class vol(base):
         criteria 异动的标准 默认为均值ma的两倍
         N 几天内出现这种情况算是符合条件 默认为一周内，即5天。如需计算当天的情况，则N = 1
         count N周期内出现几次算符合条件 count <= N
+        interval 信号间隔周期，interval内出现的重复信号予以忽略
         【重要提示】
             成交量异常的判断和K线类型是挂钩的，日线以下级别由于当天开盘前30分钟成交量的影响，会干扰选股结果
             目前不对K线类型做限制，但是需要使用者清楚明白分时线可能带来的误差
-        【例】money_abnormal_change(vol_ma = 20 ,criteria = 3 , N = 3 , count = 2 )
-            计算某代码是否在3天内有2次超过平均成交量3倍以上的情况
-            用文字表达就是A股票在某日，存在N_day内存在count次成交量大于vol_ma平均成交量criteria次的情况
+        【例】money_abnormal_change(vol_ma = 20 ,criteria = 3 , N = 3 , count = 2 , interval = 15)
+            计算某代码是否在3天内有2次超过平均成交量3倍以上的情况，15天内的重复信号仅计算第一次
+            用文字表达就是A股票在某日，存在N_day内存在count次成交量大于vol_ma平均成交量criteria次的情况，信号间隔周期interval以上
         【返回值】 元组
             0列：DataFrame 包含日期 证券代码 结果
             1列：T/F 只包含最后交易日是否满足条件的判断
