@@ -41,6 +41,8 @@ class A(base):
             data[0]：DataFrame 包含日期 证券代码 结果
             data[1]：T/F值
         """
+        #多导入的均线顺序进行排序
+        ma_list.sort(key = int) #将K线列表以int整数的形式进行排列
         df = self.A01B01_MA均线数据(ma_list = ma_list)
         if df.empty == True:
             #数据为空，需要返回空值
@@ -64,16 +66,17 @@ class A(base):
         else:
             last_row = False
         #返回最后的结果 目前为元组类型，第一列为DataFrame 第二列为T/F值       
-        return df[['code','date','result']] , last_row    
-
-        print(df)
+        return df[['code','date','result']] , last_row  
+        """
+        ##以下代码为历史陈旧记录，予以保留
         for n in range(0 , count - 1):
             short = df.iloc[-1].at[f'MA{ma_list[n]}']
             long = df.iloc[-1].at[f'MA{ma_list[n+1]}']
             if  short < long:
                 return False
         return True
-        
+        """
+
     def A01B03_MA均线空头排列(self , ma_list = ['10','20','60','120']):
         """
         MA均线空头排列
