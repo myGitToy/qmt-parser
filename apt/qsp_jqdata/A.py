@@ -56,7 +56,7 @@ class A(base):
         #如果均线多头排列 ['10','20','60','120']，则只需10>20;20>60;60>120则可以确认多头排列成立
         df['result'] = 1
         for n in range(0 , count -1):
-            df.loc[df[f'MA{ma_list[n]}'] >= df[f'MA{ma_list[n+1]}'] , f'compare'] = 1
+            df.loc[df[f'MA{ma_list[n]}'] > df[f'MA{ma_list[n+1]}'] , f'compare'] = 1
             df['result'] = df['result'] * df['compare']
             #重置df['compare']
             df['compare'] = np.nan
@@ -102,7 +102,7 @@ class A(base):
         #如果均线空头排列 ['10','20','60','120']，则只需10<20;20<60;60<120则可以确认空头排列成立
         df['result'] = 1
         for n in range(0 , count -1):
-            df.loc[df[f'MA{ma_list[n]}'] <= df[f'MA{ma_list[n+1]}'] , f'compare'] = 1
+            df.loc[df[f'MA{ma_list[n]}'] < df[f'MA{ma_list[n+1]}'] , f'compare'] = 1
             df['result'] = df['result'] * df['compare']
             #重置df['compare']
             df['compare'] = np.nan
