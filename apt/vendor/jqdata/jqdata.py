@@ -584,15 +584,15 @@ class data(base):
 
 
 
-    def get_all_code(self , end_date = datetime.datetime.now() , type = "'stock','etf'", local = True , min_cap = 0 , max_cap = 10000):
+    def get_all_code(self , end_date = datetime.datetime.now() , type = "'stock','etf'", local = True , default_cap_row = 'circulating_market_cap' , min_cap = 0 , max_cap = 10000):
         """
         读取所有证券代码列表
         本函数提供下游K线形态、量价分析使用
         【输入】
             end_date 取代码的基准日期 默认为当天
-            local 是否脱机查询 默认为脱机（此条暂时未实装，用self.myauth做等效替代）
+            local 是否脱机查询 默认为脱机（此条已被删除，请用myauth做等效替代）
             type 数据类型 "'stock','index','fund','etf','lof','fja','fjb'" 默认为stock+etf
-            include_ETF 包含ETF数据 默认为否
+            default_cap_row 选取的市值列，默认为流通市值；选项有流动市值(circulating_market_cap)和总市值(market_cap)
             min_cap 最小市值(总市值)要求(单位：亿) 100亿则输入 默认为0
             max_cap 最大市值(总市值)要求(单位：亿) 10000万亿则输入 默认为10000亿
             min_daily_money_etf 最小交易量要求（ETF专用）1000万则输入 默认为0
@@ -605,6 +605,7 @@ class data(base):
         if self.myauth == False:
             #脱机查询
             #定位数据库中的最后日期(这里默认使用510300进行查询)
+            #<<<<<<<<<<<<<<<<<<<<<<这里完全可以用security来取代jadata_1d 另外能否将两个sql查询进行合并？>>>>>>>>>>>>>>>>>>>>>>
             df_day = pd.read_sql_query(f"select * from jqdata_1d where date(date)<='{end_date.date()}' and code = '510300.XSHG' order by date desc limit 1" , self.engine)
             if df_day.empty == True:
                 #数据库不存在数据
@@ -618,7 +619,7 @@ class data(base):
                 except:
                     print("数据读取失败")  
                 #print(df_db)
-                return df_db
+                #return df_db
             #【【【目前到这一步就直接返回结果，后面的代码暂时没有实装】】】
             #如果后面要去除下面代码的话，还要考虑valuation对应新增的几个索引，可以考虑删除以释放数据库空间
 
@@ -634,17 +635,21 @@ class data(base):
             else:
                 #数据库存在数据，新定义开始日期
                 valuation_last_day=  df_val_day.loc[0 , 'date']
-            sql_val = f"select code , date , market_cap from valuation where market_cap between {min_cap * 1e8} and {max_cap * 1e8}  and date(date) = '{valuation_last_day}'"
-            print(sql_val)
+            sql_val = f"select code , date , {default_cap_row} from valuation where {default_cap_row} between {min_cap} and {max_cap}  and date(date) = '{valuation_last_day}'"
+            #print(sql_val) #此处打印sql语句的目的是因为查询耗时过长（18秒），后期会予以修正
             try:
                 df_val = pd.read_sql_query(sql_val , self.engine)
             except:
                 print("数据读取失败")  
-            print(df_val)
+            #print(df_val)
             df_stock = df_db[(df_db['type'] == 'stock')]
                              #[( df_trans['证券代码'] == code )]
             df_stock = pd.merge(df_stock , df_val , on = ['code'], how = 'left') 
+            #去除不符合条件的个股
+            #print(df_stock)
+            df_stock = df_stock.dropna(subset = [f'{default_cap_row}'])
             print(df_stock)
+            return df_stock
 
         else:
             #在线查询，调取jqdata
