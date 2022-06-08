@@ -105,6 +105,9 @@
     <Compile Include="apt\vendor\tspro\base.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="apt\vendor\tspro\data.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="apt\vendor\tspro\tick.py">
       <SubType>Code</SubType>
     </Compile>
@@ -125,9 +128,18 @@
     <Compile Include="bt\Data.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="demo\demo_akshare_init.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="demo\demo_mtm.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="demo\demo_tspro_structure_test.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_新多条件引用测试.py" />
+    <Compile Include="demo\demo_新多条件选股测试 DataFrame格式.py" />
+    <Compile Include="demo\demo_新单条件选股测试 DataFrame格式.py" />
     <Compile Include="demo\demo_新多条件测试.py" />
     <Compile Include="demo\demo_tbl_斜率角.py" />
     <Compile Include="demo\demo_A04.py">
