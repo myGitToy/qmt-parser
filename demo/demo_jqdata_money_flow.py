@@ -10,11 +10,11 @@ pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
 auth('18621899367','Qq19840207')
 
-start = datetime.datetime(2021,11,1)
-end = datetime.datetime(2021,12,31)
+start = datetime.datetime(2022,1,1)
+end = datetime.datetime(2022,12,31)
 print(start)
 print(start.date())
-code = '002472.XSHE'
+code = '600313.XSHG'
 #df_share = finance.run_query(query(finance.FUND_SHARE_DAILY).filter(finance.FUND_SHARE_DAILY.date >= '2020/12/8' , finance.FUND_SHARE_DAILY.date <= '2020/12/10' , finance.FUND_SHARE_DAILY.code == '159949.XSHE' ))
 #print(df_share)
 #获取全部

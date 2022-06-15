@@ -29,7 +29,7 @@ from apt.vendor.jqdata.ETF import ETF as ETF
 集合竞价数据	2019年至今	交易日最晚9:28分之前更新
 """
 
-start = datetime.datetime(2022,6,9)    #日线 60m 30m 最后更新日 start 5/18；30m从5、23开始
+start = datetime.datetime(2022,6,13)    #日线 60m 30m 最后更新日 start 5/18；30m从5、23开始
 
              #（注意：日线数据不能在过零点及开盘前更新，否则会出现类似于停盘的数据 无VOL MONEY）
 #end = datetime.datetime(2005,12,31,16)
