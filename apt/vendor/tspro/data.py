@@ -7,16 +7,12 @@ from datetime import datetime
 from apt.vendor.jqdata.jqdata import data as jqdata
 from apt.vendor.tspro.base import base as base
 from apt.vendor.tspro.base import stock as stock
-#应对[Errno 11003] getaddrinfo failed) 好像目前没什么用，先留着
-#上述错误是因为更新sqlacademy包所引起的，目前已恢复原文件，暂时不进行升级
-#import socket
-#socket.getaddrinfo('localhost', 25)
 
 class data(base,stock):
     """
     数据接口 基类
     所有需要从tusharePro获取数据的都需要从此处引用
-    引用规范：from apt.vendor.jqdata.jqdata import data as jqdata
+    引用规范：from apt.vendor.tspro.data import data as data
     例：量化选股 qsp_jqdata就是从这里作为基类引用的
     
     def __init__(self, rds_host=base.数据源.localhost, myauth=True , code = None , start = datetime(2021,1,1), end = datetime.now() , ktype = "1d" , fq = base.复权.动态复权 ):
@@ -32,10 +28,7 @@ class data(base,stock):
     def update_v1(self):
         """
         tusharePro数据日常更新的主入口（按天更新）
-        目前只支持日线数据更新 因为积分关系
-        start_date 开始时间，默认为2020年
-        end_date 结束时间 默认为当前时间（更新函数中默认不更新当天的及时数据，因为会造成重复录入，请注意）
-        ktype K线周期 1d 5m 60m等
+        本模块只支持日线格式更新（日线数据按日进行全部数据的获取，因此与分时线的逻辑有所不同）
         更新逻辑：
             1. 获取需要更新的时间周期中的交易日
             2. 循环读取证券代码列表进行更新
@@ -54,7 +47,6 @@ class data(base,stock):
         #剔除非交易日
         trade_days.query('is_open == 1' , inplace = True)
         trade_days['cal_date'] = pd.to_datetime(trade_days['cal_date'])
-
         for day in trade_days['cal_date']:
             #print(f"##############正在更新%s数据##############" % day.strftime("%Y-%m-%d"))
             #检查数据库是否存在数据（目前跳过验证，数据查询耗时较长）
@@ -72,10 +64,14 @@ class data(base,stock):
                     #df.rename(columns={'ts_code': 'code', 'trade_date': 'date' , 'vol': 'volume' , 'amount': 'money'} , errors="raise")
                     #df.rename(columns={"ts_code": "code", "trade_date": "date" } , errors="raise")
                     df.rename(columns={"ts_code": "code", "trade_date": "date" ,"vol" : "volume" , "amount" : "money"} , errors="raise" , inplace = True)
-                    
-                    #print(df)
                     #时间日期类的列进行类型变更
                     df['date'] = pd.to_datetime(df['date'])
+                    #volume成交量列从手转换成股 统一乘100
+                    #df['volume'].astype(np.float)
+                    df['volume'] = df['volume'] * 100
+                    #amount成交金额列从千元转换成元，统一乘1000
+                    #df['money'].astype(np.float)
+                    df['money'] = df['money'] * 1000
                     #日线数据特殊处理，因为数据库中的格式是date，不是datetime
                     #df = df[(df.date == day)]
                 else:
@@ -145,14 +141,23 @@ class data(base,stock):
                     #df.rename(columns={'ts_code': 'code', 'trade_date': 'date' , 'vol': 'volume' , 'amount': 'money'} , errors="raise")
                     #df.rename(columns={"ts_code": "code", "trade_date": "date" } , errors="raise")
                     df.rename(columns={"ts_code": "code", "trade_date": "date" ,"vol" : "volume" , "amount" : "money"} , errors="raise" , inplace = True)
-                    
+                    #日线数据金额和成交量做修正 jqdata都是以股为单位，tspro以手为单位；
+                    print(df)
+                    #volume成交量列从手转换成股 统一乘100
+                    df['volume'].astype(np.float)
+                    df['volume'] = df['volume'] * 100
+                    #amount成交金额列从千元转换成元，统一乘1000
+                    df['amount'].astype(np.float)
+                    df['amount'] = df['amount'] * 1000
+                    print(df)
                     #print(df)
                     #时间日期类的列进行类型变更
                     df['date'] = pd.to_datetime(df['date'])
                     #日线数据特殊处理，因为数据库中的格式是date，不是datetime
                     #df = df[(df.date == day)]
-                else:
-                    #分时数据正常处理
+                else:                    
+                    #分时数据目前不做处理
+                    return None
                     #############这里留一个问题，是否可以用df.date.date() == day的形式进行筛选
                     #进行当天数据的筛选，因为比如取5m数据，当天有48根，但可能上午停牌，因此48根数据就包含了昨天下午的，此时写入数据库会造成唯一索引约束错误
                     df = get_bars(security = code , count = update_num , unit = ktype , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'] , include_now = False , end_dt = end_day , df = True)
