@@ -1,4 +1,4 @@
-#多条件测试
+#多条件测试 采用的是原始的TF格式
 from apt.qsp_jqdata.A import A as A
 from apt.qsp_jqdata.base import base as base
 from apt.vendor.jqdata.jqdata import data as data
@@ -8,7 +8,7 @@ import tushare as ts
 import talib as ta
 
 a = A()
-a.start = datetime(2021,1,1)
+a.start = datetime(2021,5,1)
 a.end = datetime.now()
 a.myauth = False
 if __name__=="__main__":
@@ -16,13 +16,13 @@ if __name__=="__main__":
     #code_list = ['512830']
     #code_list = load_today_all()   
     #code_list = data.read_excel(file_name = '.\\data\\海龟模型\\自选股列表.xlsx' , sheet_name = '33指数')['证券代码'].tolist()
-    p = data()
-    code_list = p.get_all_code( type = "'stock'" , end_date = datetime(2021,11,19))['code'].tolist()
+    p = data(myauth = False)
+    code_list = p.get_all_code( type = "'stock'" , end_date = datetime(2022,5,1))['code'].tolist()
     #新高突破
     lst=[]
     for code in code_list:
         a.code = code
-        if (a.A04B02_EMA均线多头排列() and \
+        if (a.A04B02_EMA均线多头排列()[1] == True and \
                 a.A04B06_EMA均线_线性回归角度(ma = 20 , adjust_N = 20 , count = 18 , low_value=-0.003 , upper_value= 0.003)) == True:  
            print(f"{code}均线平台整理且多头排列" )
            lst.append(code)
