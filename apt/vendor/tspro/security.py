@@ -12,14 +12,22 @@ class security(base , stock):
     专门处理security的类
     包含交易日历 交易列表
     """
-    def daily_update(self , type = ['stock','index','fund','etf','lof','fja','fjb']):
+    def update_calendar(self , exchange = 'SSE'):
         """
-        security日常更新
-        type 证券类型，支持多选 默认为全部（目前不包含期货）
+        更新交易日历
+        输入：
+            exchange:交易所类型 默认更新上海交易所SSE
+                    其他交易所包括：SSE上交所,SZSE深交所,CFFEX 中金所,SHFE 上期所,CZCE 郑商所,DCE 大商所,INE 上能源
+        开始和结束日期由stock.XXX来定义
         """
         #打印标题
-        print("############正在准备更新security证券代码信息###########")
-        df_security = get_all_securities(type)
+        print("############正在准备更新security证券日历信息###########")
+        df_cal = self.pro.trade_cal(exchange = exchange, start_date = self.start_date.strftime("%Y%m%d"), end_date = self.end_date.strftime("%Y%m%d"))
+        #从数据库读取已存在的数据
+        df_db = self.get_calendar(exchange = exchange )
+        #将两者进行比较
+        df_diff = pd.concat([df_cal , df_db , df_db] ).drop_duplicates(keep = False)
+        print(df_diff)
         #将code的索引转换成列
         df_security.reset_index(level = 0 , inplace = True)
         #重命名为code
@@ -145,6 +153,11 @@ class security(base , stock):
                 
 if __name__=="__main__":
     #测试交易日历功能
+    cal = security()
+    cal.start_date = datetime(2022,1,1)
+    cal.end_date = datetime(2022,9,1)
+    cal.update_calendar()
+
     a = base()
     sec = security()
     a.start_date = datetime(2022,1,1)
@@ -153,5 +166,9 @@ if __name__=="__main__":
     print(df)
     #测试交易日历读取功能
     df_read = sec.get_calendar()
+
+    #测试基础数据 股票列表
+    df_list = a.pro.stock_basic()
+    print(df_list)
 
     
