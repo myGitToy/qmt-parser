@@ -87,7 +87,6 @@ class stock():
             end：结束日期    e.g. datetime
             ktype：K线类型 e.g. 1d 5m 30m 60m 
             fq：复权类型 默认动态复权
-            api:tspro的token信息
             fwq：服务器 默认为localhost
             myauth：是否初始化jqdata授权（需要脱机读取时要设置为False）
             auto_update：数据自动更新 e.g. True False（暂未实装）

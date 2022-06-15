@@ -21,7 +21,7 @@ pd.set_option('display.max_columns', None)
 a = ATR()
 rank = prank()
 a.myauth = False
-auth('13162818663','Qq@6537286')
+auth('18621899367','Qq19840207')
 #a.code = '601318.XSHG'
 a.ktype = '1d'
 a.start = datetime.datetime(2021,6,1)

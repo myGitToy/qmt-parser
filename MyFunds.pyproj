@@ -108,9 +108,6 @@
     <Compile Include="apt\vendor\tspro\data.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="apt\vendor\tspro\security.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="apt\vendor\tspro\tick.py">
       <SubType>Code</SubType>
     </Compile>
@@ -137,13 +134,7 @@
     <Compile Include="demo\demo_mtm.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="demo\demo_tspro_75分位数测试.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="demo\demo_tspro_structure_test.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="demo\demo_ts_分钟数据测试.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_新多条件引用测试.py" />

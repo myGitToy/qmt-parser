@@ -31,8 +31,8 @@ a.myauth = False
 
 #vol异常值筛选
 vol_abnormal = a.money_abnormal_change(vol_ma = 20 , criteria = 2 ,count = 3 , N_day = 8 , interval = 8)
-df2 = vol_abnormal[0]
-print(df2.loc[df2.result == 1])
+df2 = vol_abnormal[1]
+print(df2)
 
 dd = data(myauth = False)
 dd.get_all_code(end_date =  datetime(2021,9,23) , local = True)
