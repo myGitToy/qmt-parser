@@ -43,7 +43,7 @@ class vol(base):
         计算区间是否存在成交量异动
         vol_ma 需要回滚ma根均线的成交量均值作为比较基准，默认是20天均值
         criteria 异动的标准 默认为均值ma的两倍
-        N 几天内出现这种情况算是符合条件 默认为一周内，即5天。如需计算当天的情况，则N = 1
+        N_day 几天内出现这种情况算是符合条件 默认为一周内，即5天。如需计算当天的情况，则N = 1
         count N周期内出现几次算符合条件 count <= N
         interval 信号间隔周期，interval内出现的重复信号予以忽略
         【重要提示】
@@ -74,23 +74,23 @@ class vol(base):
         #截断函数，减少工作量（取消截断，因为后续要改为DataFrame返回输出，因此需要计算全部数据行）
         #df = df.iloc[-(x_rolling * vol_ma + 20):]
         #计算
-        df['rolling_money'] = df['money'].rolling(x_rolling * vol_ma ).sum() / vol_ma
+        df['rolling_money'] = df['money'].rolling(x_rolling * vol_ma , min_periods = 1).sum() / vol_ma
         df['m_div_ma'] = df['money'] / df['rolling_money']
         #增加[abnormal]列
         #含义：满足成交量放大条件的交易日，设置abnormal = 1
         df.loc[df['m_div_ma'] >= criteria , 'abnormal'] = 1
-        df = df.fillna(0)
+        #df = df.fillna(0)
         #增加['abnormal_amout']列
         #含义：连续N_day天内满足成交量放大的天数，最后会用这个天数和count进行比较
-        df['abnormal_amout'] = df['abnormal'].rolling(N_day).sum()
+        df['abnormal_amout'] = df['abnormal'].rolling(N_day , min_periods = 1).sum()
         #增加[result-1]列
         #含义：作为最后结果的前置列，输出0/1值，含义是是否满足count的要求
         df.loc[df['abnormal_amout'] >= count , 'result-1'] = 1
-        df = df.fillna(0)
+        #df = df.fillna(0)
         #增加[result]列
         #含义：最后的输出结果，对interval进行判断，如果X天内重复计算则去除第二个以后的结果
-        df['result'] = df['result-1'].rolling(interval).sum() * df['result-1']
-        df.loc[df['result'] > 1 , 'result'] = 0
+        df['result'] = df['result-1'].rolling(interval , min_periods= 1).sum() * df['result-1']
+        df.loc[df['result'] > 1 , 'result'] = np.nan
         #校验结果，输出全部列（仅用于测试，正常情况下注释掉）
         #print(df)
         #返回DataFrame中最后一行是否符合条件，这个返回值属于传统的T/F值
