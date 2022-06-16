@@ -78,19 +78,77 @@ class security(base , stock):
         else:
             #数据库存在数据
             return df_db
- 
-    def get_security(self , code = None , day = datetime.now()):
+
+    def update_security(self ,type = ['stock','index','fund','etf','lof','fja','fjb']):
+        """
+        security日常更新
+        type 证券类型，支持多选 默认为全部（目前不包含期货）
+        """
+        #打印标题
+        print("############正在准备更新security证券代码信息###########")
+        df_security = pd.DataFrame()
+        #设置需要更新的证券列表状态，默认只读取上市的，在回溯过往会带来一些未来函数的问题
+        list_status = ['D','L','P']
+        for list in list_status:
+            df = cal.pro.query('stock_basic', list_status = list , fields='ts_code,symbol,name,area,industry,fullname,enname,cnspell,market,exchange,curr_type,list_status,list_date,delist_date,is_hs')
+            #数据拼接
+            df_security = pd.concat([df_security , df] , sort = False )
+        #重命名为code
+        df_security.rename(columns = {'ts_code':'code'} , inplace = True)
+        df_security['list_date'] = pd.to_datetime(df_security['list_date'])
+        df_security['delist_date'] = pd.to_datetime(df_security['delist_date'])       
+        #退市日期同时设置为2099年12月31日
+        df_security = df_security.fillna({'delist_date':datetime(2099,12,31)})
+        #dataframe列名的数据类型进行映射
+        dtypedict = {
+            'code': NVARCHAR(length = 24),
+            'symbol': NVARCHAR(length = 128),
+            'name': NVARCHAR(length = 128),
+            'area': NVARCHAR(length = 128),
+            'industry': NVARCHAR(length = 128),
+            'fullname': NVARCHAR(length = 128),
+            'enname': NVARCHAR(length = 128),
+            'cnspell': NVARCHAR(length = 24),
+            'market': NVARCHAR(length = 12),
+            'exchange': NVARCHAR(length = 12),
+            'curr_type': NVARCHAR(length = 12),
+            'list_status': NVARCHAR(length = 8),
+            'list_date': Date(),
+            'delist_date': Date(),
+            'is_hs': NVARCHAR(length = 8)
+                    }
+        #数据保存至数据库
+        if df_security.empty == True:
+            print("原始数据为空，无法导入数据库")
+        else:
+            df_security.to_sql(
+                    name = 'tspro_security',
+                    con = self.engine,
+                    index = False,
+                    if_exists = 'replace',
+                    index_label='code' , #设置主键(设置未成功)
+                    dtype=dtypedict) #映射列的数据类型
+
+            with self.engine.connect() as con:
+                #设置主键
+                con.execute('ALTER TABLE `tspro_security` ADD PRIMARY KEY (`code`);')
+                #设置索引（其实主键和索引一致的话，是可以不需要设置索引的）
+                #con.execute('CREATE INDEX index `tspro_security` (`code`);')
+            print(f"数据已上传完成(security),新增数据{df_security.shape[0]}条")
+
+    def get_all_security(self , code = None , market = "'主板','创业板','中小板','科创板','CDR','北交所'" ,day = datetime.now()):
         """
         获取单代码的security信息（需要满足）
         【输入】
-            code 证券代码 默认为空
+            code 证券代码 默认为空（本版本暂时不能输入code）
+            market：市场类别 默认主板/创业板/中小板/科创板/CDR/北交所
         【输出】
-            dataframe:code|display_name|name|start_date|end_date|type|valid
+            dataframe:code|symbol|name|area|market|list_date
         """
-        if code != None:
+        if code == None:
             #脱机查询
             #定位数据库中的最后日期(这里默认使用510300进行查询)
-            df = pd.read_sql_query(f"select * from jqdata_security where code = '{code}' and start_date<='{day.date()}' and end_date >='{day.date()}'" , self.engine)
+            df = pd.read_sql_query(f"select * from tspro_security where  '{day.date()}' between list_date and delist_date and market in ({market})" , self.engine)
             if df.empty == True:
                 #数据库不存在数据
                 return pd.DataFrame()
@@ -106,13 +164,18 @@ if __name__=="__main__":
     cal = security()
     cal.start_date = datetime(1991,1,1)
     cal.end_date = datetime(1991,9,1)
-    cal.update_calendar()
+    #df_up = cal.pro.query('limit_list_d' , trade_date = '20220616')
+    #print(df_up)
+    df_sec = cal.get_all_security()
+    print(df_sec)
+    cal.update_security()
 
     a = base()
     sec = security()
     a.start_date = datetime(2022,1,1)
     a.end_date = datetime(2022,9,1)
-    df = a.pro.trade_cal(exchange='SZSE', start_date='20180101', end_date='20181231')
+    #df = a.pro.trade_cal(exchange='SZSE', list_status='D' ,   start_date='20180101', end_date='20181231')
+    df = cal.pro.query('stock_basic', exchange='', list_status=['D','L'], fields='ts_code,symbol,name,area,industry,list_date')
     print(df)
     #测试交易日历读取功能
     df_read = sec.get_calendar()
