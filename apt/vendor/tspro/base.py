@@ -37,7 +37,7 @@ class base():
 
     def __init__(self , rds_host = 数据源.localhost , myauth = True):
         """
-        jqdata 初始化
+        tspro 初始化
         rds_host: 数据源的选择 默认为本地数据
         auth: jqdata授权 默认是授权的，False应对某些特殊情况 比如脱机对数据库进行读取操作
         """
@@ -64,10 +64,11 @@ class base():
             auth('13162818663','Qq@6537286')
         else:
             print("不支持的数据源，授权无效")
-        super(base , self).__init__()
+        super(base , self).__init__()  #支持多态继承
 
 @dataclass(order = True)
 class stock():
+#    __tstype = 'D'
     class 复权(Enum): #计划需要移除
         """
         选择复权类型
@@ -100,6 +101,7 @@ class stock():
         #self.auto_update = auto_update
         self.fq = fq
         self.api = None
+        self.dict = {'1d':'D','1m':'1min','5m':'5min','30m':'30min','60m':'60min'}
         #self.myauth = myauth
         #self.server = fwq
         #数据校验环节：
@@ -116,6 +118,19 @@ class stock():
         if ktype not in ('1d','60m','30m','15m','5m','1m'):
             raise ValueError(f'不支持的K线类型：{ktype}')
         super(stock , self).__init__()  #支持多态继承
+
+"""
+    @property
+    def ktype(self):
+        return self.__ktype
+
+    @ktype.setter
+    def ktype(self, ktype):
+        dict = {'1d':'D','1m':'1min',}
+        tstype = dict[self.ktype]
+        print(tstype)
+        Circle.__ktype = ktype 
+"""
 
 if __name__=="__main__":
     a = base(myauth = True)
