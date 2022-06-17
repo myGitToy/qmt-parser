@@ -136,27 +136,23 @@ class security(base , stock):
                 #con.execute('CREATE INDEX index `tspro_security` (`code`);')
             print(f"数据已上传完成(security),新增数据{df_security.shape[0]}条")
 
-    def get_all_security(self , code = None , market = "'主板','创业板','中小板','科创板','CDR','北交所'" ,day = datetime.now()):
+    def get_security(self , market = "'主板','创业板','中小板','科创板','CDR','北交所'" , day = datetime.now()):
         """
-        获取单代码的security信息（需要满足）
+        获取本地数据库中的证券代码（按日期）
         【输入】
-            code 证券代码 默认为空（本版本暂时不能输入code）
             market：市场类别 默认主板/创业板/中小板/科创板/CDR/北交所
         【输出】
-            dataframe:code|symbol|name|area|market|list_date
+            dataframe:code|symbol|name|market|list_date
         """
-        if code == None:
-            #脱机查询
-            #定位数据库中的最后日期(这里默认使用510300进行查询)
-            df = pd.read_sql_query(f"select * from tspro_security where  '{day.date()}' between list_date and delist_date and market in ({market})" , self.engine)
-            if df.empty == True:
-                #数据库不存在数据
-                return pd.DataFrame()
-            else:
-                #数据库存在数据，返回
-                return df
+        #脱机查询
+        df = pd.read_sql_query(f"select * from tspro_security where  '{day.date()}' between list_date and delist_date and market in ({market})" , self.engine)
+        if df.empty == True:
+            #数据库不存在数据
+            return pd.DataFrame()
         else:
-            raise ValueError(f'证券代码不能为空，请检查')
+            #数据库存在数据，返回
+            return df[['code','symbol','name','market','list_date']]
+
 
                
 if __name__=="__main__":
@@ -164,10 +160,13 @@ if __name__=="__main__":
     cal = security()
     cal.start_date = datetime(1991,1,1)
     cal.end_date = datetime(1991,9,1)
+    print(cal.dict[cal.ktype])
     #df_up = cal.pro.query('limit_list_d' , trade_date = '20220616')
     #print(df_up)
-    df_sec = cal.get_all_security()
+    df_sec = cal.get_security(day = datetime(2001,1,1))
     print(df_sec)
+    cal.ktype = '1m'
+    print(cal.dict[cal.ktype])
     cal.update_security()
 
     a = base()
