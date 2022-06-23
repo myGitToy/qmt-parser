@@ -46,7 +46,7 @@ dfday = d2.resample('D').agg({'open':'first',
 							   'amount':'sum'})
 print(dfday)
 print('原始的日线数据')
-df_day = ts.pro_bar(api = a.api , ts_code = a.code, freq = 'D' ,start_date = a.start_date.strftime('%Y%m%d') , end_date = a.end_date.strftime('%Y%m%d'))
+df_day = ts.pro_bar(api = a.api  , ts_code = a.code, freq = 'D' ,start_date = a.start_date.strftime('%Y%m%d') , end_date = a.end_date.strftime('%Y%m%d'))
 print(df_day)
 
 		

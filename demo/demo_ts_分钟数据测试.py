@@ -11,7 +11,7 @@ pd.set_option('display.max_columns', None)
 
 #通用行情接口测试（日线）此接口
 print(f'------------日线数据测试-----------')
-df_a_day = ts.pro_bar(ts_code = '510300.sh' ,  start_date = '2022-06-01' , end_date = '2022-06-13' , adj = None , adjfactor = True )
+df_a_day = ts.pro_bar(ts_code = '600638.sh' ,  start_date = '2012-01-01' , end_date = '2012-01-08' , adj = None , adjfactor = True )
 print(df_a_day)
 
 #通用行情接口测试（分时线）
