@@ -46,7 +46,8 @@ class data(base):
         #获取更新列表
         if code_list == None:
             #更新列表未填写，则默认为空，即全部更新
-            code_list = list(get_all_securities(['stock','etf'],date = end_date).index)
+            #>>>>>>>>>>>>>>>>>>>>>>>>>>自2022/6/13起 无法更新场内基金数据（日线和分时线）<<<<<<<<<<<<<<<
+            code_list = list(get_all_securities(['stock'],date = end_date).index)
         #设置规则下需要更新的数目（按一天的量进行计算）
         update_num = self.__get_update_count(trade_days = 1 , ktype = ktype)
         for day in trade_days:
@@ -138,7 +139,8 @@ class data(base):
         #获取更新列表
         if code_list == None:
             #更新列表未填写，则默认为空，即全部更新
-            code_list = list(get_all_securities(['stock','etf'],date = end_date).index)
+            #>>>>>>>>>>>>>>>>>>>>>>>>>>自2022/6/13起 无法更新场内基金数据（日线和分时线）<<<<<<<<<<<<<<<
+            code_list = list(get_all_securities(['stock'],date = end_date).index)
         for code in code_list:
             #检查数据库是否存在数据
             query = "select count(code) as num from jqdata_%s where code = '%s' and date(date) BETWEEN '%s' and '%s'" % (ktype , code , start_date.strftime("%Y-%m-%d") , end_date.strftime("%Y-%m-%d"))
