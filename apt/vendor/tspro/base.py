@@ -79,13 +79,13 @@ class stock():
         后复权 = 2 #以开始日期为基准，向后进行复权
         动态复权 = 3   #以结束日期为基准，向前进行复权
 
-    def __init__(self , code = None , start = datetime(2021,1,1), end = datetime.now() , ktype = "1d" , fq = 复权.动态复权  ):
+    def __init__(self , code = None , start_date = datetime(2021,1,1), end_date = datetime.now() , ktype = "1d" , fq = 复权.动态复权  ):
         """
         初始化
         输入：
             code 证券代码   e.g. 510300.XSHG
-            start：开始日期  e.g. datetime
-            end：结束日期    e.g. datetime
+            start_date：开始日期  e.g. datetime
+            end_date：结束日期    e.g. datetime
             ktype：K线类型 e.g. 1d 5m 30m 60m 
             fq：复权类型 默认动态复权
             api:tspro的token信息
@@ -95,8 +95,8 @@ class stock():
         返回：
         """
         self.code = code
-        self.start_date = start
-        self.end_date = end
+        self.start_date = start_date
+        self.end_date = end_date
         self.ktype = ktype
         #self.auto_update = auto_update
         self.fq = fq
@@ -112,7 +112,7 @@ class stock():
         #start和end数据类型统一成datetime(对应bug id：244 未实装)
         #if (isinstance(start , str) == True and :
             #start = datetime.datetime(start)
-        if start  > end:
+        if start_date  > end_date:
             raise ValueError(f'开始日期必须早于结束日期')
         #3. K线类型校验
         if ktype not in ('1d','60m','30m','15m','5m','1m'):
