@@ -29,7 +29,7 @@ from apt.vendor.jqdata.ETF import ETF as ETF
 集合竞价数据	2019年至今	交易日最晚9:28分之前更新
 """
 
-start = datetime.datetime(2022,6,19)    #日线 60m 30m 最后更新日 start 5/18；30m从5、23开始
+start = datetime.datetime(2022,6,28)    #日线 60m 30m 最后更新日 start 5/18；30m从5、23开始
                                         #自2022/6/13起 无法更新场内基金数据（日线和分时线）
                                         #日线 60 30m最后更新日 6/24 不含
                                         #5分钟线未更新完整
@@ -55,8 +55,8 @@ jq.update_index(start_date = start , end_date = end , ktype = '60m')
 jq.update_index(start_date = start , end_date = end , ktype = '1d')
 
 #更新日线
-#jq.update_v2(start_date = start , end_date = end , ktype = '1d' )
+jq.update_v2(start_date = start , end_date = end , ktype = '1d' )
 #更新60分钟线
-#jq.update_v2(start_date = start , end_date = end , ktype = '60m' )
+jq.update_v2(start_date = start , end_date = end , ktype = '60m' )
 #更新30分钟线
-#jq.update_v2(start_date = start , end_date = end , ktype = '30m' )
+jq.update_v2(start_date = start , end_date = end , ktype = '30m' )

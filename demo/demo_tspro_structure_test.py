@@ -12,13 +12,14 @@ a = data(myauth = True)
 #a.myauth = False
 a.code = '600038.sh'
 #a.start_date = datetime(2016,7,10)  #日线更新起始日期
+
 a.start_date = datetime(2021,1,1)
 a.end_date = datetime.now()
 
 a.fq = data.复权.不复权
 a.ktype = '60m'
 #a.update_day()
-a.update_min()
+a.update_min()  
 #a.ktype = '1d'
 print(a.ktype)
 print(a.fq)
