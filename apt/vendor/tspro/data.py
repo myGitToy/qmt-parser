@@ -3,8 +3,8 @@ import pandas as pd
 import tushare as ts
 import sqlalchemy
 import akshare as ak
-from datetime import datetime
-from apt.vendor.jqdata.jqdata import data as jqdata
+from datetime import datetime,timedelta
+from apt.vendor.tspro.security import security  as security
 from apt.vendor.tspro.base import base as base
 from apt.vendor.tspro.base import stock as stock
 
@@ -25,7 +25,7 @@ class data(base,stock):
     #def __init__(self):
         #super(data , self).__init__()
 
-    def update_v1(self):
+    def update_day(self):
         """
         tusharePro数据日常更新的主入口（按天更新）
         本模块只支持日线格式更新（日线数据按日进行全部数据的获取，因此与分时线的逻辑有所不同）
@@ -36,7 +36,9 @@ class data(base,stock):
                 2.2 没有数据则直接写入操作
                 2.3 存在数据，则去重后写入
         """
-
+        #日线类型校验
+        if self.ktype != '1d':
+            raise ValueError(f'分时线数据请使用update_min函数进行更新')
         #更新时段校验 如果更新的是日线数据且校验为更新时段，则不予以更新
         #check = self.get_today_is_trade()
         check = None
@@ -64,6 +66,8 @@ class data(base,stock):
                     #df.rename(columns={'ts_code': 'code', 'trade_date': 'date' , 'vol': 'volume' , 'amount': 'money'} , errors="raise")
                     #df.rename(columns={"ts_code": "code", "trade_date": "date" } , errors="raise")
                     df.rename(columns={"ts_code": "code", "trade_date": "date" ,"vol" : "volume" , "amount" : "money"} , errors="raise" , inplace = True)
+                    #删除列
+                    df.drop(columns = ['pre_close','change','pct_chg'] , inplace = True)                 
                     #时间日期类的列进行类型变更
                     df['date'] = pd.to_datetime(df['date'])
                     #volume成交量列从手转换成股 统一乘100
@@ -98,13 +102,19 @@ class data(base,stock):
                             if_exists = 'append')
                     print(f"{day.strftime('%Y%m%d')}数据已上传完成({self.ktype})")
 
-    def update_1m(self):
+    def update_min(self):
         """
-        tusharePro1分钟数据日常更新的主入口
-        目前只支持日线数据更新 因为积分关系
-        start_date 开始时间，默认为2020年
-        end_date 结束时间 默认为当前时间（更新函数中默认不更新当天的及时数据，因为会造成重复录入，请注意）
+        tusharePro数据日常更新的主入口（按天按每代码进行更新）
+        进行历史数据更新时需要注意，由于系统设定，返回的最大row为8000行，本模块代码内部做了相应的提示
+        重要事项：
+            更新2022/6/14-2022/6/16数据时，实际只会更新6/14 15两天，6/16并不会更新
+            原因在于6/16当天的数据不符合datetime(2022,6,16)的条件
+            解决方案：请输入带时间的格式 datetime(2022,6,16,23)
+        
+        start_date 开始时间，由基类参数控制
+        end_date 结束时间，由基类参数控制
         ktype K线周期 1d 5m 60m等
+        
         更新逻辑：
             1. 获取需要更新的时间周期中的交易日
             2. 循环读取证券代码列表进行更新
@@ -112,73 +122,58 @@ class data(base,stock):
                 2.2 没有数据则直接写入操作
                 2.3 存在数据，则去重后写入
         """
-
-        #更新时段校验 如果更新的是日线数据且校验为更新时段，则不予以更新
+        #分时线类型校验
+        if self.ktype == '1d':
+            raise ValueError(f'日线数据请使用update_day函数进行更新')
+        #设定最大更新行数
+        max_row = 8000
+        #更新时段校验 交易时段不允许更新
         #check = self.get_today_is_trade()
-        check = None
+        check = None        #这里先关闭交易时段校验
         if check == self.交易时段校验.交易时段:
             raise ValueError(f'update_V1规则不允许在交易时段进行更新')
-        #获取交易日期
+        #1. 获取区间最后一天所对应的全部证券列表
+        sec = security()
+        code_list = sec.get_security(day = self.end_date)
+        #2. 获取交易日期（代码暂时移除，目前按照区间更新）
         trade_days = self.pro.trade_cal(exchange = 'SSE', start_date = self.start_date.strftime('%Y%m%d'), end_date=self.end_date.strftime('%Y%m%d'))
         #剔除非交易日
         trade_days.query('is_open == 1' , inplace = True)
         trade_days['cal_date'] = pd.to_datetime(trade_days['cal_date'])
-
-        for day in trade_days['cal_date']:
-            #print(f"##############正在更新%s数据##############" % day.strftime("%Y-%m-%d"))
-            #检查数据库是否存在数据（目前跳过验证，数据查询耗时较长）
-            query = f"select date , count(date) as num from tspro_{self.ktype} where date(date) = '{day.date()}'"
-            df_old = pd.read_sql_query(query , self.engine)
-            count = df_old.loc[0 , 'num']
-            if count > 0 :
-                #此处存在数据，不进入更新序列，直接跳过
-                print(f"{day.strftime('%Y-%m-%d')}存在数据，跳过更新")
+        #3. 获取tspro相应的数据
+        for code in code_list['code']:
+            #目前量比 vor 复权因子均无效 
+            #tspro pro_bar数据获取模块（这里对最后日期做了day+1的处理）
+            df_tspro = ts.pro_bar(api = self.api , ts_code = code, freq = self.dict[self.ktype] , adj = None , start_date = self.start_date.strftime('%Y%m%d') , end_date = (self.end_date + timedelta(days = 1)).strftime('%Y%m%d') , adjfactor = True , factors = ['tor', 'vr'] , asset = 'E')
+            #最大数据量校验
+            if df_tspro.shape[0] >= max_row:
+                raise ValueError(f'接收到的数据达到最大允许值，可能存在数据丢失，中止更新！')
+            #print(df_tspro)
+            df_tspro.rename(columns={"ts_code": "code", "trade_time": "date" ,"vol" : "volume" , "amount" : "money"} , errors="raise" , inplace = True)
+            df_tspro.drop(columns = ['trade_date','pre_close'] , inplace = True)
+            #时间日期类的列进行类型变更
+            df_tspro['date'] = pd.to_datetime(df_tspro['date'])
+            #日期排序(目前判定下为非必要，预留代码，减小数据更新的压力)
+            #df_tspro.sort_values(columns = ['date'], inplace = True , ascending = False)
+            #分时线数据不需要进行成交量和成交额修正
+            #4. 获取数据库对应日期的数据
+            query_db = f"select code,date,open,close,high,low,volume,money from tspro_{self.ktype} where date(date) between '{self.start_date.date()}' and '{self.end_date.date()}' and code = '{code}'"
+            df_db = pd.read_sql_query(query_db , self.engine)
+            df_db['date'] = pd.to_datetime(df_db['date'])
+            #print(df_tspro)
+            #5. 两个DataFrame进行差值处理
+            df_diff = pd.concat([df_tspro , df_db , df_db] ).drop_duplicates(subset=['date'] , keep = False)
+            #6. 差值数据写入数据库
+            if df_diff.empty == True:
+                print(f"{code}差值数据为空，跳过更新")
             else:
-                #不存在数据，进行更新
-                if  self.ktype == '1d':
-                    df = self.pro.daily(trade_date= day.strftime('%Y%m%d'))
-                    #根据wiki描述的数据库一致性的要求，进行列名的变更 https://huiqiao.visualstudio.com/MyFunds/_wiki/wikis/MyFunds.wiki/19/tusharePro%E6%95%B0%E6%8D%AE%E8%AF%8D%E5%85%B8
-                    #df.rename(columns={'ts_code': 'code', 'trade_date': 'date' , 'vol': 'volume' , 'amount': 'money'} , errors="raise")
-                    #df.rename(columns={"ts_code": "code", "trade_date": "date" } , errors="raise")
-                    df.rename(columns={"ts_code": "code", "trade_date": "date" ,"vol" : "volume" , "amount" : "money"} , errors="raise" , inplace = True)
-                    #日线数据金额和成交量做修正 jqdata都是以股为单位，tspro以手为单位；
-                    print(df)
-                    #volume成交量列从手转换成股 统一乘100
-                    df['volume'].astype(np.float)
-                    df['volume'] = df['volume'] * 100
-                    #amount成交金额列从千元转换成元，统一乘1000
-                    df['amount'].astype(np.float)
-                    df['amount'] = df['amount'] * 1000
-                    print(df)
-                    #print(df)
-                    #时间日期类的列进行类型变更
-                    df['date'] = pd.to_datetime(df['date'])
-                    #日线数据特殊处理，因为数据库中的格式是date，不是datetime
-                    #df = df[(df.date == day)]
-                else:                    
-                    #分时数据目前不做处理
-                    return None
-                    #############这里留一个问题，是否可以用df.date.date() == day的形式进行筛选
-                    #进行当天数据的筛选，因为比如取5m数据，当天有48根，但可能上午停牌，因此48根数据就包含了昨天下午的，此时写入数据库会造成唯一索引约束错误
-                    df = get_bars(security = code , count = update_num , unit = ktype , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'] , include_now = False , end_dt = end_day , df = True)
-                    if df.empty == True:
-                        #增加一个判断和筛选，因为正常情况下不会出错，但是如果代码未上市，此时df不会取到前面几天，而是直接返回空值
-                        #PS 日线部分竟然不影响，挺神奇的
-                        pass
-                    else:
-                        df['code']= code
-                        df = df[(df.date.dt.date == day)]
-                        #df = df[(df.date >= datetime.datetime(day.year,day.month,day.day,1)) & (df.date <= datetime.datetime(day.year,day.month,day.day,16))]
-                #保存至数据库
-                if df.empty == True:
-                    print("%s 当日数据为空，跳过上传(该日为交易日，数据截取可能存在问题)" % (day.strftime('%Y%m%d')))
-                else:
-                    df.to_sql(
-                            name = f'tspro_{self.ktype}',
-                            con = self.engine,
-                            index = False,
-                            if_exists = 'append')
-                    print(f"{day.strftime('%Y%m%d')}数据已上传完成({self.ktype})")
+                df_diff.to_sql(
+                        name = f'tspro_{self.ktype}',
+                        con = self.engine,
+                        index = False,
+                        if_exists = 'append')
+                print(f"{code}数据已上传完成({self.ktype}，新增数据{df_diff.shape[0]})")
+
     def code_ts_to_ak(self):
         """
         将tushare代码类型转换成akshare类型
@@ -216,11 +211,12 @@ class data(base,stock):
         #获取带授权的
         pass
 
-    def get_k_data(self , code = None ,  count = None ,
+    def __get_k_data_ak(self , code = None ,  count = None ,
                  col = ['code','date','open','close','high','low','volume','money','factor'] , 
                  flag_forward = False , ):
         
         """
+        这里是获取AK的复权因子，暂时不使用
         tspro数据加载模块（目前不支持输出N日后的X条数据，详见https://huiqiao.visualstudio.com/MyFunds/_workitems/edit/296）
         --------->复权数据采用akshare <---------
         start_time：开始时间 最好带上小时参数  比如(2020,12,31,8)
@@ -326,7 +322,6 @@ class data(base,stock):
 if __name__=="__main__":
     #测试ak复权因子
     a = data()
-    jq = jqdata()
     a.code ='600038.sh'
     a.start_date= datetime(2010,1,1)
     a.end_date = datetime(2010,11,26)
