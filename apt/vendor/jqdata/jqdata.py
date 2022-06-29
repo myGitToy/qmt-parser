@@ -5,9 +5,18 @@ import sqlalchemy
 import datetime
 from jqdatasdk import *
 from apt.vendor.jqdata.base import base as base
-
+#应对[Errno 11003] getaddrinfo failed) 好像目前没什么用，先留着
+#上述错误是因为更新sqlacademy包所引起的，目前已恢复原文件，暂时不进行升级
+#import socket
+#socket.getaddrinfo('localhost', 25)
 
 class data(base):
+    """
+    数据接口 基类
+    所有需要从jqdata获取数据的都需要从此处引用
+    引用规范：from apt.vendor.jqdata.jqdata import data as jqdata
+    例：量化选股 qsp_jqdata就是从这里作为基类引用的
+    """
     def update_v1(self , code_list = None , start_date = datetime.datetime(2020,1,1,1) , end_date = datetime.datetime.now() , ktype = '5m' ):
         """
         聚宽数据日常更新的主入口 第一版本 使用双循环策略，判断简单但数据库操作偏多，每天每代码都要执行一遍读取、判断、写入
@@ -37,7 +46,8 @@ class data(base):
         #获取更新列表
         if code_list == None:
             #更新列表未填写，则默认为空，即全部更新
-            code_list = list(get_all_securities(['stock','etf'],date = end_date).index)
+            #>>>>>>>>>>>>>>>>>>>>>>>>>>自2022/6/13起 无法更新场内基金数据（日线和分时线）<<<<<<<<<<<<<<<
+            code_list = list(get_all_securities(['stock'],date = end_date).index)
         #设置规则下需要更新的数目（按一天的量进行计算）
         update_num = self.__get_update_count(trade_days = 1 , ktype = ktype)
         for day in trade_days:
@@ -129,7 +139,8 @@ class data(base):
         #获取更新列表
         if code_list == None:
             #更新列表未填写，则默认为空，即全部更新
-            code_list = list(get_all_securities(['stock','etf'],date = end_date).index)
+            #>>>>>>>>>>>>>>>>>>>>>>>>>>自2022/6/13起 无法更新场内基金数据（日线和分时线）<<<<<<<<<<<<<<<
+            code_list = list(get_all_securities(['stock'],date = end_date).index)
         for code in code_list:
             #检查数据库是否存在数据
             query = "select count(code) as num from jqdata_%s where code = '%s' and date(date) BETWEEN '%s' and '%s'" % (ktype , code , start_date.strftime("%Y-%m-%d") , end_date.strftime("%Y-%m-%d"))
@@ -344,13 +355,18 @@ class data(base):
                  count = None ,
                  col = ['code','date','open','close','high','low','volume','money','factor'] , 
                  ktype = '1d' , 
+                 flag_forward = False , 
                  fq = base.复权.动态复权):
         
         """
-        jqdata数据加载模块
+        jqdata数据加载模块（目前不支持输出N日后的X条数据，详见https://huiqiao.visualstudio.com/MyFunds/_workitems/edit/296）
         start_time：开始时间 最好带上小时参数  比如(2020,12,31,8)
         end_time：结束时间 最好带上小时参数  比如(2020,12,31,16)
         count : 获取K线条目的个数 默认是全部输出  
+        flag_forward：用于获取N日之后X条数据，类似于后复权数据 默认为False
+            在这种模式下，start_date为基准日期，先后输出count条数据
+            其余模式end_date均为基准日期
+            详见https://huiqiao.visualstudio.com/MyFunds/_workitems/edit/296
         接受前复权 后复权 不复权 动态复权四种复权模式
         成交量、成交额目前未进行复权处理
         返回的数据按照升序排列（backtrader要求的数据格式）
@@ -374,7 +390,12 @@ class data(base):
         else:
             #有数据，进行复权处理
             if fq == self.复权.不复权:
-                return df_db.iloc[-count:][col]
+                if flag_forward == False:
+                    #正常模式
+                    return df_db.iloc[-count:][col]
+                else:
+                    #非正常模式，以start_date为基准输出向后的count条记录
+                    return df_db.iloc[:count][col]
             elif fq ==self.复权.前复权:
                 #前复权价格 = 当日价格 / 最后一个交易日（非end_date）的复权因子 * 当日复权因子
                 factor = self.__get_last_factor(code = code)
@@ -382,7 +403,12 @@ class data(base):
                 df_db['high'] = df_db['high'] / factor * df_db['factor']
                 df_db['low'] = df_db['low'] / factor * df_db['factor']
                 df_db['close'] = df_db['close'] / factor * df_db['factor']
-                return df_db.iloc[-count:][col]
+                if flag_forward == False:
+                    #正常模式
+                    return df_db.iloc[-count:][col]
+                else:
+                    #非正常模式，以start_date为基准输出向后的count条记录
+                    return df_db.iloc[:count][col]
             elif fq ==self.复权.后复权:
                 #后复权价格 = 当日价格 / 第一个交易日（start_date）的复权因子 * 当日复权因子    
                 #获取第一一个复权因子的数值
@@ -391,7 +417,12 @@ class data(base):
                 df_db['high'] = df_db['high'] / factor * df_db['factor']
                 df_db['low'] = df_db['low'] / factor * df_db['factor']
                 df_db['close'] = df_db['close'] / factor * df_db['factor']
-                return df_db.iloc[-count:][col]
+                if flag_forward == False:
+                    #正常模式
+                    return df_db.iloc[-count:][col]
+                else:
+                    #非正常模式，以start_date为基准输出向后的count条记录
+                    return df_db.iloc[:count][col]
             elif fq ==self.复权.动态复权:
                 #动态复权价格 = 当日价格 / 区间最后一天的复权因子 * 当日复权因子
                 #获取最后一个复权因子的数值
@@ -400,7 +431,12 @@ class data(base):
                 df_db['high'] = df_db['high'] / factor * df_db['factor']
                 df_db['low'] = df_db['low'] / factor * df_db['factor']
                 df_db['close'] = df_db['close'] / factor * df_db['factor']
-                return df_db.iloc[-count:][col]
+                if flag_forward == False:
+                    #正常模式
+                    return df_db.iloc[-count:][col]
+                else:
+                    #非正常模式，以start_date为基准输出向后的count条记录
+                    return df_db.iloc[:count][col]
             else:
                 raise ValueError(f'不支持的复权模式，请检查！')
                 return df_db
@@ -550,15 +586,15 @@ class data(base):
 
 
 
-    def get_all_code(self , end_date = datetime.datetime.now() , type = "'stock','etf'", local = True , min_cap = 0 , max_cap = 10000):
+    def get_all_code(self , end_date = datetime.datetime.now() , type = "'stock','etf'", local = True , default_cap_row = 'circulating_market_cap' , min_cap = 0 , max_cap = 10000):
         """
         读取所有证券代码列表
         本函数提供下游K线形态、量价分析使用
         【输入】
             end_date 取代码的基准日期 默认为当天
-            local 是否脱机查询 默认为脱机
+            local 是否脱机查询 默认为脱机（此条已被删除，请用myauth做等效替代）
             type 数据类型 "'stock','index','fund','etf','lof','fja','fjb'" 默认为stock+etf
-            include_ETF 包含ETF数据 默认为否
+            default_cap_row 选取的市值列，默认为流通市值；选项有流动市值(circulating_market_cap)和总市值(market_cap)
             min_cap 最小市值(总市值)要求(单位：亿) 100亿则输入 默认为0
             max_cap 最大市值(总市值)要求(单位：亿) 10000万亿则输入 默认为10000亿
             min_daily_money_etf 最小交易量要求（ETF专用）1000万则输入 默认为0
@@ -568,9 +604,10 @@ class data(base):
             dataframe:date|code|ETF|cap|money
         """
         #第一步：进行是否脱机查询的判断，在线查询比较简单，直接调取jqdata相关代码即可
-        if local == True:
+        if self.myauth == False:
             #脱机查询
             #定位数据库中的最后日期(这里默认使用510300进行查询)
+            #<<<<<<<<<<<<<<<<<<<<<<这里完全可以用security来取代jadata_1d 另外能否将两个sql查询进行合并？>>>>>>>>>>>>>>>>>>>>>>
             df_day = pd.read_sql_query(f"select * from jqdata_1d where date(date)<='{end_date.date()}' and code = '510300.XSHG' order by date desc limit 1" , self.engine)
             if df_day.empty == True:
                 #数据库不存在数据
@@ -584,7 +621,7 @@ class data(base):
                 except:
                     print("数据读取失败")  
                 #print(df_db)
-                return df_db
+                #return df_db
             #【【【目前到这一步就直接返回结果，后面的代码暂时没有实装】】】
             #如果后面要去除下面代码的话，还要考虑valuation对应新增的几个索引，可以考虑删除以释放数据库空间
 
@@ -600,17 +637,21 @@ class data(base):
             else:
                 #数据库存在数据，新定义开始日期
                 valuation_last_day=  df_val_day.loc[0 , 'date']
-            sql_val = f"select code , date , market_cap from valuation where market_cap between {min_cap * 1e8} and {max_cap * 1e8}  and date(date) = '{valuation_last_day}'"
-            print(sql_val)
+            sql_val = f"select code , date , {default_cap_row} from valuation where {default_cap_row} between {min_cap} and {max_cap}  and date(date) = '{valuation_last_day}'"
+            #print(sql_val) #此处打印sql语句的目的是因为查询耗时过长（18秒），后期会予以修正
             try:
                 df_val = pd.read_sql_query(sql_val , self.engine)
             except:
                 print("数据读取失败")  
-            print(df_val)
+            #print(df_val)
             df_stock = df_db[(df_db['type'] == 'stock')]
                              #[( df_trans['证券代码'] == code )]
             df_stock = pd.merge(df_stock , df_val , on = ['code'], how = 'left') 
+            #去除不符合条件的个股
+            #print(df_stock)
+            df_stock = df_stock.dropna(subset = [f'{default_cap_row}'])
             print(df_stock)
+            return df_stock
 
         else:
             #在线查询，调取jqdata

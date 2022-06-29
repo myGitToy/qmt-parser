@@ -65,6 +65,12 @@
     <Compile Include="apt\qsp_jqdata\expma.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="apt\qsp_jqdata\momentum.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="apt\qsp_jqdata\m2.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="apt\qsp_jqdata\prank.py">
       <SubType>Code</SubType>
     </Compile>
@@ -99,6 +105,12 @@
     <Compile Include="apt\vendor\tspro\base.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="apt\vendor\tspro\data.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="apt\vendor\tspro\security.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="apt\vendor\tspro\tick.py">
       <SubType>Code</SubType>
     </Compile>
@@ -119,6 +131,24 @@
     <Compile Include="bt\Data.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="demo\demo_akshare_init.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_mtm.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_tspro_75分位数测试.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_tspro_structure_test.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_ts_分钟数据测试.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_新多条件引用测试.py" />
+    <Compile Include="demo\demo_新多条件选股测试 DataFrame格式.py" />
+    <Compile Include="demo\demo_新单条件选股测试 DataFrame格式.py" />
     <Compile Include="demo\demo_新多条件测试.py" />
     <Compile Include="demo\demo_tbl_斜率角.py" />
     <Compile Include="demo\demo_A04.py">
@@ -179,7 +209,7 @@
     </Compile>
     <Compile Include="demo\demo_jqdata_daily_update - Copy.py" />
     <Compile Include="demo\demo_jqdata_daily_update校验.py" />
-    <Compile Include="demo\demo_jqdata_daily_update.py">
+    <Compile Include="macro\demo_jqdata_daily_update.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_jqdata_factor.py" />
@@ -220,6 +250,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="fund\__init__.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="macro\macro_tspro_更新序列.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="MyCashFlowTest.py">
@@ -280,6 +313,7 @@
     <Folder Include="demo\" />
     <Folder Include="apt\qsp_jqdata\" />
     <Folder Include="bt\" />
+    <Folder Include="macro\" />
     <Folder Include="VB\" />
   </ItemGroup>
   <ItemGroup>

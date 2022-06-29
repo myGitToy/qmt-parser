@@ -21,10 +21,10 @@ pd.set_option('display.max_columns', None)
 a = ATR()
 rank = prank()
 a.myauth = False
-auth('18621899367','Qq19840207')
+auth('13162818663','Qq@6537286')
 #a.code = '601318.XSHG'
 a.ktype = '1d'
-a.start = datetime.datetime(2021,1,1)
+a.start = datetime.datetime(2021,6,1)
 a.end = datetime.datetime.now()
 
 
@@ -55,7 +55,7 @@ for code in code_list:
     df_name_list.loc[df_name_list['code']==code,'name'] = name
 
 #更新日线和60分钟线数据
-update_start = datetime.datetime(2021,12,1)
+update_start = datetime.datetime(2022,2,1)
 jq = data(rds_host = data.数据源.localhost , myauth = True )
 jq.update_v2(code_list = code_list , start_date = update_start , end_date = a.end , ktype = '1d' )
 jq.update_v2(code_list = code_list , start_date = update_start , end_date = a.end , ktype = '60m' )

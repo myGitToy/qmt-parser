@@ -2,13 +2,13 @@
 import mpl_finance
 import tushare as ts
 import pandas as pd
-import seaborn as sns
+#import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib import ticker
 from matplotlib.pylab import date2num
 import numpy as np
 
-sns.set()
+#sns.set()
 pro = ts.pro_api()
 """
 目前测试模块将交易的time列作为时间序列并设置为索引（加入了日期，目前无法解决只显示HH:MM:SS）
@@ -21,8 +21,8 @@ pro = ts.pro_api()
 """
 #df = ts.get_realtime_quotes('159949') #当日实时买盘 卖盘挂单 支持ETF
 #print(df[['b1_v','b1_p','a1_v','a1_p']])
-day='2021-07-07'  #时间格式必须是YYYY-MM-DD
-code='000333'
+day='2022-01-21'  #时间格式必须是YYYY-MM-DD
+code='600509'
 df = ts.get_tick_data(code,date=day,src='tt')   #历史分笔交易  支持ETF 基本上为每隔三秒左右生成的合并数据，
 print(df)
 #保存原始数据至指定文件

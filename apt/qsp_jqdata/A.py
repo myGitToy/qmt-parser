@@ -24,47 +24,124 @@ class A(base):
         """
         #df = self.get_k_data( code = self.code , start_date= self.start , end_date= self.end , ktype= self.ktype)
         df = self.get_k_data()
+        if df.empty == True:
+            #无数据
+            return pd.DataFrame()        
         for ma in ma_list:
             df[f'MA{ma}'] = ta.MA(df['close'] ,  timeperiod = int(ma))
         return df
 
-    def A01B02_MA均线多头排列(self , ma_list = ['10','20','60','120']):
+    def A01B02_MA均线多头排列(self , ma_list = ['10','20','60','120'] , N_day = 5 , count = 1):
         """
         MA均线多头排列
         输入：
             证券代码，起止日期按照默认
             ma_list：需计算的均线 ['10','30','60','120']
-        输出：T/F
+            N_day 几天内出现这种情况算是符合条件 默认为一周内，即5天。如需计算当天的情况，则N = 1
+            count N周期内出现几次算符合条件 count <= N
+            【备注】：正常情况下无需修改，默认5天内只有符合一次就算True；如果就是需要当天的均线排列结果，N_day=1 count=1
+        输出：元组
+            data[0]：DataFrame 包含日期 证券代码 结果
+            data[1]：T/F值
         """
+        #数据校验
+        if count > N_day:
+            raise ValueError(f'无法计算{N}天内出现{count}次的情况，请检查逻辑')
+        #多导入的均线顺序进行排序
+        ma_list.sort(key = int) #将K线列表以int整数的形式进行排列
         df = self.A01B01_MA均线数据(ma_list = ma_list)
+        if df.empty == True:
+            #数据为空，需要返回空值
+            ##大代码量下进行滚动查询，不适合直接返回错误信息
+            return pd.DataFrame() , False
+            raise ValueError(f'数据为空，请检查！')
         #多头排列 Bull Market
         #判断ma均线的个数        
-        count = len(ma_list)
+        ma_count = len(ma_list)
+        #判断基准是两两比较，始终是前一个ma与后一个ma比较
+        #如果均线多头排列 ['10','20','60','120']，则只需10>20;20>60;60>120则可以确认多头排列成立
+        df['result'] = 1
+        for n in range(0 , ma_count -1):
+            df.loc[df[f'MA{ma_list[n]}'] > df[f'MA{ma_list[n+1]}'] , f'compare'] = 1
+            df['result'] = df['result'] * df['compare']
+            #重置df['compare']
+            df['compare'] = np.nan
+        #处理N_day内出现count次数
+        df['result_sum'] = df['result'].rolling(N_day , min_periods = 1).sum()
+        df['result'] = np.where(df['result_sum'] >= count , 1 , np.nan)
+        #df.loc[df['result_sum'] < count , 'result'] = 0
+        #设置最后一行参数，用于返回T/F值
+        if df.iloc[-1].at['result'] == 1:
+            last_row = True
+        else:
+            last_row = False
+        #返回最后的结果 目前为元组类型，第一列为DataFrame 第二列为T/F值       
+        return df[['code','date','result']] , last_row  
+        """
+        ##以下代码为历史陈旧记录，予以保留
         for n in range(0 , count - 1):
             short = df.iloc[-1].at[f'MA{ma_list[n]}']
             long = df.iloc[-1].at[f'MA{ma_list[n+1]}']
             if  short < long:
                 return False
         return True
-        
-    def A01B03_MA均线空头排列(self , ma_list = ['10','20','60','120']):
+        """
+
+    def A01B03_MA均线空头排列(self , ma_list = ['10','20','60','120'] , N_day = 5 , count = 1):
         """
         MA均线空头排列
         输入：
             证券代码，起止日期按照默认
             ma_list：需计算的均线 ['10','30','60','120']
-        输出：T/F
+            N_day 几天内出现这种情况算是符合条件 默认为一周内，即5天。如需计算当天的情况，则N = 1
+            count N周期内出现几次算符合条件 count <= N
+            【备注】：正常情况下无需修改，默认5天内只有符合一次就算True；如果就是需要当天的均线排列结果，N_day=1 count=1
+        输出：元组
+            data[0]：DataFrame 包含日期 证券代码 结果
+            data[1]：T/F值
         """
+        #数据校验
+        if count > N_day:
+            raise ValueError(f'无法计算{N}天内出现{count}次的情况，请检查逻辑')
+        #多导入的均线顺序进行排序
+        ma_list.sort(key = int) #将K线列表以int整数的形式进行排列
         df = self.A01B01_MA均线数据(ma_list = ma_list)
+        if df.empty == True:
+            #数据为空，需要返回空值
+            ##大代码量下进行滚动查询，不适合直接返回错误信息
+            return pd.DataFrame() , False
+            raise ValueError(f'数据为空，请检查！')
         #空头排列 Bear Market
         #判断ma均线的个数        
-        count = len(ma_list)
+        ma_count = len(ma_list)
+        #判断基准是两两比较，始终是前一个ma与后一个ma比较
+        #如果均线空头排列 ['10','20','60','120']，则只需10<20;20<60;60<120则可以确认空头排列成立
+        df['result'] = 1
+        for n in range(0 , ma_count -1):
+            df.loc[df[f'MA{ma_list[n]}'] < df[f'MA{ma_list[n+1]}'] , f'compare'] = 1
+            df['result'] = df['result'] * df['compare']
+            #重置df['compare']
+            df['compare'] = np.nan
+        #处理N_day内出现count次数
+        df['result_sum'] = df['result'].rolling(N_day , min_periods = 1).sum()
+        df['result'] = np.where(df['result_sum'] >= count , 1 , np.nan)
+        #df.loc[df['result_sum'] < count , 'result'] = 0
+        #设置最后一行参数，用于返回T/F值
+        if df.iloc[-1].at['result'] == 1:
+            last_row = True
+        else:
+            last_row = False
+        #返回最后的结果 目前为元组类型，第一列为DataFrame 第二列为T/F值       
+        return df[['code','date','result']] , last_row  
+        """
+        ##以下代码为历史陈旧记录，予以保留
         for n in range(0 , count - 1):
             short = df.iloc[-1].at[f'MA{ma_list[n]}']
             long = df.iloc[-1].at[f'MA{ma_list[n+1]}']
             if  short > long:
                 return False
         return True
+        """
 
     def A04B01_EMA均线数据(self , ma_list = ['5','10','20','30','60','120']):
         """
@@ -83,46 +160,99 @@ class A(base):
             df[f'EMA{ma}'] = ta.EMA(df['close'] ,  timeperiod = int(ma))
         return df
 
-    def A04B02_EMA均线多头排列(self , ma_list = ['10','20','60','120']):
+    def A04B02_EMA均线多头排列(self , ma_list = ['10','20','60','120'] , N_day = 5 , count = 1):
         """
         EMA均线多头排列
         输入：
             证券代码，起止日期按照默认
             ma_list：需计算的均线 ['10','30','60','120']
-        输出：T/F
+            N_day 几天内出现这种情况算是符合条件 默认为一周内，即5天。如需计算当天的情况，则N = 1
+            count N周期内出现几次算符合条件 count <= N
+            【备注】：正常情况下无需修改，默认5天内只有符合一次就算True；如果就是需要当天的均线排列结果，N_day=1 count=1
+        输出：元组
+            data[0]：DataFrame 包含日期 证券代码 结果
+            data[1]：T/F值
         """
+        #数据校验
+        if count > N_day:
+            raise ValueError(f'无法计算{N}天内出现{count}次的情况，请检查逻辑')
+        #多导入的均线顺序进行排序
+        ma_list.sort(key = int) #将K线列表以int整数的形式进行排列
         df = self.A04B01_EMA均线数据(ma_list = ma_list)
-        #如果数据量不足，返回False
         if df.empty == True:
-            return False
+            #数据为空，需要返回空值
+            ##大代码量下进行滚动查询，不适合直接返回错误信息
+            return pd.DataFrame() , False
+            raise ValueError(f'数据为空，请检查！')
         #多头排列 Bull Market
         #判断ma均线的个数        
-        count = len(ma_list)
-        for n in range(0 , count - 1):
-            short = df.iloc[-1].at[f'EMA{ma_list[n]}']
-            long = df.iloc[-1].at[f'EMA{ma_list[n+1]}']
-            if  short < long:
-                return False
-        return True
+        ma_count = len(ma_list)
+        #判断基准是两两比较，始终是前一个ma与后一个ma比较
+        #如果均线多头排列 ['10','20','60','120']，则只需10>20;20>60;60>120则可以确认多头排列成立
+        df['result'] = 1
+        for n in range(0 , ma_count -1):
+            df.loc[df[f'EMA{ma_list[n]}'] > df[f'EMA{ma_list[n+1]}'] , f'compare'] = 1
+            df['result'] = df['result'] * df['compare']
+            #重置df['compare']
+            df['compare'] = np.nan
+        #处理N_day内出现count次数
+        df['result_sum'] = df['result'].rolling(N_day , min_periods = 1).sum()
+        df['result'] = np.where(df['result_sum'] >= count , 1 , np.nan)
+        #df.loc[df['result_sum'] < count , 'result'] = 0
+        #设置最后一行参数，用于返回T/F值
+        if df.iloc[-1].at['result'] == 1:
+            last_row = True
+        else:
+            last_row = False
+        #返回最后的结果 目前为元组类型，第一列为DataFrame 第二列为T/F值       
+        return df[['code','date','result']] , last_row  
         
-    def A04B03_EMA均线空头排列(self , ma_list = ['10','20','60','120']):
+    def A04B03_EMA均线空头排列(self , ma_list = ['10','20','60','120'] , N_day = 5 , count = 1):
         """
         EMA均线空头排列
         输入：
             证券代码，起止日期按照默认
             ma_list：需计算的均线 ['10','30','60','120']
-        输出：T/F
+            N_day 几天内出现这种情况算是符合条件 默认为一周内，即5天。如需计算当天的情况，则N = 1
+            count N周期内出现几次算符合条件 count <= N
+            【备注】：正常情况下无需修改，默认5天内只有符合一次就算True；如果就是需要当天的均线排列结果，N_day=1 count=1
+        输出：元组
+            data[0]：DataFrame 包含日期 证券代码 结果
+            data[1]：T/F值
         """
+        #数据校验
+        if count > N_day:
+            raise ValueError(f'无法计算{N}天内出现{count}次的情况，请检查逻辑')
+        #多导入的均线顺序进行排序
+        ma_list.sort(key = int) #将K线列表以int整数的形式进行排列
         df = self.A04B01_EMA均线数据(ma_list = ma_list)
+        if df.empty == True:
+            #数据为空，需要返回空值
+            ##大代码量下进行滚动查询，不适合直接返回错误信息
+            return pd.DataFrame() , False
+            raise ValueError(f'数据为空，请检查！')
         #空头排列 Bear Market
         #判断ma均线的个数        
-        count = len(ma_list)
-        for n in range(0 , count - 1):
-            short = df.iloc[-1].at[f'EMA{ma_list[n]}']
-            long = df.iloc[-1].at[f'EMA{ma_list[n+1]}']
-            if  short > long:
-                return False
-        return True
+        ma_count = len(ma_list)
+        #判断基准是两两比较，始终是前一个ma与后一个ma比较
+        #如果均线空头排列 ['10','20','60','120']，则只需10<20;20<60;60<120则可以确认空头排列成立
+        df['result'] = 1
+        for n in range(0 , ma_count -1):
+            df.loc[df[f'EMA{ma_list[n]}'] < df[f'EMA{ma_list[n+1]}'] , f'compare'] = 1
+            df['result'] = df['result'] * df['compare']
+            #重置df['compare']
+            df['compare'] = np.nan
+        #处理N_day内出现count次数
+        df['result_sum'] = df['result'].rolling(N_day , min_periods = 1).sum()
+        df['result'] = np.where(df['result_sum'] >= count , 1 , np.nan)
+        #df.loc[df['result_sum'] < count , 'result'] = 0
+        #设置最后一行参数，用于返回T/F值
+        if df.iloc[-1].at['result'] == 1:
+            last_row = True
+        else:
+            last_row = False
+        #返回最后的结果 目前为元组类型，第一列为DataFrame 第二列为T/F值       
+        return df[['code','date','result']] , last_row 
 
     def A04B04_EMA均线_收盘价大于均线(self , ma= '10' , adjust_N = 1 , count = 1):
         """
@@ -298,4 +428,15 @@ class A(base):
         else:
             return False
 
+
+if __name__ == "__main__":
+    dd = data(myauth = False)
+    #dd.get_all_code(end_date =  datetime(2022,5,1) )
+    pd.set_option('display.max_rows', None)
+    demo = A(myauth = False)
+    demo.code = '600313.XSHG'
+    demo.start = datetime(2021,1,1)
+    demo.end = datetime(2022,5,1)
+    a = demo.A04B02_EMA均线多头排列(ma_list = ['10','20','60','120'])
+    print(a[0])
 
