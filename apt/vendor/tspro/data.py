@@ -3,6 +3,7 @@ import pandas as pd
 import tushare as ts
 import sqlalchemy
 import akshare as ak
+from sqlalchemy import create_engine,exc   #用来捕捉sqlalchemy的异常
 from datetime import datetime,timedelta
 from apt.vendor.tspro.security import security  as security
 from apt.vendor.tspro.base import base as base
@@ -102,12 +103,16 @@ class data(base,stock):
                             if_exists = 'append')
                     print(f"{day.strftime('%Y%m%d')}数据已上传完成({self.ktype})")
 
-    def update_sequence_add(self):
+    def update_sequence_add(self , type = '60m'):
         '''
         task346更改了分时线数据更新的逻辑，拆分成add和launch两部分
         add模块主要进行数据更新任务的导入
-
+        输入：
+            type 更新类型 默认60m；目前可接受参数：60m/1m 未来可能还会继续添加
         '''
+        #分时线类型校验
+        if self.ktype == '1d':
+            raise ValueError(f'日线数据请使用update_day函数进行更新')
         #点断续传数据库条目数校验
         sql_count = 'select count(id) as count from tspro_update_sequence'
         df_db = pd.read_sql_query(sql_count , self.engine)
@@ -118,19 +123,18 @@ class data(base,stock):
             #数据库存在数据，进行选择
             result = input('''数据库存在数据，请选择更新方式 \n
             1. 保留原有更新序列，添加新的序列 \n
-            2. 删除原有更新序列，添加新的序列(未实装) \n
-            3. 删除原有更新序列(未实装) \n
+            2. 删除原有更新序列，添加新的序列 \n
+            3. 删除原有更新序列 \n
             4. 退出\n''')
         #无论数据库是否存在数据，到这里进行选择
         #无数据的直接进入1，有数据的按选择进行跳转
-        if result == '1':
-            #添加新数据
+        if result == '1':               #添加新数据
             #1. 获取区间最后一天所对应的全部证券列表
             sec = security()
             code_list = sec.get_security(day = self.end_date)
             code_list['start_date'] = self.start_date
             code_list['end_date'] = self.end_date + timedelta(days = 1)
-            code_list['type'] = '60m'
+            code_list['type'] = type
             code_list = code_list[['code','start_date','end_date','type']]
             code_list.to_sql(
                     name = f'tspro_update_sequence',
@@ -139,23 +143,38 @@ class data(base,stock):
                     if_exists = 'append')
             print(f"上传已完成，新增{code_list.shape[0]}条更新序列！")
 
-        elif result == '2':
-            #删除后添加
-            pass
-        elif result == '3':
-            #直接删除
-            pass
-        elif result == '4':
-            #不做任何更改，直接跳出
+        elif result == '2':             #删除后添加
+            sql_count = 'delete from tspro_update_sequence'
+            try:    #删除需捕捉异常，否则会报错
+                pd.read_sql_query(sql_count , self.engine)
+            except exc.ResourceClosedError:
+                pass
+            #以下代码与选项1保持一致
+            #1. 获取区间最后一天所对应的全部证券列表
+            sec = security()
+            code_list = sec.get_security(day = self.end_date)
+            code_list['start_date'] = self.start_date
+            code_list['end_date'] = self.end_date + timedelta(days = 1)
+            code_list['type'] = type
+            code_list = code_list[['code','start_date','end_date','type']]
+            code_list.to_sql(
+                    name = f'tspro_update_sequence',
+                    con = self.engine,
+                    index = False,
+                    if_exists = 'append')
+            print(f"上传已完成，新增{code_list.shape[0]}条更新序列！")
+
+        elif result == '3':             #直接删除
+            sql_count = 'delete from tspro_update_sequence'
+            try:    #删除需捕捉异常，否则会报错
+                pd.read_sql_query(sql_count , self.engine)
+            except exc.ResourceClosedError:
+                print('更新序列已删除！')
+
+        elif result == '4':          #不做任何更改，直接跳出
             return 
         else:
             raise ValueError(f'无效的输入')
-        #分时线类型校验
-        if self.ktype == '1d':
-            raise ValueError(f'日线数据请使用update_day函数进行更新')
-
-
-
 
     def update_min(self):
         """
