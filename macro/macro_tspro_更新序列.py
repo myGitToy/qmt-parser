@@ -1,8 +1,6 @@
 import numpy as np
 import pandas as pd
 import tushare as ts
-import sqlalchemy
-import akshare as ak
 from datetime import datetime,timedelta
 from apt.vendor.tspro.security import security  as security
 from apt.vendor.tspro.data import data as data
