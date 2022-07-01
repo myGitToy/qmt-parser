@@ -154,7 +154,7 @@ class data(base,stock):
             sec = security()
             code_list = sec.get_security(day = self.end_date)
             code_list['start_date'] = self.start_date
-            code_list['end_date'] = self.end_date + timedelta(days = 1)
+            code_list['end_date'] = self.end_date #add模块中日期不需要+1
             code_list['type'] = type
             code_list = code_list[['code','start_date','end_date','type']]
             code_list.to_sql(
