@@ -125,7 +125,7 @@ class data(base,stock):
             1. 保留原有更新序列，添加新的序列 \n
             2. 删除原有更新序列，添加新的序列 \n
             3. 删除原有更新序列 \n
-            4. 退出\n''')
+            4. 退出（不做任何处理）\n''')
         #无论数据库是否存在数据，到这里进行选择
         #无数据的直接进入1，有数据的按选择进行跳转
         if result == '1':               #添加新数据
@@ -175,6 +175,69 @@ class data(base,stock):
             return 
         else:
             raise ValueError(f'无效的输入')
+
+    def update_sequence_launch(self):
+        '''
+        task346更改了分时线数据更新的逻辑，拆分成add和launch两部分
+        launch模块主要进行数据更新任务，支持点断续传
+        '''
+        sql = "select * from tspro_update_sequence"
+        df_sequence = pd.read_sql_query(sql , self.engine)
+        code_list = df_sequence['code']
+        if df_sequence.shape[0] > 0 :
+            #有数据，进行更新
+            #设定最大更新行数
+            max_row = 8000
+            for index , row in df_sequence.iterrows():
+                id = row['id']
+                code = row['code']
+                #start_date = datetime.strftime(row['start_date'] , '%Y-%m-%d')
+                #end_date  = datetime.strftime(row['end_date'] , '%Y-%m-%d')
+                start_date = row['start_date']
+                end_date  = row['end_date']
+                type = row['type']
+                #tspro pro_bar数据获取模块（这里对最后日期做了day+1的处理）
+                df_tspro = ts.pro_bar(api = self.api , ts_code = code, freq = self.dict[type] , adj = None , start_date = start_date.strftime('%Y%m%d') , end_date = (end_date + timedelta(days = 1)).strftime('%Y%m%d') , adjfactor = True , factors = ['tor', 'vr'] , asset = 'E')
+                #最大数据量校验
+                if df_tspro.shape[0] >= max_row:
+                    raise ValueError(f'接收到的数据达到最大允许值，可能存在数据丢失，中止更新！')
+                #print(df_tspro)
+                df_tspro.rename(columns={"ts_code": "code", "trade_time": "date" ,"vol" : "volume" , "amount" : "money"} , errors="raise" , inplace = True)
+                df_tspro.drop(columns = ['trade_date','pre_close'] , inplace = True)
+                #时间日期类的列进行类型变更
+                df_tspro['date'] = pd.to_datetime(df_tspro['date'])
+                #日期排序(目前判定下为非必要，预留代码，减小数据更新的压力)
+                #df_tspro.sort_values(columns = ['date'], inplace = True , ascending = False)
+                #分时线数据不需要进行成交量和成交额修正
+                #4. 获取数据库对应日期的数据
+                query_db = f"select code,date,open,close,high,low,volume,money from tspro_{type} where date(date) between '{start_date}' and '{end_date}' and code = '{code}'"
+                df_db = pd.read_sql_query(query_db , self.engine)
+                df_db['date'] = pd.to_datetime(df_db['date'])
+                #print(df_tspro)
+                #5. 两个DataFrame进行差值处理
+                df_diff = pd.concat([df_tspro , df_db , df_db] ).drop_duplicates(subset=['date'] , keep = False)
+                #print(df_diff)
+                #6. 差值数据写入数据库
+                if df_diff.empty == True:
+                    print(f"{code}差值数据为空，跳过更新")
+                else:
+                    df_diff.to_sql(
+                            name = f'tspro_{type}',
+                            con = self.engine,
+                            index = False,
+                            if_exists = 'append')
+                    print(f"{code}数据已上传完成({type}，新增数据{df_diff.shape[0]})")
+                #7. 将此条目从更新序列中删除
+                sql_delete = f'delete from tspro_update_sequence where id = {id}'
+                try:    #删除需捕捉异常，否则会报错
+                    pd.read_sql_query(sql_delete , self.engine)
+                except exc.ResourceClosedError:
+                    pass
+                    #print('更新序列已删除！')
+        else:
+            #无数据，跳过
+            print("更新序列无数据，跳过更新")
+
 
     def update_min(self):
         """
