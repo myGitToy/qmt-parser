@@ -102,10 +102,67 @@ class data(base,stock):
                             if_exists = 'append')
                     print(f"{day.strftime('%Y%m%d')}数据已上传完成({self.ktype})")
 
+    def update_sequence_add(self):
+        '''
+        task346更改了分时线数据更新的逻辑，拆分成add和launch两部分
+        add模块主要进行数据更新任务的导入
+
+        '''
+        #点断续传数据库条目数校验
+        sql_count = 'select count(id) as count from tspro_update_sequence'
+        df_db = pd.read_sql_query(sql_count , self.engine)
+        if df_db.iloc[0].at['count'] == 0:
+            #数据库不存在数据
+            result = '1'
+        else:
+            #数据库存在数据，进行选择
+            result = input('''数据库存在数据，请选择更新方式 \n
+            1. 保留原有更新序列，添加新的序列 \n
+            2. 删除原有更新序列，添加新的序列(未实装) \n
+            3. 删除原有更新序列(未实装) \n
+            4. 退出\n''')
+        #无论数据库是否存在数据，到这里进行选择
+        #无数据的直接进入1，有数据的按选择进行跳转
+        if result == '1':
+            #添加新数据
+            #1. 获取区间最后一天所对应的全部证券列表
+            sec = security()
+            code_list = sec.get_security(day = self.end_date)
+            code_list['start_date'] = self.start_date
+            code_list['end_date'] = self.end_date + timedelta(days = 1)
+            code_list['type'] = '60m'
+            code_list = code_list[['code','start_date','end_date','type']]
+            code_list.to_sql(
+                    name = f'tspro_update_sequence',
+                    con = self.engine,
+                    index = False,
+                    if_exists = 'append')
+            print(f"上传已完成，新增{code_list.shape[0]}条更新序列！")
+
+        elif result == '2':
+            #删除后添加
+            pass
+        elif result == '3':
+            #直接删除
+            pass
+        elif result == '4':
+            #不做任何更改，直接跳出
+            return 
+        else:
+            raise ValueError(f'无效的输入')
+        #分时线类型校验
+        if self.ktype == '1d':
+            raise ValueError(f'日线数据请使用update_day函数进行更新')
+
+
+
+
     def update_min(self):
         """
         tusharePro数据日常更新的主入口（按天按每代码进行更新）
         进行历史数据更新时需要注意，由于系统设定，返回的最大row为8000行，本模块代码内部做了相应的提示
+        task349重要提示：
+            目前分时线已做点断续传的处理，整体函数入口拆分成add和launch两部分，请注意
         重要事项：
             更新2022/6/14-2022/6/16数据时，实际只会更新6/14 15两天，6/16并不会更新
             原因在于6/16当天的数据不符合datetime(2022,6,16)的条件
@@ -325,6 +382,7 @@ if __name__=="__main__":
     a.code ='600038.sh'
     a.start_date= datetime(2010,1,1)
     a.end_date = datetime(2010,11,26)
+    a.update_sequence_add()
     dt = a.get_ak_factor()
     print(dt[0])
     print(f"最后一个复权因子为{dt[1]}")
