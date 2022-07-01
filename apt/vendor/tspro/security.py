@@ -84,13 +84,14 @@ class security(base , stock):
         security日常更新
         type 证券类型，支持多选 默认为全部（目前不包含期货）
         """
+        pro = ts.pro_api()
         #打印标题
         print("############正在准备更新security证券代码信息###########")
         df_security = pd.DataFrame()
         #设置需要更新的证券列表状态，默认只读取上市的，在回溯过往会带来一些未来函数的问题
         list_status = ['D','L','P']
         for list in list_status:
-            df = cal.pro.query('stock_basic', list_status = list , fields='ts_code,symbol,name,area,industry,fullname,enname,cnspell,market,exchange,curr_type,list_status,list_date,delist_date,is_hs')
+            df = pro.query('stock_basic', list_status = list , fields='ts_code,symbol,name,area,industry,fullname,enname,cnspell,market,exchange,curr_type,list_status,list_date,delist_date,is_hs')
             #数据拼接
             df_security = pd.concat([df_security , df] , sort = False )
         #重命名为code

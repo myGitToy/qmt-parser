@@ -31,8 +31,8 @@ from apt.vendor.jqdata.ETF import ETF as ETF
 
 start = datetime.datetime(2022,6,28)    #日线 60m 30m 最后更新日 start 5/18；30m从5、23开始
                                         #自2022/6/13起 无法更新场内基金数据（日线和分时线）
-                                        #日线 60 30m最后更新日 6/24 不含
-                                        #5分钟线未更新完整
+                                        #日线 60 30m最后更新日 7/1 不含
+                                        #5分钟线最后更新日期7/1含
              #（注意：日线数据不能在过零点及开盘前更新，否则会出现类似于停盘的数据 无VOL MONEY）
 #end = datetime.datetime(2005,12,31,16)
 end = datetime.datetime.now()
