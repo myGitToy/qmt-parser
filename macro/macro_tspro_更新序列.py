@@ -11,7 +11,7 @@ from apt.vendor.tspro.data import data as data
 a = data(myauth = True)
 a.code ='600038.sh'
 a.start_date= datetime(2022,1,1)
-a.end_date = datetime(2020,2,1)
+a.end_date = datetime(2022,7,1)
 #2. 更新证券代码库
 #sec = security()
 #security.update_security(a)
@@ -20,6 +20,7 @@ a.end_date = datetime(2020,2,1)
 
 
 #3. 更新股票日线数据
+a.ktype = '1d'
 a.update_day()
 
 #4. 更新股票小时线数据
