@@ -290,6 +290,17 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="MyFunds.py" />
+    <Compile Include="qsp_universal\A.py" />
+    <Compile Include="qsp_universal\atr.py" />
+    <Compile Include="qsp_universal\base.py" />
+    <Compile Include="qsp_universal\cdp.py" />
+    <Compile Include="qsp_universal\expma.py" />
+    <Compile Include="qsp_universal\k.py" />
+    <Compile Include="qsp_universal\m2.py" />
+    <Compile Include="qsp_universal\momentum.py" />
+    <Compile Include="qsp_universal\prank.py" />
+    <Compile Include="qsp_universal\vol.py" />
+    <Compile Include="qsp_universal\__init__.py" />
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="CondaEnv|CondaEnv|Anaconda3" />
@@ -314,6 +325,7 @@
     <Folder Include="apt\qsp_jqdata\" />
     <Folder Include="bt\" />
     <Folder Include="macro\" />
+    <Folder Include="qsp_universal\" />
     <Folder Include="VB\" />
   </ItemGroup>
   <ItemGroup>
