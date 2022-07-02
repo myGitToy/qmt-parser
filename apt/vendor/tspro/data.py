@@ -238,7 +238,6 @@ class data(base,stock):
             #无数据，跳过
             print("更新序列无数据，跳过更新")
 
-
     def update_min(self):
         """
         tusharePro数据日常更新的主入口（按天按每代码进行更新）
@@ -405,14 +404,14 @@ class data(base,stock):
                 df_db.loc[0,'factor'] = ak_factor_start
             #复权因子修正完毕，进行填充
             df_db.ffill(axis=0, inplace=True, limit=None, downcast=None)
-            if self.fq == self.复权.不复权:
+            if self.fq.value == 0:  #不复权
                 if flag_forward == False:
                     #正常模式
                     return df_db.iloc[-count:][col]
                 else:
                     #非正常模式，以start_date为基准输出向后的count条记录
                     return df_db.iloc[:count][col]
-            elif self.fq ==self.复权.前复权:
+            elif self.fq.value ==1 :  #前复权
                 #前复权价格 = 当日价格 / 最后一个交易日（非end_date）的复权因子 * 当日复权因子
                 factor = ak_factor[1]
                 print(type(factor))
@@ -426,7 +425,7 @@ class data(base,stock):
                 else:
                     #非正常模式，以start_date为基准输出向后的count条记录
                     return df_db.iloc[:count][col]
-            elif self.fq ==self.复权.后复权:
+            elif self.fq.value == 2:    #后复权
                 #后复权价格 = 当日价格 / 第一个交易日（start_date）的复权因子 * 当日复权因子    
                 #获取第一一个复权因子的数值
                 factor = df_db.iloc[0].at['factor']
@@ -440,7 +439,7 @@ class data(base,stock):
                 else:
                     #非正常模式，以start_date为基准输出向后的count条记录
                     return df_db.iloc[:count][col]
-            elif self.fq ==self.复权.动态复权:
+            elif self.fq.value == 3:    #动态复权
                 #动态复权价格 = 当日价格 / 区间最后一天的复权因子 * 当日复权因子
                 #获取最后一个复权因子的数值
                 factor = df_db.iloc[-1].at['factor']

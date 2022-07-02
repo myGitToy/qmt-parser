@@ -9,10 +9,10 @@ import pandas as pd
 
 class base():
     """
-    量化选股系统的基类(聚宽数据接口)
+    量化选股系统的基类(通用数据接口)
     使用jqdata.base作为基类
     """
-    class vendor(Enum): #计划需要移除
+    class vendor(Enum): 
         """
         选择数据供应商接口
         默认为tusharePro
@@ -21,8 +21,16 @@ class base():
         tusharePro = 1 #tusharePro
         jqdata = 2 #jqdata
         akshare = 3   #akshare（未实装）
-
-    def __init__(self , code = None , start_date = datetime(2021,1,1), end_date = datetime.now() , ktype = "1d" , fq = jqdata.复权.动态复权 , fwq = jqdata.数据源.localhost , myauth = True , vendor = vendor.tusharePro):
+    class 复权(Enum):
+        """
+        选择复权类型
+        默认为动态复权
+        """
+        不复权 = 0 #不进行复权处理
+        前复权 = 1 #以最新日期基准，向前进行复权
+        后复权 = 2 #以开始日期为基准，向后进行复权
+        动态复权 = 3   #以结束日期为基准，向前进行复权
+    def __init__(self , code = None , start_date = datetime(2021,1,1), end_date = datetime.now() , ktype = "1d" , fq = 复权.动态复权 , fwq = jqdata.数据源.localhost , myauth = False , vendor = vendor.tusharePro):
         """
         初始化
         输入：
@@ -32,7 +40,7 @@ class base():
             ktype：K线类型 e.g. 1d 5m 30m 60m 
             fq：复权类型 默认动态复权
             fwq：服务器 默认为localhost
-            myauth：是否初始化jqdata授权（需要脱机读取时要设置为False）
+            myauth：是否向vendor进行登陆授权，默认是False；量化选股的设计初衷就是脱机本地读取数据
         返回：
         """
         self.code = code
@@ -61,12 +69,10 @@ class base():
         """
         通用数据接口 获取指定日期间的K线数据
         由于tushare目前不含factor数据，因此本模块未完全可用
-        调用jqdata.data.get_k_data 用于获取最新的K线数据
         输入：
             无
         返回：
             dataframe ：包含开盘 收盘 最高 最低 成交量 成交额 代码
-            注：只返回基础数据，其他类似于MA ATR信息由其他函数进行计算
         """
         if self.vendor == self.vendor.tusharePro:
             a = tsdata()
@@ -80,15 +86,47 @@ class base():
             df = a._data__get_k_data_ak()
             return df
         elif self.vendor == self.vendor.jqdata:
-            #a = jqdata(rds_host = self.server , myauth = self.myauth)
+            a = jqdata(rds_host = self.server , myauth = self.myauth)
             #此处的get_k_data从vendor.jqdata.data.get_k_data取数据，非tushare
-            #df = a.get_k_data(code = self.code , start_date = self.start_date , end_date = self.end_date , ktype = self.ktype , fq = self.fq)
-            
-            a = jqdata()
-            print(a.code)
+            df = a.get_k_data(code = self.code , start_date = self.start_date , end_date = self.end_date , ktype = self.ktype , fq = self.fq)
             return df
+        elif self.vendor == self.vendor.akshare:
+            print("展示不支持akshare数据获取")
+            return pd.DataFrame()
+        else:
+            raise ValueError(f'不支持此数据供应商，请检查输入！')
 
-    def get_rolling_k(self , ktype = "1d"):
+    def get_code_list(self):
+        """
+        通用数据接口 获取证券代码列表
+        输入：
+            无
+        返回：
+            dataframe ：
+        """
+        if self.vendor == self.vendor.tusharePro:
+            a = tsdata()
+            a.myauth = self.myauth
+            a.数据源 = self.server
+            a.start_date = self.start_date
+            a.end_date = self.end_date
+            a.fq = self.fq
+            a.code = self.code
+            a.ktype = self.ktype
+            #获取证券列表
+
+        elif self.vendor == self.vendor.jqdata:
+            a = jqdata(rds_host = self.server , myauth = self.myauth)
+            #此处的get_k_data从vendor.jqdata.data.get_k_data取数据，非tushare
+            #获取证券列表
+
+        elif self.vendor == self.vendor.akshare:
+            print("展示不支持akshare数据获取")
+            return pd.DataFrame()
+        else:
+            raise ValueError(f'不支持此数据供应商，请检查输入！')
+
+    def get_rolling_k_等待删除(self , ktype = "1d"):
         """
         【此处不确定是否需要删除】
         抽取出来的总类，用于获取最新的K线数据，含自动更新
