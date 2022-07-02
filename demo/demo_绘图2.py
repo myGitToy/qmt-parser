@@ -3,6 +3,7 @@ from apt.os.data_load import Data_Load as dl
 d = dl()
 df_stockload = d.load_data(code = '159949' , start = '2020-01-01' , end = '2020-12-21')
 print(df_stockload.info())
+#测试
 
 # 替换 import matplotlib.finance as mpf 画k线图
 import mpl_finance as mpf  # 替换 import matplotlib.finance as mpf
