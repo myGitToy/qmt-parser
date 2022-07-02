@@ -24,7 +24,7 @@ a.end_date = datetime(2022,6,1)
 #4. 更新股票小时线数据   60分钟线最后更新日期2022/7/1含；5分钟线2020全年写入更新序列
 #目前更新序列剩余51530，预计耗时32小时
 a.ktype = '1m'
-a.update_sequence_add(type = '1d')
+#a.update_sequence_add(type = '1d')
 a.update_sequence_launch()
 #5. 更新ETF日线数据
 

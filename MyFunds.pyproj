@@ -74,6 +74,7 @@
     <Compile Include="apt\qsp_jqdata\prank.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="apt\qsp_universal\NHNL.py" />
     <Compile Include="apt\testA\B.py" />
     <Compile Include="apt\testA\A.py">
       <SubType>Code</SubType>
