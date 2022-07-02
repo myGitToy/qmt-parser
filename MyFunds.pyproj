@@ -215,7 +215,6 @@
     <Compile Include="macro\demo_jqdata_daily_update.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="demo\demo_jqdata_factor.py" />
     <Compile Include="demo\demo_jqdata_get_data.py" />
     <Compile Include="demo\demo_jqdata_min.py" />
     <Compile Include="demo\demo_jqdata.py">
