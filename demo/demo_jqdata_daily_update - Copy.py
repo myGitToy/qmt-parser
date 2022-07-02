@@ -4,17 +4,19 @@ import datetime
 import sqlalchemy
 from apt.vendor.jqdata.jqdata import data as jqdata
 from apt.vendor.jqdata.ETF import ETF as ETF
+#显示所有列
+pd.set_option('display.max_columns', None)
+pd.set_option('display.max_rows', None)  
 
-
-start = datetime.datetime(2021,1,6)    #日线 60m 最后更新日12/25 含
+start = datetime.datetime(2020,1,6)    #日线 60m 最后更新日12/25 含
                                          #5m 最后更新XX/XX含
                                          #30m 最后更新自2019年起的数据
 #end = datetime.datetime(2021,1,18,16)
-end = datetime.datetime.now()
-code = '515030.XSHG'
+end = datetime.datetime(2020,1,8)
+code = '600038.XSHG'
 jq = jqdata(rds_host = jqdata.数据源.localhost , myauth = True )
 
-df = get_bars(code, end_dt = end , count = 200 ,unit='60m' , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'])
+df = get_bars(code, end_dt = end , count = 200 ,unit='1m' , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'])
 #print(df['close'].rolling(10).quantile(0.75))
 df['p75'] = df['close'].rolling(100).quantile(0.75)
 df['p85'] = df['close'].rolling(100).quantile(0.85)
