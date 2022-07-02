@@ -389,14 +389,14 @@ class data(base):
             return pd.DataFrame()
         else:
             #有数据，进行复权处理
-            if fq == self.复权.不复权:
+            if fq.value == 0:   #不复权
                 if flag_forward == False:
                     #正常模式
                     return df_db.iloc[-count:][col]
                 else:
                     #非正常模式，以start_date为基准输出向后的count条记录
                     return df_db.iloc[:count][col]
-            elif fq ==self.复权.前复权:
+            elif fq.value == 1:  #前复权
                 #前复权价格 = 当日价格 / 最后一个交易日（非end_date）的复权因子 * 当日复权因子
                 factor = self.__get_last_factor(code = code)
                 df_db['open'] = df_db['open'] / factor * df_db['factor']
@@ -409,7 +409,7 @@ class data(base):
                 else:
                     #非正常模式，以start_date为基准输出向后的count条记录
                     return df_db.iloc[:count][col]
-            elif fq ==self.复权.后复权:
+            elif fq.value == 2:  #后复权
                 #后复权价格 = 当日价格 / 第一个交易日（start_date）的复权因子 * 当日复权因子    
                 #获取第一一个复权因子的数值
                 factor = df_db.iloc[0].at['factor']
@@ -423,7 +423,7 @@ class data(base):
                 else:
                     #非正常模式，以start_date为基准输出向后的count条记录
                     return df_db.iloc[:count][col]
-            elif fq ==self.复权.动态复权:
+            elif fq.value == 3: #动态复权
                 #动态复权价格 = 当日价格 / 区间最后一天的复权因子 * 当日复权因子
                 #获取最后一个复权因子的数值
                 factor = df_db.iloc[-1].at['factor']
