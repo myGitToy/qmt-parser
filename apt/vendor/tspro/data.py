@@ -110,8 +110,11 @@ class data(base,stock):
         输入：
             type 更新类型 默认60m；目前可接受参数：60m/1m 未来可能还会继续添加
         '''
+        #type数据校验
+        if type not in ['1d','60m','1m']:
+            raise ValueError(f'无效的数据类型')
         #分时线类型校验
-        if self.ktype == '1d':
+        if self.ktype == '1d' or type == '1d':
             raise ValueError(f'日线数据请使用update_day函数进行更新')
         #点断续传数据库条目数校验
         sql_count = 'select count(id) as count from tspro_update_sequence'
