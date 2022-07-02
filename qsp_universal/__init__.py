@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 """
-【jqdata qsp系统】
+【量化选股通用接口】
 Quantitative stock picking 量化选股系统
 所有涉及到选股的内容，包括利用日线、小时线进行K线、VOL线选股，基本面选股等等
 

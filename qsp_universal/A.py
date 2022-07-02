@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import talib as ta
 """
-【选股系统A jqdata】
+【选股系统A】
 目录树：
     A01 MA均线选股系统
     A02

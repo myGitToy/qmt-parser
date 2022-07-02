@@ -4,7 +4,7 @@ from apt.qsp_jqdata.base import base
 import numpy as np
 import pandas as pd
 """
-【K线选股系统 jqdata】
+【K线选股系统 通用接口】
 """
 class k(base):
     def new_high_break(self , MINIMUM = 3 ,MAXIMUM = 100 , MA_HIGH_PERIOD = 100 ) :
