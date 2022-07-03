@@ -427,19 +427,18 @@ class data(base,stock):
             count = len(df_db)
         if df_db.empty == True:
             #无数据
-            #print("无数据")
             return pd.DataFrame()
         else:
             #有数据，进行复权处理
             #定义日线 分时数据新列factor_date用于拼接复权因子
-            df_db['factor_date'] = pd.to_datetime(df_db['date'], format="%Y-%m-%d")
+            df_db['factor_date'] = pd.to_datetime(df_db['date'].dt.date)
             #获取复权因子
             tspro_factor = self.get_tspro_factor()
             tspro_factor['factor_date'] = tspro_factor['date']
             #复权因子与K线数据进行拼接（复权因子和K线数据只有要一处空值，最后拼接的数据就会有所缺失）
-            #df_db = df_db.merge(tspro_factor , how = 'left' , on = 'factor_date')
-            df_db = pd.merge(df_db, tspro_factor[['factor_date','factor']], left_index = True, right_index = True, how = 'left')
-            #复权因子修正完毕，复权处理
+            df_db = pd.merge(df_db, tspro_factor[['factor_date','factor']] , on = ['factor_date'] , how = 'left')
+            #复权因子修正完毕，填充后进入复权处理（tspro每天均有复权因子，此处无需填充）
+            #df_db.ffill(axis=0, inplace=True, limit=None, downcast=None)
             if self.fq.value == 0:  #不复权
                 if flag_forward == False:
                     #正常模式
