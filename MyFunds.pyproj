@@ -213,6 +213,9 @@
     </Compile>
     <Compile Include="demo\demo_jqdata_daily_update - Copy.py" />
     <Compile Include="demo\demo_jqdata_daily_update校验.py" />
+    <Compile Include="demo\demo数据比较模块.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="macro\demo_jqdata_daily_update.py">
       <SubType>Code</SubType>
     </Compile>
@@ -255,7 +258,8 @@
     <Compile Include="fund\__init__.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="macro\macro_tspro_更新序列.py">
+    <Compile Include="macro\macro_tspro_更新序列（仅更新序列）.py" />
+    <Compile Include="macro\macro_tspro_更新序列（主）.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="MyCashFlowTest.py">
