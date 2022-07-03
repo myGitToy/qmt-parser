@@ -83,7 +83,7 @@ class base():
             a.fq = self.fq
             a.code = self.code
             a.ktype = self.ktype
-            df = a._data__get_k_data_ak()
+            df = a.get_k_data()
             return df
         elif self.vendor == self.vendor.jqdata:
             a = jqdata(rds_host = self.server , myauth = self.myauth)
