@@ -352,12 +352,166 @@ class data(base,stock):
         #获取带授权的
         pass
 
-    def __get_k_data_ak(self , code = None ,  count = None ,
-                 col = ['code','date','open','close','high','low','volume','money','factor'] , 
-                 flag_forward = False , ):
+    def update_factor(self):
+        """
+        tusharePro复权因子日常更新的主入口（按天更新）
+        更新逻辑：
+            1. 获取需要更新的时间周期中的交易日
+            2. 循环读取证券代码列表进行更新
+                2.1 读取数据库中单个代码在两个日期间的数据
+                2.2 没有数据则直接写入操作
+                2.3 存在数据，则去重后写入
+        """
+        #获取交易日期
+        trade_days = self.pro.trade_cal(exchange = 'SSE', start_date = self.start_date.strftime('%Y%m%d'), end_date=self.end_date.strftime('%Y%m%d'))
+        #剔除非交易日
+        trade_days.query('is_open == 1' , inplace = True)
+        trade_days['cal_date'] = pd.to_datetime(trade_days['cal_date'])
+        for day in trade_days['cal_date']:
+            #print(f"##############正在更新%s数据##############" % day.strftime("%Y-%m-%d"))
+            #检查数据库是否存在数据（目前跳过验证，数据查询耗时较长）
+            query = f"select date , count(date) as num from tspro_factor where date(date) = '{day.date()}'"
+            df_old = pd.read_sql_query(query , self.engine)
+            count = df_old.loc[0 , 'num']
+            if count > 0 :
+                #此处存在数据，不进入更新序列，直接跳过
+                print(f"{day.strftime('%Y-%m-%d')}存在数据，跳过更新")
+            else:
+                #不存在数据，进行更新
+                df = self.pro.query('adj_factor',  trade_date = day.strftime('%Y%m%d'))
+                #print(df)
+                #df = self.pro.daily(trade_date= day.strftime('%Y%m%d'))
+                #根据wiki描述的数据库一致性的要求，进行列名的变更 https://huiqiao.visualstudio.com/MyFunds/_wiki/wikis/MyFunds.wiki/19/tusharePro%E6%95%B0%E6%8D%AE%E8%AF%8D%E5%85%B8
+                #df.rename(columns={'ts_code': 'code', 'trade_date': 'date' , 'vol': 'volume' , 'amount': 'money'} , errors="raise")
+                #df.rename(columns={"ts_code": "code", "trade_date": "date" } , errors="raise")
+                df.rename(columns={"ts_code": "code", "trade_date": "date" ,"adj_factor" : "factor" } , errors="raise" , inplace = True)           
+                #时间日期类的列进行类型变更
+                df['date'] = pd.to_datetime(df['date'])
+                #保存至数据库
+                if df.empty == True:
+                    print("%s 当日数据为空，跳过上传(该日为交易日，数据截取可能存在问题)" % (day.strftime('%Y%m%d')))
+                else:
+                    df.to_sql(
+                            name = f'tspro_factor',
+                            con = self.engine,
+                            index = False,
+                            if_exists = 'append')
+                    print(f"{day.strftime('%Y%m%d')}复权因子已上传完成")
+
+    def get_k_data(self , count = None , col = ['code','date','open','close','high','low','volume','money','factor'] , flag_forward = False ):
         
         """
-        这里是获取AK的复权因子，暂时不使用
+        tspro数据加载模块（目前不支持输出N日后的X条数据，详见https://huiqiao.visualstudio.com/MyFunds/_workitems/edit/296）
+        start_time：开始时间 最好带上小时参数  比如(2020,12,31,8)
+        end_time：结束时间 最好带上小时参数  比如(2020,12,31,16)
+        count : 获取K线条目的个数 默认是全部输出  
+        flag_forward：用于获取N日之后X条数据，类似于后复权数据 默认为False
+            在这种模式下，start_date为基准日期，先后输出count条数据
+            其余模式end_date均为基准日期
+            详见https://huiqiao.visualstudio.com/MyFunds/_workitems/edit/296
+        接受前复权 后复权 不复权 动态复权四种复权模式
+        成交量、成交额目前未进行复权处理
+        返回的数据按照升序排列（backtrader要求的数据格式）
+        """
+        if self.start_date  > self.end_date:
+            raise ValueError(f'开始日期必须早于结束日期')
+        if self.ktype not in ['1d','1m','5m','30m','60m']:
+            raise ValueError(f'不合规的K线类型: {ktype}')
+        if self.code == None :
+            raise ValueError(f'证券代码不能为空')
+        query = f"select * from tspro_{self.ktype} where code = '{self.code}' and date BETWEEN '{self.start_date}' and '{self.end_date}' order by date asc"         
+        df_db = pd.read_sql_query(query , self.engine)
+        #处理需要返回的个数
+        if count == None:
+            #返回全部
+            count = len(df_db)
+        if df_db.empty == True:
+            #无数据
+            #print("无数据")
+            return pd.DataFrame()
+        else:
+            #有数据，进行复权处理
+            #定义日线 分时数据新列factor_date用于拼接复权因子
+            df_db['factor_date'] = pd.to_datetime(df_db['date'], format="%Y-%m-%d")
+            #获取复权因子
+            tspro_factor = self.get_tspro_factor()
+            tspro_factor['factor_date'] = tspro_factor['date']
+            #复权因子与K线数据进行拼接（复权因子和K线数据只有要一处空值，最后拼接的数据就会有所缺失）
+            #df_db = df_db.merge(tspro_factor , how = 'left' , on = 'factor_date')
+            df_db = pd.merge(df_db, tspro_factor[['factor_date','factor']], left_index = True, right_index = True, how = 'left')
+            #复权因子修正完毕，复权处理
+            if self.fq.value == 0:  #不复权
+                if flag_forward == False:
+                    #正常模式
+                    return df_db.iloc[-count:][col]
+                else:
+                    #非正常模式，以start_date为基准输出向后的count条记录
+                    return df_db.iloc[:count][col]
+            elif self.fq.value ==1 :  #前复权
+                #前复权价格 = 当日价格 / 最后一个交易日（非end_date）的复权因子 * 当日复权因子
+                factor = self.__get_last_factor()
+                df_db['open'] = df_db['open'] / factor * df_db['factor']
+                df_db['high'] = df_db['high'] / factor * df_db['factor']
+                df_db['low'] = df_db['low'] / factor * df_db['factor']
+                df_db['close'] = df_db['close'] / factor * df_db['factor']
+                if flag_forward == False:
+                    #正常模式
+                    return df_db.iloc[-count:][col]
+                else:
+                    #非正常模式，以start_date为基准输出向后的count条记录
+                    return df_db.iloc[:count][col]
+            elif self.fq.value == 2:    #后复权
+                #后复权价格 = 当日价格 / 第一个交易日（start_date）的复权因子 * 当日复权因子    
+                #获取第一一个复权因子的数值
+                factor = df_db.iloc[0].at['factor']
+                df_db['open'] = df_db['open'] / factor * df_db['factor']
+                df_db['high'] = df_db['high'] / factor * df_db['factor']
+                df_db['low'] = df_db['low'] / factor * df_db['factor']
+                df_db['close'] = df_db['close'] / factor * df_db['factor']
+                if flag_forward == False:
+                    #正常模式
+                    return df_db.iloc[-count:][col]
+                else:
+                    #非正常模式，以start_date为基准输出向后的count条记录
+                    return df_db.iloc[:count][col]
+            elif self.fq.value == 3:    #动态复权
+                #动态复权价格 = 当日价格 / 区间最后一天的复权因子 * 当日复权因子
+                #获取最后一个复权因子的数值
+                factor = df_db.iloc[-1].at['factor']
+                df_db['open'] = df_db['open'] / factor * df_db['factor']
+                df_db['high'] = df_db['high'] / factor * df_db['factor']
+                df_db['low'] = df_db['low'] / factor * df_db['factor']
+                df_db['close'] = df_db['close'] / factor * df_db['factor']
+                if flag_forward == False:
+                    #正常模式
+                    return df_db.iloc[-count:][col]
+                else:
+                    #非正常模式，以start_date为基准输出向后的count条记录
+                    return df_db.iloc[:count][col]
+            else:
+                raise ValueError(f'不支持的复权模式，请检查！')
+                return df_db
+    def __get_last_factor(self , day = datetime(2020,12,1)):
+        """
+        获取指定股票的最后复权因子（内部函数）
+        """
+        query = f"select date,factor from tspro_factor where code = '{self.code}' and date >= '{day.date()}' order by date desc limit 1"       
+        df_db = pd.read_sql_query(query , self.engine)
+        return df_db.iloc[0].at['factor']
+
+    def get_tspro_factor(self):
+        """
+        获取tspro的复权因子
+        无需输入start_date和end_date
+        """
+        sql = f"select date,code,factor from tspro_factor where code = '{self.code}' and date(date) between '{self.start_date.date()}' and '{self.end_date.date()}'"
+        df_db = pd.read_sql_query(sql , self.engine)
+        df_db['date'] = pd.to_datetime(df_db['date'] , format="%Y-%m-%d")
+        return df_db
+
+    def __get_k_data_ak(self , code = None ,  count = None , col = ['code','date','open','close','high','low','volume','money','factor'] , flag_forward = False):      
+        """
+        这里是获取AK的复权因子，暂时不使用 保留备用
         tspro数据加载模块（目前不支持输出N日后的X条数据，详见https://huiqiao.visualstudio.com/MyFunds/_workitems/edit/296）
         --------->复权数据采用akshare <---------
         start_time：开始时间 最好带上小时参数  比如(2020,12,31,8)
@@ -461,28 +615,4 @@ class data(base,stock):
                 return df_db
 
 if __name__=="__main__":
-    #测试ak复权因子
-    a = data()
-    a.code ='600038.sh'
-    a.start_date= datetime(2010,1,1)
-    a.end_date = datetime(2010,11,26)
-    a.update_sequence_add()
-    dt = a.get_ak_factor()
-    print(dt[0])
-    print(f"最后一个复权因子为{dt[1]}")
-    df = a.get_k_data()
-    print(df[['code','date','open','close','high','low','volume','money','factor']])
-    df_jq = jq.get_k_data(code  = '600038.XSHG' , start_date = a.start_date , end_date = a.end_date)
-    print(df_jq[['code','date','open','close','high','low','volume','money','factor']])
-    
-    #获取需要更新的证券列表
-    pro = ts.pro_api('55297f16c0119146589e059db315ba28a9412e89ec9f91e538e655b2')
-    # 拉取数据
-    #df = pro.daily(ts_code = '600038.SH' , start_date = '2022/1/1')
-    df = pro.daily(trade_date= '20220602')
-
-    #df = pro.daily(ts_code='000001.SZ', start_date='20180701', end_date='20180718')
-    #code = pro.daily(trade_date='20200918')['ts_code'].apply(lambda x:x[:6]).tolist()
-    #df['trade_date'] = pd.to_datetime(df['trade_date'])
-    print(df)
-   
+    pass
