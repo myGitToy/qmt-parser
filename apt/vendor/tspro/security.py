@@ -137,7 +137,7 @@ class security(base , stock):
                 #con.execute('CREATE INDEX index `tspro_security` (`code`);')
             print(f"数据已上传完成(security),新增数据{df_security.shape[0]}条")
 
-    def get_security(self , market = "'主板','创业板','中小板','科创板','CDR','北交所'" , day = datetime.now()):
+    def get_all_code(self , market = "'主板','创业板','中小板','科创板','CDR','北交所'" , day = datetime.now()):
         """
         获取本地数据库中的证券代码（按日期）
         【输入】

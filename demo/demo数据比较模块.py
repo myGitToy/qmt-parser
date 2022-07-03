@@ -13,7 +13,7 @@ tspro.end_date = datetime(2022,7,10)
 tspro.fq = tspro.复权.动态复权
 tspro.ktype = '1m'
 #ts数据
-df_ts = tspro.get_code_list()
+df_ts = tspro.get_all_code()
 #[['code','date','close','factor']]
 print(df_ts)
 #jqdata数据

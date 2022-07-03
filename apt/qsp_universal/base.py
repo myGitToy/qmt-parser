@@ -2,6 +2,8 @@
 from apt.vendor.jqdata.jqdata import data as jqdata
 from apt.vendor.jqdata.base import base as jqbase
 from apt.vendor.tspro.data import data as tsdata
+from apt.vendor.tspro.security import security as tssec
+from apt.vendor.jqdata.security import security as jqsec
 from datetime import datetime , timedelta
 from enum import Enum
 import numpy as np
@@ -96,7 +98,7 @@ class base():
         else:
             raise ValueError(f'不支持此数据供应商，请检查输入！')
 
-    def get_code_list(self):
+    def get_all_code(self):
         """
         通用数据接口 获取证券代码列表
         输入：
@@ -105,24 +107,15 @@ class base():
             dataframe ：
         """
         if self.vendor == self.vendor.tusharePro:
-            a = tsdata()
-            a.myauth = self.myauth
-            a.数据源 = self.server
-            a.start_date = self.start_date
-            a.end_date = self.end_date
-            a.fq = self.fq
-            a.code = self.code
-            a.ktype = self.ktype
-            #获取证券列表
-            a.get_all_code(end_date = self.end_date)
-
+            a = tssec()
+            #获取证券列表            
+            return a.get_all_code(day = self.end_date)
         elif self.vendor == self.vendor.jqdata:
-            a = jqdata(rds_host = self.server , myauth = self.myauth)
-            #此处的get_k_data从vendor.jqdata.data.get_k_data取数据，非tushare
+            a = jqsec()
             #获取证券列表
-            a.get_all_code(end_date = self.end_date)
+            return a.get_all_code(day = self.end_date)
         elif self.vendor == self.vendor.akshare:
-            print("展示不支持akshare数据获取")
+            print("暂时不支持akshare数据获取")
             return pd.DataFrame()
         else:
             raise ValueError(f'不支持此数据供应商，请检查输入！')

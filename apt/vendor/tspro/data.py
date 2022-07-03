@@ -136,7 +136,7 @@ class data(base,stock):
         if result == '1':               #添加新数据
             #1. 获取区间最后一天所对应的全部证券列表
             sec = security()
-            code_list = sec.get_security(day = self.end_date)
+            code_list = sec.get_all_code(day = self.end_date)
             code_list['start_date'] = self.start_date
             code_list['end_date'] = self.end_date + timedelta(days = 1)
             code_list['type'] = type
@@ -157,7 +157,7 @@ class data(base,stock):
             #以下代码与选项1保持一致
             #1. 获取区间最后一天所对应的全部证券列表
             sec = security()
-            code_list = sec.get_security(day = self.end_date)
+            code_list = sec.get_all_code(day = self.end_date)
             code_list['start_date'] = self.start_date
             code_list['end_date'] = self.end_date #add模块中日期不需要+1
             code_list['type'] = type
@@ -277,7 +277,7 @@ class data(base,stock):
             raise ValueError(f'update_V1规则不允许在交易时段进行更新')
         #1. 获取区间最后一天所对应的全部证券列表
         sec = security()
-        code_list = sec.get_security(day = self.end_date)
+        code_list = sec.get_all_code(day = self.end_date)
         #2. 获取交易日期（代码暂时移除，目前按照区间更新）
         trade_days = self.pro.trade_cal(exchange = 'SSE', start_date = self.start_date.strftime('%Y%m%d'), end_date=self.end_date.strftime('%Y%m%d'))
         #剔除非交易日
@@ -495,6 +495,7 @@ class data(base,stock):
             else:
                 raise ValueError(f'不支持的复权模式，请检查！')
                 return df_db
+
     def __get_last_factor(self , day = datetime(2020,12,1)):
         """
         获取指定股票的最后复权因子（内部函数）
