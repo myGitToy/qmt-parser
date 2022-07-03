@@ -431,7 +431,10 @@ class data(base,stock):
         else:
             #有数据，进行复权处理
             #定义日线 分时数据新列factor_date用于拼接复权因子
-            df_db['factor_date'] = pd.to_datetime(df_db['date'].dt.date)
+            if self.ktype == '1d':
+                df_db['factor_date'] = pd.to_datetime(df_db['date'], format="%Y-%m-%d")
+            else:
+                df_db['factor_date'] = pd.to_datetime(df_db['date'].dt.date)
             #获取复权因子
             tspro_factor = self.get_tspro_factor()
             tspro_factor['factor_date'] = tspro_factor['date']
