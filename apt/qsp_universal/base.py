@@ -114,12 +114,13 @@ class base():
             a.code = self.code
             a.ktype = self.ktype
             #获取证券列表
+            a.get_all_code(end_date = self.end_date)
 
         elif self.vendor == self.vendor.jqdata:
             a = jqdata(rds_host = self.server , myauth = self.myauth)
             #此处的get_k_data从vendor.jqdata.data.get_k_data取数据，非tushare
             #获取证券列表
-
+            a.get_all_code(end_date = self.end_date)
         elif self.vendor == self.vendor.akshare:
             print("展示不支持akshare数据获取")
             return pd.DataFrame()
