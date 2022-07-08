@@ -412,6 +412,45 @@ class data(base,stock):
                             if_exists = 'append')
                     print(f"{day.strftime('%Y%m%d')}复权因子已上传完成")
 
+    def update_factor_ETF(self , flag_ignore_database = True):
+        """
+        tusharePro基金数据复权因子日常更新的主入口（按天更新）
+        更新逻辑：
+            1. 获取需要更新的时间周期中的交易日
+            2. 循环读取证券代码列表进行更新
+                2.1 读取数据库中单个代码在两个日期间的数据
+                2.2 没有数据则直接写入操作
+                2.3 存在数据，则去重后写入
+        """
+        #获取交易日期
+        trade_days = self.pro.trade_cal(exchange = 'SSE', start_date = self.start_date.strftime('%Y%m%d'), end_date=self.end_date.strftime('%Y%m%d'))
+        #剔除非交易日
+        trade_days.query('is_open == 1' , inplace = True)
+        trade_days['cal_date'] = pd.to_datetime(trade_days['cal_date'])
+        for day in trade_days['cal_date']:
+            #print(f"##############正在更新%s复权因子数据（ETF）##############" % day.strftime("%Y-%m-%d"))
+            #检查数据库是否存在数据（目前跳过验证，数据查询耗时较长）
+            query = f"select code,date,factor from tspro_factor where date(date) = '{day.date()}'"
+            df_db = pd.read_sql_query(query , self.engine)
+            df = self.pro.fund_adj(trade_date = day.strftime('%Y%m%d'))
+            #ts数据处理
+            df.rename(columns={"ts_code": "code", "trade_date": "date" ,"adj_factor" : "factor" } , errors="raise" , inplace = True)           
+            #时间日期类的列进行类型变更
+            df['date'] = pd.to_datetime(df['date'])
+            df_db['date'] = pd.to_datetime(df_db['date'])
+            #两者取差集(df-df_db)主要目的是为了导入ETF复权因子，因此主集设定为df
+            df = pd.concat([df , df_db , df_db] ).drop_duplicates(subset=['code','date'] , keep = False)
+            #保存至数据库
+            if df.empty == True:
+                print("%s 当日数据为空或者差集为空，跳过上传" % (day.strftime('%Y%m%d')))
+            else:
+                df.to_sql(
+                        name = f'tspro_factor',
+                        con = self.engine,
+                        index = False,
+                        if_exists = 'append')
+                print(f"{day.strftime('%Y%m%d')}复权因子已上传完成(ETF)")
+
     def get_k_data(self , count = None , col = ['code','date','open','close','high','low','volume','money','factor'] , flag_forward = False , flag_resample = False):
         
         """
@@ -654,4 +693,10 @@ class data(base,stock):
                 return df_db
 
 if __name__=="__main__":
-    pass
+    tspro = data()
+    tspro.code ='601318.sh'
+    tspro.start_date= datetime(2022,7,5,8)
+    tspro.end_date = datetime(2022,7,7,16)
+    tspro.fq = tspro.复权.动态复权
+    tspro.ktype = '1d'
+    tspro.update_factor_ETF()
