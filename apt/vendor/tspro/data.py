@@ -104,7 +104,19 @@ class data(base,stock):
                             index = False,
                             if_exists = 'append')
                     print(f"{day.strftime('%Y%m%d')}数据已上传完成({self.ktype})")
-
+    
+    def update_etf_day(self):
+        #测试ETF复权因子
+        #etf_factor = self.pro.fund_adj(trade_date = '20220701')
+        #print(etf_factor)
+        #测试ETF日线数据
+        etf_day = self.pro.fund_daily(trade_date = '20220701')
+        print(etf_day)
+        #测试ETF分时线
+        eft_min = ts.pro_bar(api = self.api , ts_code = '159949.SZ', freq = '60min' , adj = None , start_date = self.start_date.strftime('%Y%m%d') , end_date = (self.end_date + timedelta(days = 1)).strftime('%Y%m%d') , asset = 'FD')
+        print(eft_min)
+        #测试ETF列表
+        pass
     def update_sequence_add(self , type = '60m'):
         '''
         task346更改了分时线数据更新的逻辑，拆分成add和launch两部分
@@ -138,7 +150,7 @@ class data(base,stock):
             sec = security()
             code_list = sec.get_all_code(day = self.end_date)
             code_list['start_date'] = self.start_date
-            code_list['end_date'] = self.end_date + timedelta(days = 1)
+            code_list['end_date'] = self.end_date
             code_list['type'] = type
             code_list = code_list[['code','start_date','end_date','type']]
             code_list.to_sql(
@@ -400,7 +412,7 @@ class data(base,stock):
                             if_exists = 'append')
                     print(f"{day.strftime('%Y%m%d')}复权因子已上传完成")
 
-    def get_k_data(self , count = None , col = ['code','date','open','close','high','low','volume','money','factor'] , flag_forward = False ):
+    def get_k_data(self , count = None , col = ['code','date','open','close','high','low','volume','money','factor'] , flag_forward = False , flag_resample = False):
         
         """
         tspro数据加载模块（目前不支持输出N日后的X条数据，详见https://huiqiao.visualstudio.com/MyFunds/_workitems/edit/296）
@@ -411,6 +423,10 @@ class data(base,stock):
             在这种模式下，start_date为基准日期，先后输出count条数据
             其余模式end_date均为基准日期
             详见https://huiqiao.visualstudio.com/MyFunds/_workitems/edit/296
+        flag_resample：T/F 用于标识是否进行重采样
+            目前仅对60分钟线有效
+            True：进行重采样
+            False：不进行重采样，舍弃9:30单根数据
         接受前复权 后复权 不复权 动态复权四种复权模式
         成交量、成交额目前未进行复权处理
         返回的数据按照升序排列（backtrader要求的数据格式）
@@ -444,6 +460,24 @@ class data(base,stock):
             df_db = pd.merge(df_db, tspro_factor[['factor_date','factor']] , on = ['factor_date'] , how = 'left')
             #复权因子修正完毕，填充后进入复权处理（tspro每天均有复权因子，此处无需填充）
             #df_db.ffill(axis=0, inplace=True, limit=None, downcast=None)
+            #进行60分钟线修正
+            if self.ktype =='60m':
+                #判断使用何种方式进行60分钟线修正
+                if flag_resample == False:
+                    #去除9：30数据
+                    #df_db = df_db.drop(df_db[df_db['date'].dt.time == '09:30:00'].index)
+                    #取出09:30数据
+                    df_drop = df_db.query('date.dt.time == datetime.strptime("09:30","%H:%M").time()')
+                    #两者取差集
+                    df_db = pd.concat([df_db , df_drop , df_drop] ).drop_duplicates(subset=['date'] , keep = False)
+                else:
+                    #重采样
+                    raise ValueError('暂不支持重采样')
+                    df_db['date'] = pd.to_datetime(df_db['date'])
+                    df_db.set_index('date',inplace = True)
+                    df_db = df_db.resample('60min').agg({'open':'first','high':'max','low':'min','close':'last','volume':'sum','money':'sum','factor':'first'})
+                    print(df_db)
+
             if self.fq.value == 0:  #不复权
                 if flag_forward == False:
                     #正常模式
