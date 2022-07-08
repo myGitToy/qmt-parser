@@ -264,7 +264,7 @@ class data(base,stock):
         task346更改了分时线数据更新的逻辑，拆分成add和launch两部分
         launch模块主要进行数据更新任务，支持点断续传
         '''
-        sql = "select * from tspro_update_sequence"
+        sql = "select * from tspro_update_sequence" #------>这里可以加入对于stock和etf类型的限制，使得这个函数专门用来处理这两类
         df_sequence = pd.read_sql_query(sql , self.engine)
         code_list = df_sequence['code']
         if df_sequence.shape[0] > 0 :
@@ -278,13 +278,16 @@ class data(base,stock):
                 #end_date  = datetime.strftime(row['end_date'] , '%Y-%m-%d')
                 start_date = row['start_date']
                 end_date  = row['end_date']
+                myclass = row['class']
                 type = row['type']
                 #tspro pro_bar数据获取模块（这里对最后日期做了day+1的处理）
-                df_tspro = ts.pro_bar(api = self.api , ts_code = code, freq = self.dict[type] , adj = None , start_date = start_date.strftime('%Y%m%d') , end_date = (end_date + timedelta(days = 1)).strftime('%Y%m%d') , adjfactor = True , factors = ['tor', 'vr'] , asset = 'E')
+                if myclass == 'stock':
+                    df_tspro = ts.pro_bar(api = self.api , ts_code = code, freq = self.dict[type] , adj = None , start_date = start_date.strftime('%Y%m%d') , end_date = (end_date + timedelta(days = 1)).strftime('%Y%m%d') , adjfactor = True , factors = ['tor', 'vr'] , asset = 'E')
+                elif myclass == 'etf':
+                    df_tspro = ts.pro_bar(api = self.api , ts_code = code, freq = self.dict[type] , adj = None , start_date = start_date.strftime('%Y%m%d') , end_date = (end_date + timedelta(days = 1)).strftime('%Y%m%d') , adjfactor = True , asset = 'FD')
                 #最大数据量校验
                 if df_tspro.shape[0] >= max_row:
                     raise ValueError(f'接收到的数据达到最大允许值，可能存在数据丢失，中止更新！')
-                #print(df_tspro)
                 df_tspro.rename(columns={"ts_code": "code", "trade_time": "date" ,"vol" : "volume" , "amount" : "money"} , errors="raise" , inplace = True)
                 df_tspro.drop(columns = ['trade_date','pre_close'] , inplace = True)
                 #时间日期类的列进行类型变更
@@ -296,10 +299,8 @@ class data(base,stock):
                 query_db = f"select code,date,open,close,high,low,volume,money from tspro_{type} where date(date) between '{start_date}' and '{end_date}' and code = '{code}'"
                 df_db = pd.read_sql_query(query_db , self.engine)
                 df_db['date'] = pd.to_datetime(df_db['date'])
-                #print(df_tspro)
                 #5. 两个DataFrame进行差值处理
                 df_diff = pd.concat([df_tspro , df_db , df_db] ).drop_duplicates(subset=['date'] , keep = False)
-                #print(df_diff)
                 #6. 差值数据写入数据库
                 if df_diff.empty == True:
                     print(f"{code}差值数据为空，跳过更新")
