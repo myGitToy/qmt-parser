@@ -1,14 +1,19 @@
-import datetime
-from apt.os.data_load import Data_Load as dl
-d = dl()
-df_stockload = d.load_data(code = '159949' , start = '2020-01-01' , end = '2020-12-21')
-print(df_stockload.info())
-#测试
-
+from datetime import datetime
+from apt.qsp_universal.base import base as data
 # 替换 import matplotlib.finance as mpf 画k线图
 import mpl_finance as mpf  # 替换 import matplotlib.finance as mpf
-
 import matplotlib.pyplot as plt
+
+#获取K线数据
+tspro = data()
+tspro.code ='601318.sh'
+tspro.vendor = tspro.vendor.tusharePro
+tspro.start_date= datetime(2022,1,1,8)
+tspro.end_date = datetime(2022,7,8,16)
+#ETF数据1998/10/19 含
+tspro.fq = tspro.复权.动态复权
+#d = dl()
+df_stockload = tspro.get_k_data()
 
 # 创建fig对象
 fig = plt.figure(figsize=(8, 6), dpi=100, facecolor="white")
@@ -20,7 +25,7 @@ fig.subplots_adjust(left=0.09, bottom=0.20, right=0.94, top=0.90, wspace=0.2, hs
 graph_KAV = fig.add_subplot(1, 1, 1)
 
 # 画k线
-mpf.candlestick2_ochl(graph_KAV, df_stockload.Open, df_stockload.Close, df_stockload.High, df_stockload.Low, width=0.5,
+mpf.candlestick2_ochl(graph_KAV, df_stockload.open, df_stockload.close, df_stockload.high, df_stockload.low, width=0.5,
                       colorup='r', colordown='g')  # 绘制K线走势
 
 """
@@ -38,13 +43,13 @@ mpf.candlestick_ochl(graph_KAV, ohlc, width=0.2, colorup='r', colordown='g', alp
 
 # 绘制移动平均线图
 # pd.rolling_mean(df_stockload.Close,window=20)
-df_stockload['Ma20'] = df_stockload.Close.rolling(window=20).mean()
+df_stockload['Ma20'] = df_stockload.close.rolling(window=20).mean()
 
 # pd.rolling_mean(df_stockload.Close,window=30)
-df_stockload['Ma30'] = df_stockload.Close.rolling(window=30).mean()
+df_stockload['Ma30'] = df_stockload.close.rolling(window=30).mean()
 
 # pd.rolling_mean(df_stockload.Close,window=60)
-df_stockload['Ma60'] = df_stockload.Close.rolling(window=60).mean()
+df_stockload['Ma60'] = df_stockload.close.rolling(window=60).mean()
 
 import numpy as np
 
@@ -63,7 +68,8 @@ graph_KAV.set_xlabel("日期")
 graph_KAV.set_ylabel(u"价格")
 graph_KAV.set_xlim(0, len(df_stockload.index))  # 设置一下x轴的范围
 graph_KAV.set_xticks(range(0, len(df_stockload.index), 15))  # X轴刻度设定 每15天标一个日期
-graph_KAV.set_xticklabels([df_stockload.index.strftime('%Y-%m-%d')[index] for index in graph_KAV.get_xticks()])  # 标签设置为日期
+#graph_KAV.set_xticklabels([df_stockload.index.strftime('%Y-%m-%d')[index] for index in graph_KAV.get_xticks()])  # 标签设置为日期
+graph_KAV.set_xticklabels([df_stockload.index[index] for index in graph_KAV.get_xticks()])  # 标签设置为日期
 
 # X-轴每个ticker标签都向右倾斜45度
 for label in graph_KAV.xaxis.get_ticklabels():
