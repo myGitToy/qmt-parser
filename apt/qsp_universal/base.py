@@ -67,12 +67,22 @@ class base():
         if ktype not in ('1d','60m','30m','15m','5m','1m'):
             raise ValueError(f'不支持的K线类型：{ktype}')
 
-    def get_k_data(self):
+    def get_k_data(self , count = None , col = ['code','date','open','close','high','low','volume','money','factor'] , flag_forward = False , flag_resample = False):
         """
         通用数据接口 获取指定日期间的K线数据
         由于tushare目前不含factor数据，因此本模块未完全可用
-        输入：
+        输入（jqdata数据类型）：
             无
+        输入（tusharePro数据类型）：
+        count: 获取K线条目的个数 默认是全部输出  
+        flag_forward：用于获取N日之后X条数据，类似于后复权数据 默认为False
+            在这种模式下，start_date为基准日期，先后输出count条数据
+            其余模式end_date均为基准日期
+            详见https://huiqiao.visualstudio.com/MyFunds/_workitems/edit/296
+        flag_resample：T/F 用于标识是否进行重采样
+            目前仅对60分钟线有效
+            True：进行重采样
+            False：不进行重采样，舍弃9:30单根数据
         返回：
             dataframe ：包含开盘 收盘 最高 最低 成交量 成交额 代码
         """
@@ -85,7 +95,7 @@ class base():
             a.fq = self.fq
             a.code = self.code
             a.ktype = self.ktype
-            df = a.get_k_data()
+            df = a.get_k_data(count = count , col = col , flag_forward = flag_forward , flag_resample = flag_resample)
             return df
         elif self.vendor == self.vendor.jqdata:
             a = jqdata(rds_host = self.server , myauth = self.myauth)

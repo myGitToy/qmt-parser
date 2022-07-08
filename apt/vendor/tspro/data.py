@@ -475,7 +475,7 @@ class data(base,stock):
                     raise ValueError('暂不支持重采样')
                     df_db['date'] = pd.to_datetime(df_db['date'])
                     df_db.set_index('date',inplace = True)
-                    df_db = df_db.resample('60min').agg({'open':'first','high':'max','low':'min','close':'last','volume':'sum','money':'sum','factor':'first'})
+                    df_db = df_db.resample('60min').agg({'open':'first','high':'max','low':'min','close':'last','volume':'sum','money':'sum','factor':'first'}).dropna(axis=0)
                     print(df_db)
 
             if self.fq.value == 0:  #不复权
