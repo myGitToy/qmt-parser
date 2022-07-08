@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
-from apt.qsp_jqdata.base import base
-from apt.vendor.jqdata.jqdata import data as data
+from apt.qsp_universal.base import base
+#from apt.vendor.jqdata.jqdata import data as data
 import numpy as np
 import pandas as pd
 import talib as ta
@@ -430,13 +430,12 @@ class A(base):
 
 
 if __name__ == "__main__":
-    dd = data(myauth = False)
-    #dd.get_all_code(end_date =  datetime(2022,5,1) )
     pd.set_option('display.max_rows', None)
     demo = A(myauth = False)
-    demo.code = '600313.XSHG'
+    demo.code = '600313.sh'
+    demo.vendor = demo.vendor.tusharePro
     demo.start = datetime(2021,1,1)
-    demo.end = datetime(2022,5,1)
-    a = demo.A04B02_EMA均线多头排列(ma_list = ['10','20','60','120'])
+    demo.end = datetime(2022,7,7)
+    a = demo.A04B02_EMA均线多头排列()
     print(a[0])
 

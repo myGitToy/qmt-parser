@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
-from apt.qsp_jqdata.base import base
+from apt.qsp_universal.base import base
 import numpy as np
 import pandas as pd
 
@@ -99,4 +99,15 @@ class vol(base):
         else:
             last_row = False
         #返回最后的结果 目前为元组类型，第一列为DataFrame 第二列为T/F值       
-        return df[['code','date','result']] , last_row    
+        return df[['code','date','result']] , last_row   
+
+if __name__ == "__main__":
+    pd.set_option('display.max_rows', None)
+    demo = vol(myauth = False)
+    demo.code = '600313.sh'
+    demo.vendor = demo.vendor.tusharePro
+    demo.start = datetime(2021,1,1)
+    demo.end = datetime(2022,7,7)
+    a = demo.money_abnormal_change(criteria = 2.5 )
+    print(a[0])
+    
