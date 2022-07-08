@@ -104,7 +104,59 @@ class data(base,stock):
                             index = False,
                             if_exists = 'append')
                     print(f"{day.strftime('%Y%m%d')}数据已上传完成({self.ktype})")
-    
+    def update_day_ETF(self):
+        """
+        tusharePro基金数据日常更新的主入口（按天更新）
+        本模块只支持日线格式更新（日线数据按日进行全部数据的获取，因此与分时线的逻辑有所不同）
+        更新逻辑：
+            1. 获取需要更新的时间周期中的交易日
+            2. 数据取差集后插入数据库
+        """
+        #日线类型校验
+        if self.ktype != '1d':
+            raise ValueError(f'分时线数据请使用update_min函数进行更新')
+        #更新时段校验 如果更新的是日线数据且校验为更新时段，则不予以更新
+        #check = self.get_today_is_trade()
+        check = None
+        if check == self.交易时段校验.交易时段:
+            raise ValueError(f'update_V1规则不允许在交易时段进行更新')
+        #获取交易日期
+        trade_days = self.pro.trade_cal(exchange = 'SSE', start_date = self.start_date.strftime('%Y%m%d'), end_date=self.end_date.strftime('%Y%m%d'))
+        #剔除非交易日
+        trade_days.query('is_open == 1' , inplace = True)
+        trade_days['cal_date'] = pd.to_datetime(trade_days['cal_date'])
+        for day in trade_days['cal_date']:
+            #print(f"##############正在更新%s数据##############" % day.strftime("%Y-%m-%d"))
+            #检查数据库是否存在数据（目前跳过验证，数据查询耗时较长）
+            query = f"select code,date from tspro_{self.ktype} where date(date) = '{day.date()}'"
+            df_db = pd.read_sql_query(query , self.engine)
+            df =self.pro.fund_daily(trade_date = day.strftime('%Y%m%d'))
+            df.rename(columns={"ts_code": "code", "trade_date": "date" ,"vol" : "volume" , "amount" : "money"} , errors="raise" , inplace = True)
+            #删除列
+            df.drop(columns = ['pre_close','change','pct_chg'] , inplace = True)                 
+            #时间日期类的列进行类型变更
+            df['date'] = pd.to_datetime(df['date'])
+            df_db['date'] = pd.to_datetime(df_db['date'])
+            #volume成交量列从手转换成股 统一乘100
+            #df['volume'].astype(np.float)
+            df['volume'] = df['volume'] * 100
+            #amount成交金额列从千元转换成元，统一乘1000
+            #df['money'].astype(np.float)
+            df['money'] = df['money'] * 1000
+            #日线数据特殊处理，因为数据库中的格式是date，不是datetime
+            #两者取差集(df-df_db)主要目的是为了导入ETF复权因子，因此主集设定为df
+            df = pd.concat([df , df_db , df_db] ).drop_duplicates(subset=['code','date'] , keep = False)
+            #print(df)
+            #保存至数据库
+            if df.empty == True:
+                print("%s 当日数据为空或者差集为空，跳过上传(该日为交易日，数据截取可能存在问题)" % (day.strftime('%Y%m%d')))
+            else:
+                df.to_sql(
+                        name = f'tspro_{self.ktype}',
+                        con = self.engine,
+                        index = False,
+                        if_exists = 'append')
+                print(f"{day.strftime('%Y%m%d')}数据已上传完成(ETF日线)")    
     def update_etf_day(self):
         #测试ETF复权因子
         #etf_factor = self.pro.fund_adj(trade_date = '20220701')
@@ -695,8 +747,10 @@ class data(base,stock):
 if __name__=="__main__":
     tspro = data()
     tspro.code ='601318.sh'
-    tspro.start_date= datetime(2022,7,5,8)
-    tspro.end_date = datetime(2022,7,7,16)
+    tspro.start_date= datetime(2022,1,1,8)
+    tspro.end_date = datetime(2022,7,8,16)
+    #ETF数据1998/10/19 含
     tspro.fq = tspro.复权.动态复权
     tspro.ktype = '1d'
+    tspro.update_day_ETF()
     tspro.update_factor_ETF()
