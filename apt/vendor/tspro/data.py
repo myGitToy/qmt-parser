@@ -157,6 +157,7 @@ class data(base,stock):
                         index = False,
                         if_exists = 'append')
                 print(f"{day.strftime('%Y%m%d')}数据已上传完成(ETF日线)")    
+
     def update_etf_day(self):
         #测试ETF复权因子
         #etf_factor = self.pro.fund_adj(trade_date = '20220701')
@@ -169,16 +170,21 @@ class data(base,stock):
         print(eft_min)
         #测试ETF列表
         pass
-    def update_sequence_add(self , type = '60m'):
+
+    def update_sequence_add(self , myclass = 'stock' , type = '60m'):
         '''
         task346更改了分时线数据更新的逻辑，拆分成add和launch两部分
         add模块主要进行数据更新任务的导入
         输入：
-            type 更新类型 默认60m；目前可接受参数：60m/1m 未来可能还会继续添加
+            myclass 一级目录 默认stock  目前可接受参数stock|etf
+            type 二级目录 默认60m；目前可接受参数：60m/1m
         '''
+        #class数据校验
+        if myclass not in ['stock','etf']:
+            raise ValueError(f'无效的数据类型(一级目录)')
         #type数据校验
         if type not in ['1d','60m','1m']:
-            raise ValueError(f'无效的数据类型')
+            raise ValueError(f'无效的数据类型(二级目录)')
         #分时线类型校验
         if self.ktype == '1d' or type == '1d':
             raise ValueError(f'日线数据请使用update_day函数进行更新')
@@ -200,11 +206,15 @@ class data(base,stock):
         if result == '1':               #添加新数据
             #1. 获取区间最后一天所对应的全部证券列表
             sec = security()
-            code_list = sec.get_all_code(day = self.end_date)
+            if myclass == 'stock':
+                code_list = sec.get_all_code(day = self.end_date)
+            elif myclass == 'etf':
+                raise ValueError(f'暂时不支持ETF类数据更新')
             code_list['start_date'] = self.start_date
             code_list['end_date'] = self.end_date
+            code_list['class'] = myclass
             code_list['type'] = type
-            code_list = code_list[['code','start_date','end_date','type']]
+            code_list = code_list[['code','start_date','end_date','class','type']]
             code_list.to_sql(
                     name = f'tspro_update_sequence',
                     con = self.engine,
@@ -221,11 +231,15 @@ class data(base,stock):
             #以下代码与选项1保持一致
             #1. 获取区间最后一天所对应的全部证券列表
             sec = security()
-            code_list = sec.get_all_code(day = self.end_date)
+            if myclass == 'stock':
+                code_list = sec.get_all_code(day = self.end_date)
+            elif myclass == 'etf':
+                raise ValueError(f'暂时不支持ETF类数据更新')
             code_list['start_date'] = self.start_date
             code_list['end_date'] = self.end_date #add模块中日期不需要+1
+            code_list['class'] = myclass
             code_list['type'] = type
-            code_list = code_list[['code','start_date','end_date','type']]
+            code_list = code_list[['code','start_date','end_date','myclass','type']]
             code_list.to_sql(
                     name = f'tspro_update_sequence',
                     con = self.engine,
