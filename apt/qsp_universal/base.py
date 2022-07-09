@@ -98,9 +98,9 @@ class base():
             df = a.get_k_data(count = count , col = col , flag_forward = flag_forward , flag_resample = flag_resample)
             return df
         elif self.vendor == self.vendor.jqdata:
-            a = jqdata(rds_host = self.server , myauth = self.myauth)
+            a = jqdata(rds_host = self.server , myauth = self.myauth) 
             #此处的get_k_data从vendor.jqdata.data.get_k_data取数据，非tushare
-            df = a.get_k_data(code = self.code , start_date = self.start_date , end_date = self.end_date , ktype = self.ktype , fq = self.fq)
+            df = a.get_k_data(code = self.code , start_date = self.start_date , end_date = self.end_date , ktype = self.ktype , fq = self.fq , count = count , flag_forward = flag_forward)
             return df
         elif self.vendor == self.vendor.akshare:
             print("展示不支持akshare数据获取")
@@ -108,7 +108,7 @@ class base():
         else:
             raise ValueError(f'不支持此数据供应商，请检查输入！')
 
-    def get_all_code(self):
+    def get_all_code(self , type = type):
         """
         通用数据接口 获取证券代码列表
         输入：
@@ -123,7 +123,7 @@ class base():
         elif self.vendor == self.vendor.jqdata:
             a = jqsec()
             #获取证券列表
-            return a.get_all_code(day = self.end_date)
+            return a.get_all_code(day = self.end_date , type= type)
         elif self.vendor == self.vendor.akshare:
             print("暂时不支持akshare数据获取")
             return pd.DataFrame()
