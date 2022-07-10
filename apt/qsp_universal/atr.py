@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
-from apt.qsp_jqdata.base import base
+from apt.qsp_universal.base import base
 import numpy as np
 import pandas as pd
 """
@@ -65,7 +65,7 @@ class ATR(base):
 
     def daily_update(self , code_list = [] , N = 25 , MAHR_100_HIGH = 25, MAHR_20 = 5 ,MAHR_30 = 8 , to_csv = True):
         #ATR模块每日更新
-        df_main=pd.DataFrame()
+        df_main = pd.DataFrame()
         for code in code_list:
             #循环截取所有列表中的数据
             self.code = code
@@ -80,7 +80,7 @@ class ATR(base):
         #保存数据
         if to_csv == True:
             #print(df_main)
-            df_main.to_csv('.\\trade\\ATR_jqdata.csv', encoding = 'utf_8_sig')
+            df_main.to_csv(f'.\\trade\\ATR_{self.vendor}.csv', encoding = 'utf_8_sig')
         return df_main
 
     def abnormal_atr(self , atr_ma = 25 , criteria = 2 , N = 5 , count = 1 , flag_std = True):

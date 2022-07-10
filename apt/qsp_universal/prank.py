@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
-from apt.qsp_jqdata.base import base
-from apt.vendor.jqdata.jqdata import data as jqdata
+from apt.qsp_universal.base import base
 import numpy as np
 import pandas as pd
 
@@ -35,7 +34,7 @@ class prank(base):
 
     def daily_update(self , code_list = [] , N = 100 , to_csv = True):
         #ATR模块每日更新
-        df_main=pd.DataFrame()
+        df_main = pd.DataFrame()
         for code in code_list:
             #循环截取所有列表中的数据
             self.code = code

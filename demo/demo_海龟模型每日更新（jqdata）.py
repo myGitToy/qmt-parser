@@ -24,7 +24,7 @@ a.myauth = False
 auth('13162818663','Qq@6537286')
 #a.code = '601318.XSHG'
 a.ktype = '1d'
-a.start = datetime.datetime(2021,6,1)
+a.start = datetime.datetime(2019,6,1)
 a.end = datetime.datetime.now()
 
 

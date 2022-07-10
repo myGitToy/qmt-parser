@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime
-from apt.qsp_jqdata.base import base
+from apt.qsp_universal.base import base
 import numpy as np
 import pandas as pd
 """

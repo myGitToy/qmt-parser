@@ -112,7 +112,7 @@ class base():
         """
         通用数据接口 获取证券代码列表
         输入：
-            无
+            type 证券类别 默认为['stock','etf']
         返回：
             dataframe ：
         """
@@ -123,7 +123,7 @@ class base():
         elif self.vendor == self.vendor.jqdata:
             a = jqsec()
             #获取证券列表
-            return a.get_all_code(day = self.end_date , type= type)
+            return a.get_all_code(day = self.end_date , type = type)
         elif self.vendor == self.vendor.akshare:
             print("暂时不支持akshare数据获取")
             return pd.DataFrame()
@@ -153,3 +153,20 @@ class base():
         else:
             print("K线类型输入无效，按照默认日线数据返回结果")
             return 1
+
+    def read_excel(file_name = None , sheet_name = None):
+        """
+        读取excel数据
+        注意事项：
+            1. 默认引擎为xlrd，目前高版本已不支持xlsx文件
+            2. 切换引擎至openpyxl 
+            3. 上述两个引擎都需要额外pip install
+            4. 表的名称和列的名称目前都支持中文
+            5. 读取时excel表格必须处于关闭状态，否则会报错（已通过增加exception做到提示错误信息）
+        """
+        try:
+            df = pd.read_excel( file_name, sheet_name = sheet_name , engine = 'openpyxl' )
+            return df
+        except Exception as e:
+            print(str(e))
+            return pd.DataFrame()
