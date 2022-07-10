@@ -207,9 +207,9 @@ class data(base,stock):
             #1. 获取区间最后一天所对应的全部证券列表
             sec = security()
             if myclass == 'stock':
-                code_list = sec.get_all_code(day = self.end_date)
+                code_list = sec.get_all_code(day = self.end_date , type = ['stock'])
             elif myclass == 'etf':
-                raise ValueError(f'暂时不支持ETF类数据更新')
+                code_list = sec.get_all_code(day = self.end_date , type = ['etf'])
             code_list['start_date'] = self.start_date
             code_list['end_date'] = self.end_date
             code_list['class'] = myclass
@@ -232,14 +232,14 @@ class data(base,stock):
             #1. 获取区间最后一天所对应的全部证券列表
             sec = security()
             if myclass == 'stock':
-                code_list = sec.get_all_code(day = self.end_date)
+                code_list = sec.get_all_code(day = self.end_date , type = ['stock'])
             elif myclass == 'etf':
-                raise ValueError(f'暂时不支持ETF类数据更新')
+                code_list = sec.get_all_code(day = self.end_date , type = ['etf'])
             code_list['start_date'] = self.start_date
             code_list['end_date'] = self.end_date #add模块中日期不需要+1
             code_list['class'] = myclass
             code_list['type'] = type
-            code_list = code_list[['code','start_date','end_date','myclass','type']]
+            code_list = code_list[['code','start_date','end_date','class','type']]
             code_list.to_sql(
                     name = f'tspro_update_sequence',
                     con = self.engine,
@@ -289,7 +289,9 @@ class data(base,stock):
                 if df_tspro.shape[0] >= max_row:
                     raise ValueError(f'接收到的数据达到最大允许值，可能存在数据丢失，中止更新！')
                 df_tspro.rename(columns={"ts_code": "code", "trade_time": "date" ,"vol" : "volume" , "amount" : "money"} , errors="raise" , inplace = True)
-                df_tspro.drop(columns = ['trade_date','pre_close'] , inplace = True)
+                #stock更新正常的，etf更新会报错
+                if myclass == 'stock':
+                    df_tspro.drop(columns = ['trade_date','pre_close'] , inplace = True)
                 #时间日期类的列进行类型变更
                 df_tspro['date'] = pd.to_datetime(df_tspro['date'])
                 #日期排序(目前判定下为非必要，预留代码，减小数据更新的压力)
