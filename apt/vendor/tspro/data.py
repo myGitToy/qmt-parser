@@ -28,9 +28,13 @@ class data(base,stock):
     #def __init__(self):
         #super(data , self).__init__()
 
-    def update_day(self):
+    def update_day(self , ignore_etf = True):
         """
         tusharePro数据日常更新的主入口（按天更新）
+        输入：
+            ignore_eft 
+                True 跳过数据库数据校验（即忽略当日的ETF或者stock数据，进入差集更新）
+                Flase 进行数据库校验
         本模块只支持日线格式更新（日线数据按日进行全部数据的获取，因此与分时线的逻辑有所不同）
         更新逻辑：
             1. 获取需要更新的时间周期中的交易日
@@ -58,11 +62,11 @@ class data(base,stock):
             query = f"select date , count(date) as num from tspro_{self.ktype} where date(date) = '{day.date()}'"
             df_old = pd.read_sql_query(query , self.engine)
             count = df_old.loc[0 , 'num']
-            if count > 0 :
+            if count > 0 and ignore_etf == True:
                 #此处存在数据，不进入更新序列，直接跳过
-                print(f"{day.strftime('%Y-%m-%d')}存在数据，跳过更新")
+                print(f"{day.strftime('%Y-%m-%d')}存在数据或者不进行差集处理，跳过更新")
             else:
-                #不存在数据，进行更新
+                #不存在数据 或者进入差集更新模式
                 if  self.ktype == '1d':
                     df = self.pro.daily(trade_date= day.strftime('%Y%m%d'))
                     #根据wiki描述的数据库一致性的要求，进行列名的变更 https://huiqiao.visualstudio.com/MyFunds/_wiki/wikis/MyFunds.wiki/19/tusharePro%E6%95%B0%E6%8D%AE%E8%AF%8D%E5%85%B8
@@ -81,6 +85,11 @@ class data(base,stock):
                     df['money'] = df['money'] * 1000
                     #日线数据特殊处理，因为数据库中的格式是date，不是datetime
                     #df = df[(df.date == day)]
+                    #差集处理
+                    query = f"select code , date from tspro_{self.ktype} where date(date) = '{day.date()}'"
+                    df_db = pd.read_sql_query(query , self.engine)
+                    df_db['date'] = pd.to_datetime(df_db['date'])
+                    df = pd.concat([df , df_db , df_db ]).drop_duplicates(subset = ['code','date'] , keep = False)
                 else:
                     #分时数据正常处理
                     #############这里留一个问题，是否可以用df.date.date() == day的形式进行筛选
@@ -104,6 +113,7 @@ class data(base,stock):
                             index = False,
                             if_exists = 'append')
                     print(f"{day.strftime('%Y%m%d')}数据已上传完成({self.ktype})")
+
     def update_day_ETF(self):
         """
         tusharePro基金数据日常更新的主入口（按天更新）
@@ -130,7 +140,7 @@ class data(base,stock):
             #检查数据库是否存在数据（目前跳过验证，数据查询耗时较长）
             query = f"select code,date from tspro_{self.ktype} where date(date) = '{day.date()}'"
             df_db = pd.read_sql_query(query , self.engine)
-            df =self.pro.fund_daily(trade_date = day.strftime('%Y%m%d'))
+            df = self.pro.fund_daily(trade_date = day.strftime('%Y%m%d'))
             df.rename(columns={"ts_code": "code", "trade_date": "date" ,"vol" : "volume" , "amount" : "money"} , errors="raise" , inplace = True)
             #删除列
             df.drop(columns = ['pre_close','change','pct_chg'] , inplace = True)                 
@@ -157,19 +167,6 @@ class data(base,stock):
                         index = False,
                         if_exists = 'append')
                 print(f"{day.strftime('%Y%m%d')}数据已上传完成(ETF日线)")    
-
-    def update_etf_day(self):
-        #测试ETF复权因子
-        #etf_factor = self.pro.fund_adj(trade_date = '20220701')
-        #print(etf_factor)
-        #测试ETF日线数据
-        etf_day = self.pro.fund_daily(trade_date = '20220701')
-        print(etf_day)
-        #测试ETF分时线
-        eft_min = ts.pro_bar(api = self.api , ts_code = '159949.SZ', freq = '60min' , adj = None , start_date = self.start_date.strftime('%Y%m%d') , end_date = (self.end_date + timedelta(days = 1)).strftime('%Y%m%d') , asset = 'FD')
-        print(eft_min)
-        #测试ETF列表
-        pass
 
     def update_sequence_add(self , myclass = 'stock' , type = '60m'):
         '''
