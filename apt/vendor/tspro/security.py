@@ -82,7 +82,7 @@ class security(base , stock):
     def update_security(self ,type = ['stock','index','fund','etf','lof','fja','fjb']):
         """
         security日常更新
-        type 证券类型，支持多选 默认为全部（目前不包含期货）
+        type jqdata证券类型，此处予以保留，实际无效果
         """
         pro = ts.pro_api()
         #打印标题
@@ -137,22 +137,44 @@ class security(base , stock):
                 #con.execute('CREATE INDEX index `tspro_security` (`code`);')
             print(f"数据已上传完成(security),新增数据{df_security.shape[0]}条")
 
-    def get_all_code(self , market = "'主板','创业板','中小板','科创板','CDR','北交所'" , day = datetime.now()):
+    def get_all_code(self , market = ['主板','创业板','中小板','科创板','CDR','北交所'] , day = datetime.now() , type = ['stock','etf']):
         """
         获取本地数据库中的证券代码（按日期）
         【输入】
-            market：市场类别 默认主板/创业板/中小板/科创板/CDR/北交所
+            market：list 市场类别 默认主板/创业板/中小板/科创板/CDR/北交所
+            day：datetime 日期 如果查询过去某一天的全部代码，day就是定位的坐标
+            type：list 证券类型 stock/etf/lof
+            --------->未来可能会加入市值筛选 基金份额筛选等内容
         【输出】
             dataframe:code|symbol|name|market|list_date
         """
         #脱机查询
-        df = pd.read_sql_query(f"select * from tspro_security where  '{day.date()}' between list_date and delist_date and market in ({market})" , self.engine)
-        if df.empty == True:
+        market_type = ','.join(["'%s'" % item for item in market ])
+        type_string = ','.join(["'%s'" % item for item in type ])
+        df_main = pd.DataFrame()
+        for tp in type:
+            #按照类型循环读取
+            if tp == 'stock':
+                #读取股票类代码
+                df = pd.read_sql_query(f"select * from tspro_security where '{day.date()}' between list_date and delist_date and market in ({market_type})" , self.engine)
+                df_main = pd.concat([df_main , df[['code','symbol','name','market','list_date']]] , sort = False )
+            elif tp == 'etf':
+                #读取ETF类代码
+                df = pd.read_sql_query(f"select * from tspro_security where '{day.date()}' between list_date and delist_date and market in ({market_type})" , self.engine)
+                df_main = pd.concat([df_main , df[['code','symbol','name','market','list_date']]] , sort = False )
+            elif tp == 'lof':
+                #读取ETF类代码
+                raise ValueError(f'暂不支持LOF代码')
+            else:
+                #其他类型
+                raise ValueError(f'暂不支持该类型代码')
+            
+        if df_main.empty == True:
             #数据库不存在数据
             return pd.DataFrame()
         else:
             #数据库存在数据，返回
-            return df[['code','symbol','name','market','list_date']]
+            return df_main
 
 
                
@@ -162,6 +184,8 @@ if __name__=="__main__":
     cal.start_date = datetime(1991,1,1)
     cal.end_date = datetime(1991,9,1)
     print(cal.dict[cal.ktype])
+    df = cal.get_all_code(type = ['stock'] , day = cal.end_date)
+    print(df)
     #df_up = cal.pro.query('limit_list_d' , trade_date = '20220616')
     #print(df_up)
     df_sec = cal.get_security(day = datetime(2001,1,1))
