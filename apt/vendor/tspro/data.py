@@ -28,13 +28,13 @@ class data(base,stock):
     #def __init__(self):
         #super(data , self).__init__()
 
-    def update_day(self , ignore_etf = True):
+    def update_day(self , flag_verify_db = True):
         """
         tusharePro数据日常更新的主入口（按天更新）
         输入：
-            ignore_eft 
-                True 跳过数据库数据校验（即忽略当日的ETF或者stock数据，进入差集更新）
-                Flase 进行数据库校验
+        flag_verify_db T/F值 是否进行当日数据校验 默认是False 不进行校验，进行差集更新
+            True 进行校验，如有 则跳过更新（速度最快，但可能会漏，尤其是先更新ETF后更新stock，则stock会漏更新）
+            Flase 不进行数据库数量校验 即忽略当日库中原有的ETF或者stock数据，进入差集更新（速度较慢，但能保证完整性）
         本模块只支持日线格式更新（日线数据按日进行全部数据的获取，因此与分时线的逻辑有所不同）
         更新逻辑：
             1. 获取需要更新的时间周期中的交易日
@@ -43,6 +43,7 @@ class data(base,stock):
                 2.2 没有数据则直接写入操作
                 2.3 存在数据，则去重后写入
         """
+        print("############正在准备更新stock日线数据###########")
         #日线类型校验
         if self.ktype != '1d':
             raise ValueError(f'分时线数据请使用update_min函数进行更新')
@@ -62,9 +63,10 @@ class data(base,stock):
             query = f"select date , count(date) as num from tspro_{self.ktype} where date(date) = '{day.date()}'"
             df_old = pd.read_sql_query(query , self.engine)
             count = df_old.loc[0 , 'num']
-            if count > 0 and ignore_etf == True:
+            if count > 0 and flag_verify_db == True:
+                #同时满足两种情况：数据库存在数据且忽略ETF数据，则跳过更新
                 #此处存在数据，不进入更新序列，直接跳过
-                print(f"{day.strftime('%Y-%m-%d')}存在数据或者不进行差集处理，跳过更新")
+                print(f"{day.strftime('%Y-%m-%d')}存在数据且忽略当日数据，跳过更新")
             else:
                 #不存在数据 或者进入差集更新模式
                 if  self.ktype == '1d':
@@ -122,6 +124,7 @@ class data(base,stock):
             1. 获取需要更新的时间周期中的交易日
             2. 数据取差集后插入数据库
         """
+        print("############正在准备更新ETF日线数据###########")
         #日线类型校验
         if self.ktype != '1d':
             raise ValueError(f'分时线数据请使用update_min函数进行更新')
@@ -432,9 +435,12 @@ class data(base,stock):
         #获取带授权的
         pass
 
-    def update_factor(self):
+    def update_factor(self , flag_verify_db = False):
         """
         tusharePro复权因子日常更新的主入口（按天更新）
+        flag_verify_db T/F值 是否进行当日数据校验 默认是False 不进行校验，进行差集更新
+            True 进行校验，如有 则跳过更新（速度最快，但可能会漏，尤其是先更新ETF后更新stock，则stock会漏更新）
+            Flase 不进行数据库数量校验 即忽略当日库中原有的ETF或者stock数据，进入差集更新（速度较慢，但能保证完整性）
         更新逻辑：
             1. 获取需要更新的时间周期中的交易日
             2. 循环读取证券代码列表进行更新
@@ -442,6 +448,7 @@ class data(base,stock):
                 2.2 没有数据则直接写入操作
                 2.3 存在数据，则去重后写入
         """
+        print("############正在准备更新stock复权因子###########")
         #获取交易日期
         trade_days = self.pro.trade_cal(exchange = 'SSE', start_date = self.start_date.strftime('%Y%m%d'), end_date=self.end_date.strftime('%Y%m%d'))
         #剔除非交易日
@@ -453,11 +460,13 @@ class data(base,stock):
             query = f"select date , count(date) as num from tspro_factor where date(date) = '{day.date()}'"
             df_old = pd.read_sql_query(query , self.engine)
             count = df_old.loc[0 , 'num']
-            if count > 0 :
+            if count > 0 and flag_verify_db == True:
                 #此处存在数据，不进入更新序列，直接跳过
-                print(f"{day.strftime('%Y-%m-%d')}存在数据，跳过更新")
+                print(f"{day.strftime('%Y-%m-%d')}存在数据且忽略当日数据，跳过更新")
             else:
-                #不存在数据，进行更新
+                #1. 不存在数据 无关忽略与否，进行更新
+                #2. 存在数据，且不忽略数据库当日原有数据
+                #不存在数据，或者进入差集更新模式
                 df = self.pro.query('adj_factor',  trade_date = day.strftime('%Y%m%d'))
                 #print(df)
                 #df = self.pro.daily(trade_date= day.strftime('%Y%m%d'))
@@ -467,9 +476,14 @@ class data(base,stock):
                 df.rename(columns={"ts_code": "code", "trade_date": "date" ,"adj_factor" : "factor" } , errors="raise" , inplace = True)           
                 #时间日期类的列进行类型变更
                 df['date'] = pd.to_datetime(df['date'])
+                #差集处理
+                query = f"select code , date from tspro_factor where date(date) = '{day.date()}'"
+                df_db = pd.read_sql_query(query , self.engine)
+                df_db['date'] = pd.to_datetime(df_db['date'])
+                df = pd.concat([df , df_db , df_db ]).drop_duplicates(subset = ['code','date'] , keep = False)
                 #保存至数据库
                 if df.empty == True:
-                    print("%s 当日数据为空，跳过上传(该日为交易日，数据截取可能存在问题)" % (day.strftime('%Y%m%d')))
+                    print("%s 当日数据为空或者差集为空，跳过上传(该日为交易日，数据截取可能存在问题)" % (day.strftime('%Y%m%d')))
                 else:
                     df.to_sql(
                             name = f'tspro_factor',
@@ -488,6 +502,7 @@ class data(base,stock):
                 2.2 没有数据则直接写入操作
                 2.3 存在数据，则去重后写入
         """
+        print("############正在准备更新ETF复权因子###########")
         #获取交易日期
         trade_days = self.pro.trade_cal(exchange = 'SSE', start_date = self.start_date.strftime('%Y%m%d'), end_date=self.end_date.strftime('%Y%m%d'))
         #剔除非交易日
