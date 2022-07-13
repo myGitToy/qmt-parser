@@ -171,96 +171,127 @@ class data(base,stock):
                         if_exists = 'append')
                 print(f"{day.strftime('%Y%m%d')}数据已上传完成(ETF日线)")    
 
-    def update_sequence_add(self , myclass = 'stock' , type = '60m'  , priority = 0 ):
+    def update_sequence_add(self , code_list = None , myclass = 'stock' , type = '60m'  , priority = 0 ):
         '''
         task346更改了分时线数据更新的逻辑，拆分成add和launch两部分
         add模块主要进行数据更新任务的导入
         输入：
+            code_list 需要更新的证券代码列表，有列表（优先更新）和无列表（正常更新）进入的是两个不同的流程
             myclass 一级目录 默认stock  目前可接受参数stock|etf
             type 二级目录 默认60m；目前可接受参数：60m/1m
             priority 优先更新标识 默认为0
         '''
-        #class数据校验
-        if myclass not in ['stock','etf']:
-            raise ValueError(f'无效的数据类型(一级目录)')
-        #type数据校验
-        if type not in ['1d','60m','1m']:
-            raise ValueError(f'无效的数据类型(二级目录)')
-        #分时线类型校验
-        if self.ktype == '1d' or type == '1d':
-            raise ValueError(f'日线数据请使用update_day函数进行更新')
-        #点断续传数据库条目数校验
-        sql_count = 'select count(id) as count from tspro_update_sequence'
-        df_db = pd.read_sql_query(sql_count , self.engine)
-        if df_db.iloc[0].at['count'] == 0:
-            #数据库不存在数据
-            result = '1'
-        else:
-            #数据库存在数据，进行选择
-            result = input('''数据库存在数据，请选择更新方式 \n
-            1. 保留原有更新序列，添加新的序列 \n
-            2. 删除原有更新序列，添加新的序列 \n
-            3. 删除原有更新序列 \n
-            4. 退出（不做任何处理）\n''')
-        #无论数据库是否存在数据，到这里进行选择
-        #无数据的直接进入1，有数据的按选择进行跳转
-        if result == '1':               #添加新数据
-            #1. 获取区间最后一天所对应的全部证券列表
+        if code_list != None:
+            ######流程1：优先更新逻辑，混合代码，需要拉取证券列表的类型等数据
+            ######       此时myclass类型无效；type有效；priority为1
             sec = security()
-            if myclass == 'stock':
-                code_list = sec.get_all_code(day = self.end_date , type = ['stock'])
-            elif myclass == 'etf':
-                code_list = sec.get_all_code(day = self.end_date , type = ['etf'])
-            code_list['start_date'] = self.start_date
-            code_list['end_date'] = self.end_date
-            code_list['class'] = myclass
-            code_list['type'] = type
-            code_list = code_list[['code','start_date','end_date','class','type']]
-            code_list['priority'] = priority
-            code_list.to_sql(
+            df_main = pd.DataFrame()
+            for code in code_list:
+                #按每条数据，分别获取信息并写入数据库
+                myclass = sec.get_security(code = code)
+                if myclass != np.nan:
+                    record = {'code':code,'start_date':self.start_date,'end_date':self.end_date,'class':myclass,'type':type,'priority':1}                             
+                    df_main = df_main.append(record , ignore_index = True)
+                    #df = pd.DataFrame()
+                    #df['code'] = code
+                    #df['start_date'] = self.start_date
+                    #df['end_date'] = self.end_date
+                    #df['class'] = myclass
+                    #df['type'] = type
+                    #df['priority'] = 1
+                #df_main = pd.concat([df_main,df])
+            #写入数据库
+            df_main.to_sql(
                     name = f'tspro_update_sequence',
                     con = self.engine,
                     index = False,
                     if_exists = 'append')
-            print(f"上传已完成，新增{code_list.shape[0]}条更新序列！")
+            print(f"优先更新列表上传已完成，新增{df_main.shape[0]}条更新序列！")
 
-        elif result == '2':             #删除后添加
-            sql_count = 'delete from tspro_update_sequence'
-            try:    #删除需捕捉异常，否则会报错
-                pd.read_sql_query(sql_count , self.engine)
-            except exc.ResourceClosedError:
-                pass
-            #以下代码与选项1保持一致
-            #1. 获取区间最后一天所对应的全部证券列表
-            sec = security()
-            if myclass == 'stock':
-                code_list = sec.get_all_code(day = self.end_date , type = ['stock'])
-            elif myclass == 'etf':
-                code_list = sec.get_all_code(day = self.end_date , type = ['etf'])
-            code_list['start_date'] = self.start_date
-            code_list['end_date'] = self.end_date #add模块中日期不需要+1
-            code_list['class'] = myclass
-            code_list['type'] = type
-            code_list = code_list[['code','start_date','end_date','class','type']]
-            code_list['priority'] = priority
-            code_list.to_sql(
-                    name = f'tspro_update_sequence',
-                    con = self.engine,
-                    index = False,
-                    if_exists = 'append')
-            print(f"上传已完成，新增{code_list.shape[0]}条更新序列！")
-
-        elif result == '3':             #直接删除
-            sql_count = 'delete from tspro_update_sequence'
-            try:    #删除需捕捉异常，否则会报错
-                pd.read_sql_query(sql_count , self.engine)
-            except exc.ResourceClosedError:
-                print('更新序列已删除！')
-
-        elif result == '4':          #不做任何更改，直接跳出
-            return 
         else:
-            raise ValueError(f'无效的输入')
+            ######流程2：正常更新逻辑，ETF或者Stock
+            ######       此时code_list无效；myclass类型有效；type有效；priority为0
+            #class数据校验
+            if myclass not in ['stock','etf']:
+                raise ValueError(f'无效的数据类型(一级目录)')
+            #type数据校验
+            if type not in ['1d','60m','1m']:
+                raise ValueError(f'无效的数据类型(二级目录)')
+            #分时线类型校验
+            if self.ktype == '1d' or type == '1d':
+                raise ValueError(f'日线数据请使用update_day函数进行更新')
+            #点断续传数据库条目数校验
+            sql_count = 'select count(id) as count from tspro_update_sequence'
+            df_db = pd.read_sql_query(sql_count , self.engine)
+            if df_db.iloc[0].at['count'] == 0:
+                #数据库不存在数据
+                result = '1'
+            else:
+                #数据库存在数据，进行选择
+                result = input('''数据库存在数据，请选择更新方式 \n
+                1. 保留原有更新序列，添加新的序列 \n
+                2. 删除原有更新序列，添加新的序列 \n
+                3. 删除原有更新序列 \n
+                4. 退出（不做任何处理）\n''')
+            #无论数据库是否存在数据，到这里进行选择
+            #无数据的直接进入1，有数据的按选择进行跳转
+            if result == '1':               #添加新数据
+                #1. 获取区间最后一天所对应的全部证券列表
+                sec = security()
+                if myclass == 'stock':
+                    code_list = sec.get_all_code(day = self.end_date , type = ['stock'])
+                elif myclass == 'etf':
+                    code_list = sec.get_all_code(day = self.end_date , type = ['etf'])
+                code_list['start_date'] = self.start_date
+                code_list['end_date'] = self.end_date
+                code_list['class'] = myclass
+                code_list['type'] = type
+                code_list = code_list[['code','start_date','end_date','class','type']]
+                code_list['priority'] = priority
+                code_list.to_sql(
+                        name = f'tspro_update_sequence',
+                        con = self.engine,
+                        index = False,
+                        if_exists = 'append')
+                print(f"上传已完成，新增{code_list.shape[0]}条更新序列！")
+
+            elif result == '2':             #删除后添加
+                sql_count = 'delete from tspro_update_sequence'
+                try:    #删除需捕捉异常，否则会报错
+                    pd.read_sql_query(sql_count , self.engine)
+                except exc.ResourceClosedError:
+                    pass
+                #以下代码与选项1保持一致
+                #1. 获取区间最后一天所对应的全部证券列表
+                sec = security()
+                if myclass == 'stock':
+                    code_list = sec.get_all_code(day = self.end_date , type = ['stock'])
+                elif myclass == 'etf':
+                    code_list = sec.get_all_code(day = self.end_date , type = ['etf'])
+                code_list['start_date'] = self.start_date
+                code_list['end_date'] = self.end_date #add模块中日期不需要+1
+                code_list['class'] = myclass
+                code_list['type'] = type
+                code_list = code_list[['code','start_date','end_date','class','type']]
+                code_list['priority'] = priority
+                code_list.to_sql(
+                        name = f'tspro_update_sequence',
+                        con = self.engine,
+                        index = False,
+                        if_exists = 'append')
+                print(f"上传已完成，新增{code_list.shape[0]}条更新序列！")
+
+            elif result == '3':             #直接删除
+                sql_count = 'delete from tspro_update_sequence'
+                try:    #删除需捕捉异常，否则会报错
+                    pd.read_sql_query(sql_count , self.engine)
+                except exc.ResourceClosedError:
+                    print('更新序列已删除！')
+
+            elif result == '4':          #不做任何更改，直接跳出
+                return 
+            else:
+                raise ValueError(f'无效的输入')
 
     def update_sequence_launch(self , priority = 0 ):
         '''
