@@ -15,6 +15,7 @@ from apt.qsp_universal.atr import ATR
 from apt.qsp_universal.k import k
 #from apt.vendor.jqdata.jqdata import data
 from apt.qsp_universal.base import base as data
+from apt.vendor.tspro.data import data as tsdata
 from apt.qsp_universal.prank import prank
 from apt.qsp_universal.expma import expma as EXP
 
@@ -55,10 +56,15 @@ code_list = df_code_main['code'].tolist()
 #print(df_code_main )
 
 #更新日线和60分钟线数据
-#update_start = datetime.datetime(2022,2,1)
-#jq = data(rds_host = data.数据源.localhost , myauth = True )
-#jq.update_v2(code_list = code_list , start_date = update_start , end_date = a.end , ktype = '1d' )
-#jq.update_v2(code_list = code_list , start_date = update_start , end_date = a.end , ktype = '60m' )
+a = tsdata(myauth = True)
+a.start_date = datetime(2022,7,1)
+a.end_date = datetime.now()
+a.ktype = '60m'
+a.update_sequence_add(code_list = code_list , type = '60m')
+a.ktype = '1m'
+a.update_sequence_add(code_list = code_list , type = '1m')
+a.update_sequence_launch(priority = 1)
+
 
 #######3. 获取ATR数据
 df_atr = a.daily_update(code_list = code_list , N = 25 , to_csv = False)
@@ -83,10 +89,10 @@ df_atr['day'] = pd.to_datetime(df_atr['day'])
 df_prank['date'] = pd.to_datetime(df_prank['date'])
 df_prank['day'] = df_prank['date'].dt.date
 df_prank['day'] = pd.to_datetime(df_prank['day'])
-print(f"原始数据行数：{df_prank.shape[0]}；列数：{df_prank.shape[1]}")
+#print(f"原始数据行数：{df_prank.shape[0]}；列数：{df_prank.shape[1]}")
 #合并并增加P75ATR信息
 df_prank = pd.merge(df_prank , df_atr[['day','code','ATR']] , on = ['day','code'] ) 
-print(f"更新后数据行数：{df_prank.shape[0]}；列数：{df_prank.shape[1]}")
+#print(f"更新后数据行数：{df_prank.shape[0]}；列数：{df_prank.shape[1]}")
 #df_prank['p75ATR'] = df_prank['p75'] / df_prank['ATR']
 df_prank['p75ATR'] = (df_prank['close'] - df_prank['p75'] ) / df_prank['ATR']
 #prank数据增加一个证券名称task:232
@@ -98,3 +104,5 @@ df_prank.to_csv('.\\data\\海龟模型\\prank_tspro.csv', encoding = 'utf_8_sig'
 
 #######7. 更新EXPMA数据
 df_exp = exp.daily_update(code_list = code_list , to_csv = True)
+
+print('海龟模型更新完毕！')
