@@ -11,5 +11,5 @@ a = data()
 a.start_date= datetime(2021,6,1)
 a.end_date = datetime.now()
 #a.update_etf_day()
-a.update_sequence_launch()
+a.update_sequence_launch(priority = 0)
 

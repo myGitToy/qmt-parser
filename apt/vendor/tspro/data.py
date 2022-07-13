@@ -171,13 +171,14 @@ class data(base,stock):
                         if_exists = 'append')
                 print(f"{day.strftime('%Y%m%d')}数据已上传完成(ETF日线)")    
 
-    def update_sequence_add(self , myclass = 'stock' , type = '60m'):
+    def update_sequence_add(self , myclass = 'stock' , type = '60m'  , priority = 0 ):
         '''
         task346更改了分时线数据更新的逻辑，拆分成add和launch两部分
         add模块主要进行数据更新任务的导入
         输入：
             myclass 一级目录 默认stock  目前可接受参数stock|etf
             type 二级目录 默认60m；目前可接受参数：60m/1m
+            priority 优先更新标识 默认为0
         '''
         #class数据校验
         if myclass not in ['stock','etf']:
@@ -215,6 +216,7 @@ class data(base,stock):
             code_list['class'] = myclass
             code_list['type'] = type
             code_list = code_list[['code','start_date','end_date','class','type']]
+            code_list['priority'] = priority
             code_list.to_sql(
                     name = f'tspro_update_sequence',
                     con = self.engine,
@@ -240,6 +242,7 @@ class data(base,stock):
             code_list['class'] = myclass
             code_list['type'] = type
             code_list = code_list[['code','start_date','end_date','class','type']]
+            code_list['priority'] = priority
             code_list.to_sql(
                     name = f'tspro_update_sequence',
                     con = self.engine,
@@ -259,12 +262,19 @@ class data(base,stock):
         else:
             raise ValueError(f'无效的输入')
 
-    def update_sequence_launch(self):
+    def update_sequence_launch(self , priority = 0 ):
         '''
         task346更改了分时线数据更新的逻辑，拆分成add和launch两部分
         launch模块主要进行数据更新任务，支持点断续传
+        priority 是否优先更新 默认为0
         '''
-        sql = "select * from tspro_update_sequence" #------>这里可以加入对于stock和etf类型的限制，使得这个函数专门用来处理这两类
+        #处理是否优先更新
+        if priority == 1:
+            #优先更新
+            sql = "select * from tspro_update_sequence where priority = 1" 
+        else:
+            #没有优先更新列表 全部加载
+            sql = "select * from tspro_update_sequence" 
         df_sequence = pd.read_sql_query(sql , self.engine)
         code_list = df_sequence['code']
         if df_sequence.shape[0] > 0 :
@@ -285,6 +295,7 @@ class data(base,stock):
                     df_tspro = ts.pro_bar(api = self.api , ts_code = code, freq = self.dict[type] , adj = None , start_date = start_date.strftime('%Y%m%d') , end_date = (end_date + timedelta(days = 1)).strftime('%Y%m%d') , adjfactor = True , factors = ['tor', 'vr'] , asset = 'E')
                 elif myclass == 'etf':
                     df_tspro = ts.pro_bar(api = self.api , ts_code = code, freq = self.dict[type] , adj = None , start_date = start_date.strftime('%Y%m%d') , end_date = (end_date + timedelta(days = 1)).strftime('%Y%m%d') , adjfactor = True , asset = 'FD')
+                #print(df_tspro)
                 #最大数据量校验
                 if df_tspro.shape[0] >= max_row:
                     raise ValueError(f'接收到的数据达到最大允许值，可能存在数据丢失，中止更新！')
