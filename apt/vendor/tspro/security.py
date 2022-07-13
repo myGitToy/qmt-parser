@@ -87,7 +87,7 @@ class security(base , stock):
         print("############正在准备更新security证券代码信息（ETF）###########")
         #读取ETF类资产
         df_security = self.pro.fund_basic(market = 'E')
-        print(df_security)
+        #print(df_security)
         #重命名为code
         df_security.rename(columns = {'ts_code':'code'} , inplace = True)
         df_security['list_date'] = pd.to_datetime(df_security['list_date'])
@@ -238,13 +238,32 @@ class security(base , stock):
             #数据库存在数据，返回
             return df_main
 
-
+    def get_security(self , code = None):
+        '''
+        获取指定证券代码的资产属性信息（简单版）
+        目前仅返回stock或者ETF的信息
+        '''
+        string = f"""select code,market from tspro_security where code = '{code}'
+                    union ALL
+                    select code,market from tspro_fund_basic where code =  '{code}'"""
+        df = pd.read_sql_query(string , self.engine)
+        if df.shape[0] == 0:
+            #无数据
+            return np.nan
+        if df.iloc[0].at['market'] == 'E':
+            #返回ETF
+            return 'etf'
+        else:
+            #返回stock
+            return 'stock'
                
 if __name__=="__main__":
     #测试交易日历功能
     cal = security()
     cal.start_date = datetime(1991,1,1)
     cal.end_date = datetime(2022,7,1)
+    a =cal.get_security('601318.sh')
+    print(a)
     print(cal.dict[cal.ktype])
 
     #测试ETF类资产更新

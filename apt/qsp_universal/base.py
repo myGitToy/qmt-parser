@@ -130,6 +130,30 @@ class base():
         else:
             raise ValueError(f'不支持此数据供应商，请检查输入！')
 
+    def get_security(self , code = None):
+        """
+        通用数据接口 获取指定证券代码的相关信息（简单版目前仅提供stock或ETF的分类）
+        输入：
+            code 证券代码
+        返回：
+            string ：stock|etf|nan
+        """
+        if code == None:
+            code = self.code
+        if self.vendor == self.vendor.tusharePro:
+            a = tssec()
+            #获取证券列表            
+            return a.get_security(code = code)
+        elif self.vendor == self.vendor.jqdata:
+            a = jqsec()
+            #获取证券列表
+            return a.get_security(code = code)
+        elif self.vendor == self.vendor.akshare:
+            print("暂时不支持akshare数据获取")
+            return pd.DataFrame()
+        else:
+            raise ValueError(f'不支持此数据供应商，请检查输入！')
+
     def get_rolling_k_等待删除(self , ktype = "1d"):
         """
         【此处不确定是否需要删除】
