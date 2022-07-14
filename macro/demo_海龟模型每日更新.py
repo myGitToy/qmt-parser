@@ -27,7 +27,7 @@ a = ATR()
 rank = prank()
 exp = EXP()
 a.ktype = rank.ktype = exp.ktype = '1d'
-a.start_date = rank.start_date = exp.start_date = datetime(2020,1,1)
+a.start_date = rank.start_date = exp.start_date = datetime(2021,6,1)    #本地数据读取的开始日期，缩小间隔可减少excel文件的体积
 a.end_date  = rank.end_date = exp.end_date = datetime.now()
 a.vendor  = rank.vendor = exp.vendor = a.vendor.tusharePro
 
@@ -56,14 +56,15 @@ code_list = df_code_main['code'].tolist()
 #print(df_code_main )
 
 #更新日线和60分钟线数据
-a = tsdata(myauth = True)
-a.start_date = datetime(2022,7,1)
-a.end_date = datetime.now()
-a.ktype = '60m'
-a.update_sequence_add(code_list = code_list , type = '60m')
-a.ktype = '1m'
-a.update_sequence_add(code_list = code_list , type = '1m')
-a.update_sequence_launch(priority = 1)
+dt = tsdata(myauth = True)
+#a = data(myauth = True)
+dt.start_date = datetime(2022,7,13,8) #数据更新的开始日期
+dt.end_date = datetime.now()
+dt.ktype = '60m'
+dt.update_sequence_add(code_list = code_list , type = '60m')
+dt.ktype = '1m'
+dt.update_sequence_add(code_list = code_list , type = '1m')
+dt.update_sequence_launch(priority = 1)
 
 
 #######3. 获取ATR数据

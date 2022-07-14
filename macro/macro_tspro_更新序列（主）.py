@@ -8,7 +8,7 @@ from apt.vendor.tspro.data import data as data
 #1. 初始化
 a = data(myauth = True)
 a.code ='600038.sh'
-a.start_date= datetime(2022,7,14)
+a.start_date= datetime(2022,7,10,8)
 a.end_date = datetime.now()
 #2. 更新证券代码库(stock和ETF资产)
 sec = security()

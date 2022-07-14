@@ -107,7 +107,7 @@ class data(base,stock):
                         #df = df[(df.date >= datetime.datetime(day.year,day.month,day.day,1)) & (df.date <= datetime.datetime(day.year,day.month,day.day,16))]
                 #保存至数据库
                 if df.empty == True:
-                    print("%s 当日数据为空，跳过上传(该日为交易日，数据截取可能存在问题)" % (day.strftime('%Y%m%d')))
+                    print("%s 当日数据为空，跳过上传" % (day.strftime('%Y%m%d')))
                 else:
                     df.to_sql(
                             name = f'tspro_{self.ktype}',
@@ -162,7 +162,7 @@ class data(base,stock):
             #print(df)
             #保存至数据库
             if df.empty == True:
-                print("%s 当日数据为空或者差集为空，跳过上传(该日为交易日，数据截取可能存在问题)" % (day.strftime('%Y%m%d')))
+                print("%s 当日数据为空或者差集为空，跳过上传" % (day.strftime('%Y%m%d')))
             else:
                 df.to_sql(
                         name = f'tspro_{self.ktype}',
@@ -402,7 +402,7 @@ class data(base,stock):
         sec = security()
         code_list = sec.get_all_code(day = self.end_date)
         #2. 获取交易日期（代码暂时移除，目前按照区间更新）
-        trade_days = self.pro.trade_cal(exchange = 'SSE', start_date = self.start_date.strftime('%Y%m%d'), end_date=self.end_date.strftime('%Y%m%d'))
+        trade_days = self.pro.trade_cal(exchange = 'SSE', start_date = self.start_date.strftime('%Y-%m-%d %H:%M:%s'), end_date = self.end_date.strftime('%Y-%m-%d %H:%M:%s'))
         #剔除非交易日
         trade_days.query('is_open == 1' , inplace = True)
         trade_days['cal_date'] = pd.to_datetime(trade_days['cal_date'])
@@ -410,7 +410,7 @@ class data(base,stock):
         for code in code_list['code']:
             #目前量比 vor 复权因子均无效 
             #tspro pro_bar数据获取模块（这里对最后日期做了day+1的处理）
-            df_tspro = ts.pro_bar(api = self.api , ts_code = code, freq = self.dict[self.ktype] , adj = None , start_date = self.start_date.strftime('%Y%m%d') , end_date = (self.end_date + timedelta(days = 1)).strftime('%Y%m%d') , adjfactor = True , factors = ['tor', 'vr'] , asset = 'E')
+            df_tspro = ts.pro_bar(api = self.api , ts_code = code, freq = self.dict[self.ktype] , adj = None , start_date = self.start_date.strftime('%Y-%m-%d %H:%M:%s') , end_date = (self.end_date + timedelta(days = 1)).strftime('%Y-%m-%d %H:%M:%s') , adjfactor = True , factors = ['tor', 'vr'] , asset = 'E')
             #最大数据量校验
             if df_tspro.shape[0] >= max_row:
                 raise ValueError(f'接收到的数据达到最大允许值，可能存在数据丢失，中止更新！')
@@ -525,7 +525,7 @@ class data(base,stock):
                 df = pd.concat([df , df_db , df_db ]).drop_duplicates(subset = ['code','date'] , keep = False)
                 #保存至数据库
                 if df.empty == True:
-                    print("%s 当日数据为空或者差集为空，跳过上传(该日为交易日，数据截取可能存在问题)" % (day.strftime('%Y%m%d')))
+                    print("%s 当日数据为空或者差集为空，跳过上传" % (day.strftime('%Y%m%d')))
                 else:
                     df.to_sql(
                             name = f'tspro_factor',
