@@ -340,9 +340,12 @@ class data(base,stock):
                 #df_tspro.sort_values(columns = ['date'], inplace = True , ascending = False)
                 #分时线数据不需要进行成交量和成交额修正
                 #4. 获取数据库对应日期的数据
-                query_db = f"select code,date,open,close,high,low,volume,money from tspro_{type} where date(date) between '{start_date}' and '{end_date}' and code = '{code}'"
+                query_db = f"select code,date,open,close,high,low,volume,money from tspro_{type} where date(date) between '{start_date.date()}' and '{end_date.date()}' and code = '{code}'"
                 df_db = pd.read_sql_query(query_db , self.engine)
                 df_db['date'] = pd.to_datetime(df_db['date'])
+                #测试两个df格式
+                #print(df_tspro)
+                #print(df_db)
                 #5. 两个DataFrame进行差值处理
                 df_diff = pd.concat([df_tspro , df_db , df_db] ).drop_duplicates(subset=['date'] , keep = False)
                 #6. 差值数据写入数据库
