@@ -1,3 +1,8 @@
+"""
+本模块用于更新每日资金流向图
+按照自选股列表中的证券资产列表，自动输出到指定目录
+根据1m数据重采样到30m，按照最近一个月出图
+"""
 from datetime import datetime ,timedelta
 import numpy as np
 import tushare as ts
