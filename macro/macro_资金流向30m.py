@@ -1,4 +1,4 @@
-from datetime import datetime 
+from datetime import datetime ,timedelta
 import numpy as np
 import tushare as ts
 import pandas as pd
@@ -11,12 +11,13 @@ pd.set_option('display.unicode.east_asian_width', True)
 # 显示所有列
 #pd.set_option('display.max_columns', None)
 a = data()
-a.code = '002466.sz'
-a.start_date = datetime(2022,6,22,4)
+a.code = '601366.sh'
 a.end_date = datetime(2022,7,22,16)
+a.start_date = a.end_date - timedelta(days = 30)
 a.fq = data.复权.动态复权
 a.ktype = '1m'
 a.vendor = a.vendor.tusharePro
+name = a.get_security(code = a.code)[0].iloc[0].at['name']    #获取证券名称
 df = a.get_k_data().sort_values(by = ['date'] )
 #删除9:30和15:00的数据（日线重采样不删除头尾数据）
 #逻辑是头尾数据的价格变化也是由资金导致的，因此日线不受影响
@@ -46,7 +47,7 @@ ax2 = ax1.twinx()    # mirror the ax1
 # 使用xticks
 # 这句是核心
 #plt.xticks(range(0,count,int(count/50)),list(df.index)[::int(count/50)], rotation = 30)
-plt.xticks(range(0,len(df.index),20),list(df.index)[::20], rotation = 30)
+plt.xticks(range(0,len(df.index),10),list(df.index)[::10], rotation = 30)
 
 # 创建子图
 #graph_KAV = fig.add_subplot(1, 1, 1)
@@ -60,6 +61,6 @@ ax2.plot(range(len(df.index)), df['cumsum'], 'b-')
 ax1.set_xlabel('时间')
 ax1.set_ylabel('价格', color='g')
 ax2.set_ylabel('资金流向（百万元人民币）', color='b')
-plt.title(f'{a.code}:{a.start_date.date()}-{a.end_date.date()}资金流向表' )
+plt.title(f'{a.code}[{name}]:{a.start_date.date()}-{a.end_date.date()}资金流向表' )
 plt.show()
 
