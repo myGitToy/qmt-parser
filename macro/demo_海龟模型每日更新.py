@@ -47,6 +47,9 @@ df_code2 = data.read_excel(file_name = '.\\data\\海龟模型\\自选股列表.x
 df_code3 = data.read_excel(file_name = '.\\data\\海龟模型\\自选股列表.xlsx' , sheet_name = 'ETF')
 #合并表格
 df_code_main = pd.concat([df_code_main, df_code1 , df_code2 , df_code3] , sort = False)
+print(df_code_main)
+df = df_code_main.query('证券代码 == "688349.SH"')
+print(df)
 #更改列名
 df_code_main.rename(columns={"证券代码": "code", "证券名称": "name"} , errors="raise" , inplace = True)
 #去重
@@ -58,7 +61,7 @@ code_list = df_code_main['code'].tolist()
 #更新日线和60分钟线数据
 dt = tsdata(myauth = True)
 #a = data(myauth = True)
-dt.start_date = datetime(2022,7,13,8) #数据更新的开始日期
+dt.start_date = datetime(2022,10,1,8) #数据更新的开始日期
 dt.end_date = datetime.now()
 dt.ktype = '60m'
 dt.update_sequence_add(code_list = code_list , type = '60m')
@@ -68,7 +71,7 @@ dt.update_sequence_launch(priority = 1)
 
 
 #######3. 获取ATR数据
-df_atr = a.daily_update(code_list = code_list , N = 25 , to_csv = False)
+df_atr = a.daily_update(code_list = code_list , N = 45 , to_csv = False)
 #print(df_atr)
 #ATR数据增加一个证券名称task:232(ps:加错地方了，但是考虑到excel文件已经修改，因此保留)
 df_atr = pd.merge(df_atr , df_code_main[['code','name']] , how = 'left' , on = 'code')
@@ -78,7 +81,7 @@ df_atr = pd.merge(df_atr , df_code_main[['code','name']] , how = 'left' , on = '
 df_atr.to_csv('.\\data\\海龟模型\\ATR_tspro.csv', encoding = 'utf_8_sig')
 
 #######5. 获取PRANK数据
-df_prank = rank.daily_update(code_list = code_list , N = 100 , to_csv = False)
+df_prank = rank.daily_update(code_list = code_list , N = 180 , to_csv = False)
 
 #######5.5 对Prank数据进行进一步处理，增加P75ATR数据
 #取atr数据

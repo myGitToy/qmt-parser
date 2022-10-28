@@ -29,10 +29,11 @@ from apt.vendor.jqdata.ETF import ETF as ETF
 集合竞价数据	2019年至今	交易日最晚9:28分之前更新
 """
 
-start = datetime.datetime(2022,7,2)    #日线 60m 30m 最后更新日 start 5/18；30m从5、23开始
+start = datetime.datetime(2022,8,31)    #日线 60m 30m 最后更新日
                                         #自2022/6/13起 无法更新场内基金数据（日线和分时线）
-                                        #日线 60 30m最后更新日 7/1 不含
-                                        #5分钟线最后更新日期7/1含
+                                        #2022/9/2新建的账号过期，8/31-9/1日期间的数据并不完整
+                                        #日线 60 30m最后更新日
+                                        #5分钟线最后更新日期
              #（注意：日线数据不能在过零点及开盘前更新，否则会出现类似于停盘的数据 无VOL MONEY）
 #end = datetime.datetime(2005,12,31,16)
 end = datetime.datetime.now()
@@ -43,10 +44,10 @@ print(df_remain)
 jq.update_trader_days()
 #获取交易日历
 cal = jq.get_trader_days(start_date = datetime.datetime(2021,11,1))
-print(cal)
+#print(cal)
 #dd = get_bars('399001.XSHE', end_dt = '2009-11-25',count =24,unit='5m' , fields = ['date', 'open', 'close', 'high', 'low', 'volume', 'money','factor'])
 #print(dd)
-#更新5分钟线
+#更新5分钟线 最后更新7/13 未全部完成
 jq.update_v1(start_date = start , end_date = end , ktype = '5m' )
 #更新指数
 jq.update_index(start_date = start , end_date = end , ktype = '5m')
@@ -55,8 +56,8 @@ jq.update_index(start_date = start , end_date = end , ktype = '60m')
 jq.update_index(start_date = start , end_date = end , ktype = '1d')
 
 #更新日线
-jq.update_v2(start_date = start , end_date = end , ktype = '1d' )
+jq.update_v1(start_date = start , end_date = end , ktype = '1d' )
 #更新60分钟线
-jq.update_v2(start_date = start , end_date = end , ktype = '60m' )
+jq.update_v1(start_date = start , end_date = end , ktype = '60m' )
 #更新30分钟线
-jq.update_v2(start_date = start , end_date = end , ktype = '30m' )
+jq.update_v1(start_date = start , end_date = end , ktype = '30m' )

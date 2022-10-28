@@ -188,7 +188,7 @@ class data(base,stock):
             df_main = pd.DataFrame()
             for code in code_list:
                 #按每条数据，分别获取信息并写入数据库
-                myclass = sec.get_security(code = code)
+                myclass = sec.get_security(code = code)[1]
                 if myclass != np.nan:
                     record = {'code':code,'start_date':self.start_date,'end_date':self.end_date,'class':myclass,'type':type,'priority':1}                             
                     df_main = df_main.append(record , ignore_index = True)

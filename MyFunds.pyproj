@@ -12,8 +12,10 @@
     <Name>MyFunds</Name>
     <RootNamespace>MyFunds</RootNamespace>
     <InterpreterId>MSBuild|env_myfund|$(MSBuildProjectFullPath)</InterpreterId>
-    <TestFramework>Pytest</TestFramework>
+    <TestFramework>pytest</TestFramework>
     <SuppressEnvironmentCreationPrompt>True</SuppressEnvironmentCreationPrompt>
+    <UnitTestPattern>test*.py</UnitTestPattern>
+    <UnitTestRootDirectory>.</UnitTestRootDirectory>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -132,6 +134,8 @@
     <Compile Include="bt\Data.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="centos9\macro_tspro_更新序列%28centos9%29（主）.py" />
+    <Compile Include="centos9\macro_tspro_更新序列%28centos9%29（仅更新序列）.py" />
     <Compile Include="demo\demo_akshare_init.py">
       <SubType>Code</SubType>
     </Compile>
@@ -141,13 +145,13 @@
     <Compile Include="demo\demo_qsp通用接口测试.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="demo\demo_绘图_布林线.py" />
+    <Compile Include="macro\macro_get_percentile.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="macro\macro_资金流向1m.py" />
+    <Compile Include="demo\demo_tspro_基金份额走势.py" />
     <Compile Include="demo\demo_tspro_75分位数测试.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="demo\demo_tspro_structure_test.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="demo\demo_ts_分钟数据测试.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_新多条件引用测试.py" />
@@ -181,16 +185,7 @@
     <Compile Include="demo\demo_市值相对强弱VSI测试.py">
       <Publish>True</Publish>
     </Compile>
-    <Compile Include="demo\demo_海龟模型文件合并测试.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="demo\demo_海龟模型每日更新.py" />
-    <Compile Include="demo\demo_atr_index.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="demo\demo_atr_test.py">
-      <SubType>Code</SubType>
-    </Compile>
+    <Compile Include="demo\demo_海龟模型每日更新（jqdata）.py" />
     <Compile Include="demo\demo_backtrader_testfile1.py">
       <SubType>Code</SubType>
     </Compile>
@@ -225,7 +220,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_jqdata_财务数据_合并资产负债表.py" />
-    <Compile Include="demo\demo_jqdata_市值计算.py" />
     <Compile Include="demo\demo_jqdata_money_flow.py">
       <SubType>Code</SubType>
     </Compile>
@@ -236,13 +230,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_plt绘图.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="demo\demo_qsp_test.py" />
-    <Compile Include="demo\demo_tspro_tokon.py">
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Include="demo\demo_ts_tick.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_历史分笔.py" />
@@ -258,8 +245,18 @@
     <Compile Include="fund\__init__.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="macro\macro_mpl_drawing.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="macro\macro_资金流向_实时绘图.py" />
+    <Compile Include="macro\macro_资金流向_每日存盘.py" />
+    <Compile Include="macro\macro_资金流向30m.py" />
+    <Compile Include="macro\demo_海龟模型每日更新.py" />
     <Compile Include="macro\macro_tspro_更新序列（仅更新序列）.py" />
     <Compile Include="macro\macro_tspro_更新序列（主）.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="macro\macro_当日分时入库状态.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="MyCashFlowTest.py">
@@ -333,6 +330,7 @@
     <Folder Include="bt\" />
     <Folder Include="macro\" />
     <Folder Include="apt\qsp_universal\" />
+    <Folder Include="centos9\" />
     <Folder Include="VB\" />
   </ItemGroup>
   <ItemGroup>

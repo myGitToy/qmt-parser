@@ -241,21 +241,24 @@ class security(base , stock):
     def get_security(self , code = None):
         '''
         获取指定证券代码的资产属性信息（简单版）
-        目前仅返回stock或者ETF的信息
+        返回
+             dataframe , string
+                df[0]:dataframe: code|market|name
+                df[1]:string: stock|etf|nan           
         '''
-        string = f"""select code,market from tspro_security where code = '{code}'
+        string = f"""select code,market,name from tspro_security where code = '{code}'
                     union ALL
-                    select code,market from tspro_fund_basic where code =  '{code}'"""
+                    select code,market,name from tspro_fund_basic where code =  '{code}'"""
         df = pd.read_sql_query(string , self.engine)
         if df.shape[0] == 0:
             #无数据
-            return np.nan
+            return pd.DataFrame() , np.nan
         if df.iloc[0].at['market'] == 'E':
             #返回ETF
-            return 'etf'
+            return df[['code','market','name']] , 'etf'
         else:
             #返回stock
-            return 'stock'
+            return df[['code','market','name']] ,'stock'
                
 if __name__=="__main__":
     #测试交易日历功能

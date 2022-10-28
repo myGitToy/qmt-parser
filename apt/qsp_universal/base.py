@@ -136,7 +136,9 @@ class base():
         输入：
             code 证券代码
         返回：
-            string ：stock|etf|nan
+            dataframe , string
+                df[0]:dataframe: code|market|name
+                df[1]:string: stock|etf|nan
         """
         if code == None:
             code = self.code

@@ -32,10 +32,12 @@ from apt.vendor.jqdata.jqdata import data as jqdata
 """
 class TestStrategy(bt.Strategy):
     params=(('high_period',25),     #最高价的计算周期（日线默认25 小时线默认100）
-            ('atr_period',14),      #ATR的计算周期（日线默认14）
-            ('prank_period',25),    #分位数的计算周期（日线默认25 小时线默认100）
+            ('atr_period',20),      #ATR的计算周期（日线默认14）
+            ('prank_period',45),    #短周期分位数的计算周期（日线默认25 小时线默认100）
+        #长周期仓位控制
+            ('prank_long_period',120),    #长周期分位数的计算周期（默认半年线120）
             ('R',0.5),             #风险值R设定
-            ('atr_size',0.5),         #ATR间隔 默认1个ATR间隔下订单
+            ('atr_size',1),         #ATR间隔 默认1个ATR间隔下订单
             ('unit_size',1),        #头寸大小 默认每次下单进行1个头寸
             ('open_separation',5),#清仓以后的再次开仓间隔（用来控制反复止损的参数）
             ('printlog',False),)     #是否输出日志 默认True
@@ -59,7 +61,8 @@ class TestStrategy(bt.Strategy):
         # 记录以往订单，在再平衡日要全部取消未成交的订单
         #self.order_list = []
         #self.prank = bt.ind.PctRank(period = self.p.prank_period , plot = True ,subplot=True)
-        self.prank = bt.indicators.PercentRank(self.datas[0].close, period = self.p.prank_period , plot = True , subplot = True )
+        self.prank = bt.indicators.PercentRank(self.datas[0].close, period = self.p.prank_period , plot = False , subplot = True )
+        self.long_prank = bt.indicators.PercentRank(self.datas[0].close, period = self.p.prank_long_period , plot = True , subplot = True )
         #self.whiteSoldier = bt.talib.talib.CDL3WHITESOLDIERS(self.data.open,self.data.high,self.data.low,self.data.close )
         self.cdl = bt.talib.CDL3INSIDE(self.data.open, self.data.high, self.data.low, self.data.close)
         
@@ -258,9 +261,9 @@ class TestStrategy(bt.Strategy):
         '''
 if __name__ == '__main__':
     #自定义参数
-    code = '002594.XSHE'
-    start = datetime.datetime(2021,1,1)
-    end = datetime.datetime(2021,12,31)
+    code = '603379.XSHG'
+    start = datetime.datetime(2020,6,1)
+    end = datetime.datetime(2022,12,31)
     ktype = '1d'
     d = jqdata(rds_host = jqdata.数据源.localhost , myauth= False)
     df_db = d.get_k_data(code = code  , start_date = start , end_date = end, ktype = ktype , fq = d.复权.前复权)

@@ -8,7 +8,7 @@ from apt.vendor.tspro.data import data as data
 #1. 初始化
 a = data(myauth = True)
 a.code ='600038.sh'
-a.start_date= datetime(2022,7,10,8)
+a.start_date= datetime(2022,10,29,8)
 a.end_date = datetime.now()
 #2. 更新证券代码库(stock和ETF资产)
 sec = security()
@@ -27,7 +27,7 @@ a.update_factor(flag_verify_db = False)
 a.update_day_ETF()          #包含2020年起的数据  最后更新日期2022/7/8含
 a.update_factor_ETF() 
 
-#4. 更新股票小时线数据   60分钟线最后更新日期2022/7/6含；5分钟线2020全年写入更新序列
+#4. 更新股票小时线数据   60分钟线最后更新日期2022/7/6含；1分钟线2020全年写入更新序列
 #目前更新序列剩余18700，预计耗时13小时（每分钟预计可更新24-27组，每组约5800条左右）
 #每个月数据量约1.5GB（纯数据库 不含索引） 含索引约2.2GB/月
 a.ktype = '60m'

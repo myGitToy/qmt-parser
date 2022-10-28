@@ -17,7 +17,7 @@ tspro.ktype = '1d'
 
 #ts数据
 df_ts = tspro.get_k_data()
-df_ts['close'].plot()
+#df_ts['close'].plot()
 # 先画日K线
 #fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(20, 8), dpi=80)
 #candlestick_ochl(axes, df_ts.values, width=0.2, colorup='r', colordown='g')
@@ -27,6 +27,8 @@ df_ts['close'].plot()
 #jqdata数据
 tspro.code = '603986.XSHG'
 tspro.vendor = tspro.vendor.jqdata
+df = tspro.get_all_code(type = ['etf','stock'])
+print(df)
 df_jqdata = tspro.get_k_data()
 #print(df_jqdata)
 

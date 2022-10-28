@@ -31,11 +31,11 @@ class TestStrategy(bt.Strategy):
     params=(('max_unit',6),        #最大交易头寸
             ('high_period',25),     #最高价的计算周期（日线默认25 小时线默认100）
             ('atr_period',25),      #ATR的计算周期（日线默认14）
-            ('prank_period',25),    #分位数的计算周期（日线默认25 小时线默认100）
+            ('prank_period',45),    #分位数的计算周期（日线默认25 小时线默认100）
             ('R',0.25),             #风险值R设定
-            ('atr_size',1),         #ATR间隔 默认1个ATR间隔下订单
-            ('unit_size',1),        #头寸大小 默认每次下单进行1个头寸
-            ('cut_atr',2),          #从最高点收盘价下跌N个ATR则进行清仓
+            ('atr_size',0.5),         #ATR间隔 默认1个ATR间隔下订单
+            ('unit_size',0.5),        #头寸大小 默认每次下单进行1个头寸
+            ('cut_atr',4),          #从最高点收盘价下跌N个ATR则进行清仓
             ('open_separation',5),#清仓以后的再次开仓间隔（用来控制反复止损的参数）
             ('printlog',False),)     #是否输出日志 默认True
     def log(self, txt, dt=None):
@@ -245,7 +245,7 @@ if __name__ == '__main__':
     cerebro = bt.Cerebro(optdatas=True, optreturn=True)
     ######### 通过 feeds 读取数据 #########
     d = Data()
-    d.code = '600036.XSHG'
+    d.code = '603501.XSHG'
     d.start = datetime(2021,1,1)
     d.end = datetime(2022,12,10)
     d.ktype = '1d'
