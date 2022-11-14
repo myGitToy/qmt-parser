@@ -52,6 +52,23 @@ class security(base):
                 #con.execute('CREATE INDEX index `jqdata_security` (`code`);')
             print("数据已上传完成(security)")
 
+    def get_all_code(self , day = datetime.datetime.now() , type = ['stock','etf']):
+        """
+        获取本地数据库中的证券代码（按日期）
+        【输入】
+            day 定位的日期
+            type：证券类型 ['stock','index','fund','etf','lof','fja','fjb']
+        """
+        type_string = ','.join(["'%s'" % item for item in type ])
+        sql = f"select * from jqdata_security where start_date<='{day.date()}' and end_date >='{day.date()}' and type in ({type_string})"
+        df_db = pd.read_sql_query(sql , self.engine)
+        if df_db.shape[0] == 0 :
+            #数据库不存在数据
+            return pd.DataFrame()
+        else:
+            #数据库存在数据，返回
+            return df_db
+
     def get_security(self , code = None , day = datetime.datetime.now()):
         """
         获取单代码的security信息（需要满足）

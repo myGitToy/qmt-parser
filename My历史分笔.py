@@ -20,7 +20,7 @@ print(df)
 #df.to_csv('.\\data\\%s_tick_data_%s.csv' % (code,day), encoding = 'utf_8_sig')
 #设置格式
 df['time'] = day + ' ' + df['time']
-df['time'] = pd.to_datetime(df['time']  )
+df['time'] = pd.to_datetime(df['time'])
 #设置索引
 df.set_index('time',inplace=True)
 #买卖分离

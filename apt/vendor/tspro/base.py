@@ -33,7 +33,7 @@ class base():
         aliyun = 0
         aws = 1
         localhost = 2
-        nas = 3
+        centos9 = 3
 
     def __init__(self , rds_host = 数据源.localhost , myauth = True):
         """
@@ -59,9 +59,13 @@ class base():
                 #初始化ts接口
                 self.pro = ts.pro_api('55297f16c0119146589e059db315ba28a9412e89ec9f91e538e655b2')
                 self.token = '55297f16c0119146589e059db315ba28a9412e89ec9f91e538e655b2'
-        elif rds_host == self.数据源.nas:
-            print("nas 暂不支持")
-            auth('13162818663','Qq@6537286')
+        elif rds_host == self.数据源.centos9:
+            self.engine = sqlalchemy.create_engine('mysql+pymysql://stock:sal62688558@192.168.1.188:3306/stock')
+            #本地数据源支持脱机访问，其他数据源则不支持脱机
+            if self.myauth == True:
+                #初始化ts接口
+                self.pro = ts.pro_api('55297f16c0119146589e059db315ba28a9412e89ec9f91e538e655b2')
+                self.token = '55297f16c0119146589e059db315ba28a9412e89ec9f91e538e655b2'
         else:
             print("不支持的数据源，授权无效")
         super(base , self).__init__()  #支持多态继承

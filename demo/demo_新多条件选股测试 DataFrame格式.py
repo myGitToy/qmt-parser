@@ -4,22 +4,29 @@
 #from apt.qsp_jqdata.vol import vol as VOL
 #from apt.qsp_jqdata import *
 #from apt.qsp_jqdata import A,vol
-import apt.qsp_jqdata.A
+from apt.qsp_jqdata.A import A as A
+from apt.qsp_jqdata.vol import vol as vol
+#import apt.qsp_jqdata.A 
+
 from apt.vendor.jqdata.jqdata import data as data
 from datetime import datetime
 import pandas as pd
 import tushare as ts
 import talib as ta
 pd.set_option('display.max_rows', None)
-tt = apt.qsp_jqdata.A.A(myauth = False)
-demo = A.A(myauth = False)
-demo = vol.vol(myauth = False)
+#tt = apt.qsp_jqdata.A.A(myauth = False)
+#demo = A.A(myauth = False)
+#demo = vol.vol(myauth = False)
 #demo = data(myauth = False)
+
+
+class demo(A,vol):
+    pass
+demo = demo()
 demo.code = '510300.XSHG'
 demo.start = datetime(2021,5,1)
 demo.end = datetime.now()
 demo.myauth = False
-
 
 #df2 = A.A.A01B01_MA均线数据(demo)   #竟然还可以这样引用
 
@@ -45,4 +52,4 @@ if __name__=="__main__":
 
         #print(df_main)
         #df_main = pd.concat([df_main, df],sort = False)
-    print(df_main.loc[df_main['date'] >= pd.to_datetime('2022/4/1')])
+    print(df_main.loc[df_main['date'] >= pd.to_datetime('2022/8/20')])

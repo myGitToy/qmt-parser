@@ -28,8 +28,8 @@ class TestStrategy(bt.Strategy):
             ('atr_period',25),      #ATR的计算周期（日线默认14）
             ('prank_period',25),    #分位数的计算周期（日线默认25 小时线默认100）
             ('R',0.25),             #风险值R设定
-            ('atr_size',1),         #ATR间隔 默认1个ATR间隔下订单
-            ('unit_size',1),        #头寸大小 默认每次下单进行1个头寸
+            ('atr_size',0.5),         #ATR间隔 默认1个ATR间隔下订单
+            ('unit_size',0.5),        #头寸大小 默认每次下单进行1个头寸
             ('cut_atr',4),          #从最高点收盘价下跌N个ATR则进行清仓
             ('open_separation',5),#清仓以后的再次开仓间隔（用来控制反复止损的参数）
             ('printlog',False),)     #是否输出日志 默认True
@@ -53,13 +53,16 @@ class TestStrategy(bt.Strategy):
         #self.prank = bt.indicators.PercentRank(self.datas[0].close, period = self.p.prank_period , plot = True , subplot = True )
         #设置ATR指标
         self.atr = bt.indicators.AverageTrueRange(self.datas[0] , period = self.params.atr_period , plot = True , subplot= True , movav = bt.ind.MovAv.EMA)
+        #设置ATR指标(短期均线)
+        self.atr_short = bt.indicators.AverageTrueRange(self.datas[0] , period = 5 , plot = True , subplot= True , movav = bt.ind.MovAv.EMA)
+        #self.atr_high = bt.And(self.atr[0] > 2 * self.atr[] )
         #设置头寸指标
         self.unit = self.cerebro.broker.getvalue() * self.params.R /100  / self.atr 
         #设置止损指标
         self.high_cut = bt.indicators.Highest(self.datas[0].close - self.atr * self.params.cut_atr , period = self.params.high_period , plot = True , subplot= False) 
         #设置EMA均线
         self.ema_short = bt.talib.EMA(self.datas[0], timeperiod = 14)
-        self.ema_long = bt.talib.EMA(self.datas[0], timeperiod = 120)
+        self.ema_long = bt.talib.EMA(self.datas[0], timeperiod = 60)
         #设置交易信号
         self.signal_abv_ema_long = bt.And(self.datas[0] > self.ema_long)
         #####设置EMA均线SLOPE指标
@@ -140,9 +143,9 @@ class TestStrategy(bt.Strategy):
             #1. 未开仓 未挂单：新建挂单
             #2. 未开仓 有挂单：修改挂单
             #计算75分位数的买入价格
-            self.quantile_value  = np.quantile(self.datas[0].close.get(size = 20), [0.25, 0.5, 0.75 , 0.85], interpolation = 'linear')
+            self.quantile_value  = np.quantile(self.datas[0].close.get(size = self.params.prank_period), [0.25, 0.5, 0.75 , 0.85], interpolation = 'linear')
             #print(f"当前P75值为：{self.quantile_value[1]}")
-            #买入价格的基准线是75分位数和EMA120均线取高者
+            #买入价格的基准线是85分位数和EMA120均线取高者
             base_price = round(max(self.quantile_value[2] , self.ema_long[0]) , 3)
             if len(self.broker.get_orders_open()) == 0:
                 #对应上面情况1
@@ -203,9 +206,9 @@ if __name__ == '__main__':
     cerebro = bt.Cerebro(optdatas=True, optreturn=True)
     ######### 通过 feeds 读取数据 #########
     d = Data()
-    d.code = '600036.XSHG'
-    d.start = datetime(2019,6,1)
-    d.end = datetime(2021,12,10)
+    d.code = '688559.XSHG'
+    d.start = datetime(2015,1,1)
+    d.end = datetime(2022,12,10)
     d.ktype = '1d'
     d.myauth = False
     df_db = d.get_bt_data()
