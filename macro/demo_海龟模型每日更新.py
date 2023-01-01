@@ -61,7 +61,7 @@ code_list = df_code_main['code'].tolist()
 #更新日线和60分钟线数据
 dt = tsdata(myauth = True)
 #a = data(myauth = True)
-dt.start_date = datetime(2022,11,1,8) #数据更新的开始日期
+dt.start_date = datetime(2022,12,1,8) #数据更新的开始日期
 dt.end_date = datetime.now()
 dt.ktype = '60m'
 dt.update_sequence_add(code_list = code_list , type = '60m')
