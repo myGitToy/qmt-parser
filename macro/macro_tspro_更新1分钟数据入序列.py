@@ -8,10 +8,9 @@ from apt.vendor.tspro.data import data as data
 #1. 初始化
 a = data(myauth = True)
 a.code ='600038.sh'
-a.start_date= datetime(2022,10,1,8) #1998/10/20日开始有ETF数据
-a.end_date = datetime(2022,11,1,16)
-#2021年1分钟线数据已更新 2022/11/19
-#2022年数据更新到10月底 2022/11/19
+a.start_date= datetime(2021,12,1,1) #1998/10/20日开始有ETF数据    ETF日线数据2000/13/30 ETF复权因子2000/13/32
+a.end_date = datetime(2022,1,1,1)
+#现在更新2021年的1分钟线数据
 #备注 2020年数据centos9数据库是没有的
 """
 date	num
@@ -43,6 +42,7 @@ date	num
 #每个月数据量约1.5GB（纯数据库 不含索引） 含索引约2.2GB/月
 
 #centos1分钟线数据更新，约每分钟19组 每组5000条左右（1个月的数据量）
+#2023/1/1 目前本地局域网更新速度为16.6条/分钟
 a.ktype = '1m'
 a.update_sequence_add(myclass = 'stock' , type = '1m' , priority = 0)
 
