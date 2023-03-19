@@ -41,6 +41,9 @@
     <Compile Include="apt\os\data_update.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="apt\os\hdf5.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="apt\os\tsos.py">
       <SubType>Code</SubType>
     </Compile>
@@ -149,6 +152,17 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_绘图_布林线.py" />
+    <Compile Include="demo\hdf5演示模块_ 数据更新.py" />
+    <Compile Include="demo\hdf5数据读取和查看.py" />
+    <Compile Include="demo\hdf5数据读取写入测试.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\同花顺正则表达式测试.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\测试模块.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="macro\macro_get_percentile.py">
       <SubType>Code</SubType>
     </Compile>
@@ -313,6 +327,7 @@
     <InterpreterReference Include="CondaEnv|CondaEnv|Anaconda3" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="pip更新规范.txt" />
     <Content Include="readme.txt" />
     <Content Include="更新日志.txt" />
   </ItemGroup>
