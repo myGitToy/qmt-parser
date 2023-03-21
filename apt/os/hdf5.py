@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import h5py
 import os.path
+import uuid
 class hdf5(data):
     """
     hdf5文件的读取，加载，删除，更新的基类
@@ -20,6 +21,7 @@ class hdf5(data):
         #关于如何调用，请参考task449
         #https://huiqiao.visualstudio.com/MyFunds/_sprints/taskboard/MyFunds%20Team/MyFunds/2023Q1?workitem=449
         self.file_path = "C:\\Data\\hdf5\\1min"  #数据存盘的根目录
+        self.update_path = "C:\\Data\\hdf5" #更新列表的存盘目录（用于记录需要更新的数据）
         self.max_row = 8000  #单次更新的最大数据行（tspro的限制）
         self.key = key
         super(data , self).__init__()  #支持多态继承，强制声明父类的init方法，注册api，用来对self.pro提供支持
@@ -48,6 +50,7 @@ class hdf5(data):
         输出为pandas DataFrame格式
         """
         df_db = pd.read_hdf(f'{self.file_path}\\{self.code}.h5', key = self.key , where = f"date >='{self.start_date}' and date <='{self.end_date}'")
+        return df_db
         print(df_db)
 
     def data_query_by_count(self):
@@ -132,41 +135,64 @@ class hdf5(data):
             type 二级目录 默认60m；目前可接受参数：60m/1m
             priority 优先更新标识 默认为0
         '''
+        #####更新证券列表######
+        code_list = pro_api.stock_basic(self)[['code','name']]
+        code_list['uuid'] = code_list.apply(lambda _: str(uuid.uuid1()).replace('-', ''), axis=1)
+        #备注：在生成uuid过程中，不能包含- 否则在保存时会报错
+        code_list['myclass'] = myclass
+        code_list['type'] = type
+        code_list['priority'] = priority
+        code_list['start_date'] = self.start_date
+        code_list['end_date'] = self.end_date
+        pd.set_option('display.max_columns', None)
+        #print(code_list)
+        #####END######
+
+        ######检查H5文件######
+        full_path = f'{self.update_path}\\update_sequence.h5'
+        df_db = pd.DataFrame()
+        if os.path.exists(full_path):
+            #文件存在，读取本地文件
+            df_db = pd.read_hdf(full_path , key = self.key )
+            #返回真实行数
+            df_db_count = df_db.shape[0]
+        else:
+            #文件不存在，直接返回行数0
+            df_db_count = 0
+        print(f'H5文件中目前存在{df_db_count}条记录')
+        if df_db_count == 0:
+            #H5文件不存在数据，直接添加
+            #with h5py.File(full_path, 'w') as f:
+                # Create a new dataset
+                #dset = f.create_dataset(f'/{self.key}', data = code_list)
+            code_list.to_hdf(path_or_buf = full_path, mode = 'w' , append  = True , complevel  = 5 , complib  = 'blosc' , format = "table" , key = self.key)
+        else:
+            #H5文件存在数据，进行选择
+            result = input('''H5存在数据，请选择更新方式 \n
+            1. 保留原有更新序列，添加新的序列 \n
+            2. 删除原有更新序列，添加新的序列 \n
+            3. 删除原有更新序列 \n
+            4. 退出（不做任何处理）\n''')
         #print(data.token)
-        df = pro_api.stock_basic(self,end_date = '2022/7/1')
-        print(df)
-        print(d.pro.stock_basic(list_status='L', fields='ts_code,symbol,name,area,industry,market,list_date,delist_date,is_hs')) #获取TS代码，股票代码，股票名称，所在地域，所属行业，市场类型等信息
-        print(test_db)
-        test_db = security.pro.stock_basic(list_status='L', fields='ts_code,symbol,name,area,industry,market,list_date,delist_date,is_hs') #获取TS代码，股票代码，股票名称，所在地域，所属行业，市场类型等信息
-        print(test_db)
-        df_basic = self.pro.stock_basic(list_status='L', fields='ts_code,symbol,name,area,industry,market,list_date,delist_date,is_hs') #获取TS代码，股票代码，股票名称，所在地域，所属行业，市场类型等信息
-        print(df_basic)
-        if code_list != None:
-            ######流程1：优先更新逻辑，混合代码，需要拉取证券列表的类型等数据
-            ######       此时myclass类型无效；type有效；priority为1
-            sec = security()
-            df_main = pd.DataFrame()
-            for code in code_list:
-                #按每条数据，分别获取信息并写入数据库
-                myclass = sec.get_security(code = code)[1]
-                if myclass != np.nan:
-                    record = {'code':code,'start_date':self.start_date,'end_date':self.end_date,'class':myclass,'type':type,'priority':1}                             
-                    df_main = df_main.append(record , ignore_index = True)
-                    #df = pd.DataFrame()
-                    #df['code'] = code
-                    #df['start_date'] = self.start_date
-                    #df['end_date'] = self.end_date
-                    #df['class'] = myclass
-                    #df['type'] = type
-                    #df['priority'] = 1
-                #df_main = pd.concat([df_main,df])
-            #写入数据库
-            df_main.to_sql(
-                    name = f'tspro_update_sequence',
-                    con = self.engine,
-                    index = False,
-                    if_exists = 'append')
-            print(f"优先更新列表上传已完成，新增{df_main.shape[0]}条更新序列！")
+        #print(pro_api.stock_basic(self))
+            if result == '1' :
+                #追加数据
+                code_list.to_hdf(path_or_buf = full_path, mode = 'a' , append  = True , complevel  = 5 , complib  = 'blosc' , format = "table" , key = self.key)
+            elif result == '2':
+                #写入
+                code_list.to_hdf(path_or_buf = full_path, mode = 'w' , append  = True , complevel  = 5 , complib  = 'blosc' , format = "table" , key = self.key)
+            elif result == '3':
+                #删除
+                #目前这边还有一些bug，在删除dataset后，重新读取会出现以下错误
+                #'No object named RawData in the file'
+                #所以最好的解决方法是直接删除文件
+                with pd.HDFStore(full_path, 'a') as store:
+                    if f'/{self.key}' in store:
+                        store.remove(f'/{self.key}')
+            elif result == '4':
+                pass
+            else:
+                pass
 if __name__ == '__main__':
     a = hdf5()
     a.start_date = datetime(2020,1,1,8)
@@ -174,6 +200,4 @@ if __name__ == '__main__':
     a.code = '159949.SZ'
     a.ktype = '1min'
     a.update_sequence_add()
-    a.data_update()
-    a.data_query_by_count()
     
