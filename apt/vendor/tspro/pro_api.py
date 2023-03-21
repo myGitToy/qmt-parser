@@ -23,25 +23,25 @@ class pro_api(data):
         此处：调用pro_api方法，仅可在线访问
         get_all_code：从本地数据库获取数据
         【输入】
-            market：list 市场类别 默认主板/创业板/中小板/科创板/CDR/北交所
-            day：datetime 日期 如果查询过去某一天的全部代码，day就是定位的坐标
-            type：list 证券类型 stock/etf/lof
-            --------->未来可能会加入市值筛选 基金份额筛选等内容
+            通过self.end_date传值过来的日期，用于定位某一个具体的日期，用于和上市退市日期进行比较
         【输出】
-            dataframe:code|symbol|name|market|list_date
-            #获取TS代码，股票代码，股票名称，所在地域，所属行业，市场类型等信息
+            dataframe:code 证券代码|symbol 股票代码6位数字|name 证券名称|area 地域|industry 所属行业|
+            market 市场类型|list_status 上市状态 L上市 D退市 P暂停上市|list_date 上市日期|date 退市日期|
+            is_hs 是否沪深港通标的，N否 H沪股通 S深股通
         """
         df1 = self.pro.stock_basic(list_status='L', fields='ts_code,symbol,name,area,industry,market,list_status,list_date,delist_date,is_hs') 
         df2 = self.pro.stock_basic(list_status='D', fields='ts_code,symbol,name,area,industry,market,list_status,list_date,delist_date,is_hs') 
         df3 = self.pro.stock_basic(list_status='P', fields='ts_code,symbol,name,area,industry,market,list_status,list_date,delist_date,is_hs') 
         df = pd.concat([df1, df2, df3])
-        df.rename(columns={"ts_code": "code", "delist_date": "date" } , errors="raise" , inplace = True)
+        df.rename(columns={"ts_code": "code" } , errors="raise" , inplace = True)
         #df.drop(columns = ['trade_date','pre_close'] , inplace = True)
         #时间日期类的列进行类型变更
         df['list_date'] = pd.to_datetime(df['list_date'])
-        df['date'] = pd.to_datetime(df['date'])
-        df['date'].fillna(pd.to_datetime('2050-01-01') , inplace = True)
-        df = df[df['date'] > self.end_date]
+        df['delist_date'] = pd.to_datetime(df['delist_date'])
+        df['delist_date'].fillna(pd.to_datetime('2050-01-01') , inplace = True)
+        #df = df[df['delist_date'] > self.end_date & df['list_date'] < self.end_date ] #测试未通过
+        #df.query(f'list_date <= {self.end_date} or delist_date >= {self.end_date}')    #测试未通过
+        df = df.loc[(df['list_date'] <= self.end_date) & (df['delist_date'] >= self.end_date)]
         return df
 
 if __name__ == '__main__':
