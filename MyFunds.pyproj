@@ -117,6 +117,9 @@
     <Compile Include="apt\vendor\tspro\data.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="apt\vendor\tspro\pro_api.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="apt\vendor\tspro\security.py">
       <SubType>Code</SubType>
     </Compile>

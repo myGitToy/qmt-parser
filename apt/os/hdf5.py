@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 from dateutil import rrule
 from datetime import datetime,date,timedelta
-from apt.vendor.tspro.data import data
+from apt.vendor.tspro.base import base as base
+from apt.vendor.tspro.base import stock as stock
+from apt.vendor.tspro.data import data as data
+from apt.vendor.tspro.pro_api import pro_api
 import tushare as ts
 import pandas as pd
 import numpy as np
@@ -14,10 +17,12 @@ class hdf5(data):
     """
     def __init__(self , key = 'RawData'):
         #全局变量定义
+        #关于如何调用，请参考task449
+        #https://huiqiao.visualstudio.com/MyFunds/_sprints/taskboard/MyFunds%20Team/MyFunds/2023Q1?workitem=449
         self.file_path = "C:\\Data\\hdf5\\1min"  #数据存盘的根目录
         self.max_row = 8000  #单次更新的最大数据行（tspro的限制）
         self.key = key
-
+        super(data , self).__init__()  #支持多态继承，强制声明父类的init方法，注册api，用来对self.pro提供支持
     def data_delete(self):
         """
         删除hdf5文件中指定日期间的数据(代码无法运行)
@@ -51,7 +56,7 @@ class hdf5(data):
         一般用于数据校验，1分钟线数据，每天数据量超过241条，则表明存在重复数据，整个库就必须进行调整
         """
         df_db = pd.read_hdf(f'{self.file_path}\\{self.code}.h5', key = self.key , where = f"date >='{self.start_date}' and date <='{self.end_date}'")
-        print(df_db.groupby(pd.Grouper(level='date', freq='D')).size())
+        print(df_db.groupby(pd.Grouper(level = 'date', freq = 'D')).size())
 
     def data_update(self):
         """
@@ -109,16 +114,66 @@ class hdf5(data):
         ###4. 追加保存HDF5文件
         if df_add.shape[0] > 0 :
             #保存文件
-            df_add.to_hdf(path_or_buf=f'{self.file_path}\\{self.code}.h5', mode = 'a' , append  = True , complevel  = 5 , complib  = 'blosc' , format = "table" , key =self.key)
+            df_add.to_hdf(path_or_buf=f'{self.file_path}\\{self.code}.h5', mode = 'a' , append  = True , complevel  = 5 , complib  = 'blosc' , format = "table" , key = self.key)
             #输出数量
             print(f'{self.code} 1分钟线更新完毕，添加{df_add.shape[0]}条数据；')
         else:
             print(f'{self.code} 区间内无新增数据；')
+    def update_sequence_add(self , code_list = None , myclass = 'stock' , type = '60m'  , priority = 0 ):
+        '''
+        task346更改了分时线数据更新的逻辑，拆分成add和launch两部分
+        H5 DataFrame格式如下：
+        uuid|code|start_date|end_date|type|priority
+        uuid（索引）|证券代码|开始日期|结束日期|更新数据的类型 如1min|是否优先更新
+        add模块主要进行数据更新任务的导入
+        输入：
+            code_list 需要更新的证券代码列表，有列表（优先更新）和无列表（正常更新）进入的是两个不同的流程
+            myclass 一级目录 默认stock  目前可接受参数stock|etf
+            type 二级目录 默认60m；目前可接受参数：60m/1m
+            priority 优先更新标识 默认为0
+        '''
+        #print(data.token)
+        df = pro_api.stock_basic(self,end_date = '2022/7/1')
+        print(df)
+        print(d.pro.stock_basic(list_status='L', fields='ts_code,symbol,name,area,industry,market,list_date,delist_date,is_hs')) #获取TS代码，股票代码，股票名称，所在地域，所属行业，市场类型等信息
+        print(test_db)
+        test_db = security.pro.stock_basic(list_status='L', fields='ts_code,symbol,name,area,industry,market,list_date,delist_date,is_hs') #获取TS代码，股票代码，股票名称，所在地域，所属行业，市场类型等信息
+        print(test_db)
+        df_basic = self.pro.stock_basic(list_status='L', fields='ts_code,symbol,name,area,industry,market,list_date,delist_date,is_hs') #获取TS代码，股票代码，股票名称，所在地域，所属行业，市场类型等信息
+        print(df_basic)
+        if code_list != None:
+            ######流程1：优先更新逻辑，混合代码，需要拉取证券列表的类型等数据
+            ######       此时myclass类型无效；type有效；priority为1
+            sec = security()
+            df_main = pd.DataFrame()
+            for code in code_list:
+                #按每条数据，分别获取信息并写入数据库
+                myclass = sec.get_security(code = code)[1]
+                if myclass != np.nan:
+                    record = {'code':code,'start_date':self.start_date,'end_date':self.end_date,'class':myclass,'type':type,'priority':1}                             
+                    df_main = df_main.append(record , ignore_index = True)
+                    #df = pd.DataFrame()
+                    #df['code'] = code
+                    #df['start_date'] = self.start_date
+                    #df['end_date'] = self.end_date
+                    #df['class'] = myclass
+                    #df['type'] = type
+                    #df['priority'] = 1
+                #df_main = pd.concat([df_main,df])
+            #写入数据库
+            df_main.to_sql(
+                    name = f'tspro_update_sequence',
+                    con = self.engine,
+                    index = False,
+                    if_exists = 'append')
+            print(f"优先更新列表上传已完成，新增{df_main.shape[0]}条更新序列！")
 if __name__ == '__main__':
     a = hdf5()
-    a.start_date = datetime(2023,1,1,8)
+    a.start_date = datetime(2020,1,1,8)
     a.end_date = datetime(2023,3,20,16)
-    a.code = '001201.SZ'
+    a.code = '159949.SZ'
     a.ktype = '1min'
+    a.update_sequence_add()
     a.data_update()
     a.data_query_by_count()
+    
