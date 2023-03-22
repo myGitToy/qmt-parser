@@ -272,11 +272,16 @@ class hdf5(data):
                 #print(df_db.groupby(pd.Grouper(level='date', freq='D')).size())
                 ###3. 检查两个版本的差集
                 df_add = pd.concat([df_tspro , df_db , df_db ]).drop_duplicates( keep = False)
-                #print(df_add)
+                print(df_add)
 
                 ###4. 追加保存HDF5文件
-                df_add.to_hdf(path_or_buf = file_path_h5 , mode = 'a' , append  = True , complevel  = 5 , complib  = 'blosc' , format="table" , key = self.key)
-                print(f'已更新{code}，时间范围{start_date.date()}-{end_date.date()}，总写入数据量{df_add.shape[0]};')
+                if df_add.shape[0] >0 :
+                    #有数据，则差集写入H5
+                    df_add.to_hdf(path_or_buf = file_path_h5 , mode = 'a' , append  = True , complevel  = 5 , complib  = 'blosc' , format="table" , key = self.key)
+                    print(f'已更新{code}，时间范围{start_date.date()}-{end_date.date()}，总写入数据量{df_add.shape[0]};')
+                else:
+                    #无数据 跳过更新
+                    print(f'{code}无数据，跳过更新;')
                 ###5. 数据已更新，删除该条UUID的更新请求
                 #目前实现方法是重新打开数据->读取全部记录->删除特定uuid的记录->写回文件
                 df_store = pd.read_hdf(full_path, key = self.key)
