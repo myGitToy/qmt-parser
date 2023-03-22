@@ -139,7 +139,7 @@ class hdf5(data):
         code_list = pro_api.stock_basic(self)[['code','name']]
         code_list['uuid'] = code_list.apply(lambda _: str(uuid.uuid1()).replace('-', ''), axis=1)
         #备注：在生成uuid过程中，不能包含- 否则在保存时会报错
-        code_list['myclass'] = myclass
+        code_list['class'] = myclass
         code_list['type'] = type
         code_list['priority'] = priority
         code_list['start_date'] = self.start_date
@@ -193,11 +193,99 @@ class hdf5(data):
                 pass
             else:
                 pass
+
+    def update_sequence_launch(self , priority = 0 ):
+        '''
+        task346更改了分时线数据更新的逻辑，拆分成add和launch两部分
+        launch模块主要进行数据更新任务，支持点断续传
+        priority 是否优先更新 默认为0 目前H5文件在priority不写入索引的情况下，无法做到区分是否优先更新
+        【bug report】end_date的设置一定要小心
+        如果当前日期是3/21，那如果end_date选择3/20，则取出比较和去重的数据是3/20，但实际数据库里含有3/21的数据
+        但是用3/20的数据去更新，实际又会更新到21号的数据
+        因此在当前逻辑下会重复更新3/21号的数据
+        这个bug连带出来还有一个问题就是必须顺序更新，不能更新2023年以后再更新前面的，会出错
+        '''
+        #读取全部数据
+        full_path = f'{self.update_path}\\update_sequence.h5'
+        df_sequence = pd.read_hdf(full_path, key = self.key )
+        code_list = df_sequence['code']
+        if df_sequence.shape[0] > 0 :
+            #有数据，进行更新
+            #设定最大更新行数
+            max_row = self.max_row
+            for index , row in df_sequence.iterrows():
+                id = row['uuid']
+                code = row['code']
+                #start_date = datetime.strftime(row['start_date'] , '%Y-%m-%d')
+                #end_date  = datetime.strftime(row['end_date'] , '%Y-%m-%d')
+                start_date = row['start_date']
+                end_date  = row['end_date']
+                myclass = row['class']
+                type = row['type']
+                #######tushare PRO数据更新模块
+                #tspro pro_bar数据获取模块（这里对最后日期做了day+1的处理）
+                df_tspro = pd.DataFrame()
+                for dt in rrule.rrule(rrule.MONTHLY, dtstart = start_date, until = end_date):    
+                    #print(dt.strftime("%Y-%m") )
+                    #print(f"时间范围：{dt} - {dt  + timedelta(days = 35)}")
+                    tmp_end_date = dt  + timedelta(days = 35)
+                    #####1.1 从tspro取出时间段内的所有数据（需要做很多变形处理才能适配数据规范）
+                    df = ts.pro_bar(api = self.api , ts_code = code , freq = '1min' , adj = None , start_date = dt.strftime('%Y-%m-%d %H:%M:%S') , end_date = tmp_end_date.strftime('%Y-%m-%d %H:%M:%S') , adjfactor = True , factors = ['tor', 'vr'] , asset = 'E')
+                    #df = ts.pro_bar( ts_code = '601318.sh' , freq = '1min' , adj = None , start_date = '2022-09-01 09:00:00' , end_date = '2022-10-01 16:00:00' , adjfactor = True , factors = ['tor', 'vr'] , asset = 'E')
+                    #最大数据量校验（此处保留校验，本模块做了月度更新处理，理论上不会触发超8000行）
+                    if df.shape[0] >= max_row:
+                        raise ValueError(f'接收到的数据达到最大允许值，可能存在数据丢失，中止更新！')
+                    df_tspro = pd.concat([df_tspro , df] , axis = 0 ) 
+                    #print('-----')    
+                #####1.2 tspro数据读取完毕，进行变形处理和适配
+                df_tspro.rename(columns={"ts_code": "code", "trade_time": "date" ,"vol" : "volume" , "amount" : "money"} , errors="raise" , inplace = True)
+                df_tspro.drop(columns = ['trade_date','pre_close'] , inplace = True)
+                #时间日期类的列进行类型变更
+                df_tspro['date'] = pd.to_datetime(df_tspro['date'])
+                #日期排序(目前判定下为非必要，预留代码，减小数据更新的压力)
+                df_tspro.sort_values(by = ['date'], inplace = True , ascending = False)
+                #分时线数据不需要进行成交量和成交额修正
+                df_tspro.drop_duplicates(subset = ['code', 'date'], keep = 'first', inplace = True)
+                #code date进行索引化
+                df_tspro = df_tspro.set_index(['code','date'] , drop = True)
+                #print(df_tspro)
+                #以上 tspro数据更新模块完成
+
+                #########临时模块：将数据写入HDF5文件#########
+                #目的是一次性写入，因为测试文件可能并不存在，需要这个模块创建测试文件
+                #df_tspro.to_hdf(path_or_buf=f'{file_path}\\{a.code}.h5', mode = 'w' , append  = True , complevel  = 5 , complib  = 'blosc' , format="table" , key='test')
+                #########临时模块END#########
+
+                ###2. 读取H5文件（指定日期间的数据）
+                file_path_h5 = f'{self.file_path}\\{code}.h5'
+                df_db = pd.DataFrame()
+                if os.path.exists(file_path_h5):
+                    #文件存在，读取本地文件
+                    df_db = pd.read_hdf(file_path_h5, key = self.key , where = f"date >='{start_date}' and date <='{end_date}'")
+                #print(df_db)
+                #列出原始数据的行数，进行筛查有没有重复的日期
+                #print(df_db.groupby(pd.Grouper(level='date', freq='D')).size())
+                ###3. 检查两个版本的差集
+                df_add = pd.concat([df_tspro , df_db , df_db ]).drop_duplicates( keep = False)
+                #print(df_add)
+
+                ###4. 追加保存HDF5文件
+                df_add.to_hdf(path_or_buf = file_path_h5 , mode = 'a' , append  = True , complevel  = 5 , complib  = 'blosc' , format="table" , key = self.key)
+                print(f'已更新{code}，时间范围{start_date.date()}-{end_date.date()}，总写入数据量{df_add.shape[0]};')
+                ###5. 数据已更新，删除该条UUID的更新请求
+                #目前实现方法是重新打开数据->读取全部记录->删除特定uuid的记录->写回文件
+                df_store = pd.read_hdf(full_path, key = self.key)
+                df_store = df_store[df_store['uuid'] != id]
+                df_store.to_hdf(path_or_buf = full_path , mode = 'w' , append  = True , complevel  = 5 , complib  = 'blosc' , format = "table" , key = self.key)
+
 if __name__ == '__main__':
     a = hdf5()
-    a.start_date = datetime(2020,1,1,8)
-    a.end_date = datetime(2023,3,20,16)
-    a.code = '159949.SZ'
+    a.start_date = datetime(2023,1,3,8)
+    a.end_date = datetime(2023,3,7,16)
+    a.code = '000001.SZ'
     a.ktype = '1min'
+    df = a.data_query()
+    print(df)
     a.update_sequence_add()
+    a.update_sequence_launch()
     
