@@ -208,6 +208,8 @@ class hdf5(data):
         #读取全部数据
         full_path = f'{self.update_path}\\update_sequence.h5'
         df_sequence = pd.read_hdf(full_path, key = self.key )
+        #查看需要更新的列表
+        #print(df_sequence)
         code_list = df_sequence['code']
         if df_sequence.shape[0] > 0 :
             #有数据，进行更新
@@ -248,7 +250,10 @@ class hdf5(data):
                 df_tspro.drop_duplicates(subset = ['code', 'date'], keep = 'first', inplace = True)
                 #code date进行索引化
                 df_tspro = df_tspro.set_index(['code','date'] , drop = True)
+                #根据需要更新的数据区间进行筛选，tspro仅返回区间内的数据，以免造成重复更新
                 #print(df_tspro)
+                #print(df_tspro.query("date >= @start_date & date <= @end_date"))
+                df_tspro = df_tspro.query("date >= @start_date & date <= @end_date")
                 #以上 tspro数据更新模块完成
 
                 #########临时模块：将数据写入HDF5文件#########
@@ -260,7 +265,7 @@ class hdf5(data):
                 file_path_h5 = f'{self.file_path}\\{code}.h5'
                 df_db = pd.DataFrame()
                 if os.path.exists(file_path_h5):
-                    #文件存在，读取本地文件
+                    #文件存在，读取本地文件（读取文件的区间与tspro数据更新的区间保持一致）
                     df_db = pd.read_hdf(file_path_h5, key = self.key , where = f"date >='{start_date}' and date <='{end_date}'")
                 #print(df_db)
                 #列出原始数据的行数，进行筛查有没有重复的日期
@@ -284,8 +289,8 @@ if __name__ == '__main__':
     a.end_date = datetime(2023,3,7,16)
     a.code = '000001.SZ'
     a.ktype = '1min'
-    df = a.data_query()
-    print(df)
-    a.update_sequence_add()
+    #df = a.data_query()
+    #print(df)
+    #a.update_sequence_add()
     a.update_sequence_launch()
     
