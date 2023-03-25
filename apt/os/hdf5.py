@@ -76,7 +76,7 @@ class hdf5(data):
             #print(f"时间范围：{dt} - {dt  + timedelta(days = 35)}")
             tmp_end_date = dt  + timedelta(days = 35)
             #####1.1 从tspro取出时间段内的所有数据（需要做很多变形处理才能适配数据规范）
-            df = ts.pro_bar( ts_code = self.code , freq = '1min' , adj = None , start_date = dt.strftime('%Y-%m-%d %H:%M:%S') , end_date = tmp_end_date.strftime('%Y-%m-%d %H:%M:%S') , adjfactor = True , factors = ['tor', 'vr'] , asset = 'E')
+            df = ts.pro_bar(ts_code = self.code , freq = '1min' , adj = None , start_date = dt.strftime('%Y-%m-%d %H:%M:%S') , end_date = tmp_end_date.strftime('%Y-%m-%d %H:%M:%S') , adjfactor = True , factors = ['tor', 'vr'] , asset = 'E')
             #df = ts.pro_bar( ts_code = '601318.sh' , freq = '1min' , adj = None , start_date = '2022-09-01 09:00:00' , end_date = '2022-10-01 16:00:00' , adjfactor = True , factors = ['tor', 'vr'] , asset = 'E')
             #最大数据量校验（此处保留校验，本模块做了月度更新处理，理论上不会触发超8000行）
             if df.shape[0] >= self.max_row:
@@ -166,6 +166,7 @@ class hdf5(data):
                 # Create a new dataset
                 #dset = f.create_dataset(f'/{self.key}', data = code_list)
             code_list.to_hdf(path_or_buf = full_path, mode = 'w' , append  = True , complevel  = 5 , complib  = 'blosc' , format = "table" , key = self.key)
+            print(f"已新建{code_list.shape[0]}条记录，时间范围{self.start_date.date()}-{self.end_date.date()}")
         else:
             #H5文件存在数据，进行选择
             result = input('''H5存在数据，请选择更新方式 \n
@@ -178,9 +179,11 @@ class hdf5(data):
             if result == '1' :
                 #追加数据
                 code_list.to_hdf(path_or_buf = full_path, mode = 'a' , append  = True , complevel  = 5 , complib  = 'blosc' , format = "table" , key = self.key)
+                print(f"已追加{code_list.shape[0]}条记录，时间范围{self.start_date.date()}-{self.end_date.date()}")
             elif result == '2':
                 #写入
                 code_list.to_hdf(path_or_buf = full_path, mode = 'w' , append  = True , complevel  = 5 , complib  = 'blosc' , format = "table" , key = self.key)
+                print(f"已新建{code_list.shape[0]}条记录，时间范围{self.start_date.date()}-{self.end_date.date()}")
             elif result == '3':
                 #删除
                 #目前这边还有一些bug，在删除dataset后，重新读取会出现以下错误
@@ -208,6 +211,8 @@ class hdf5(data):
         #读取全部数据
         full_path = f'{self.update_path}\\update_sequence.h5'
         df_sequence = pd.read_hdf(full_path, key = self.key )
+        #初始化token（这里其实不需要dell XPS15能正常运行，迁移到R730就需要重新设置TOKEN）
+        ts.set_token(self.token)
         #查看需要更新的列表
         #print(df_sequence)
         code_list = df_sequence['code']
@@ -225,14 +230,14 @@ class hdf5(data):
                 myclass = row['class']
                 type = row['type']
                 #######tushare PRO数据更新模块
-                #tspro pro_bar数据获取模块（这里对最后日期做了day+1的处理）
+                #tspro pro_bar数据获取模块
                 df_tspro = pd.DataFrame()
                 for dt in rrule.rrule(rrule.MONTHLY, dtstart = start_date, until = end_date):    
                     #print(dt.strftime("%Y-%m") )
                     #print(f"时间范围：{dt} - {dt  + timedelta(days = 35)}")
                     tmp_end_date = dt  + timedelta(days = 35)
                     #####1.1 从tspro取出时间段内的所有数据（需要做很多变形处理才能适配数据规范）
-                    df = ts.pro_bar(api = self.api , ts_code = code , freq = '1min' , adj = None , start_date = dt.strftime('%Y-%m-%d %H:%M:%S') , end_date = tmp_end_date.strftime('%Y-%m-%d %H:%M:%S') , adjfactor = True , factors = ['tor', 'vr'] , asset = 'E')
+                    df = ts.pro_bar( ts_code = code , freq = '1min' , adj = None , start_date = dt.strftime('%Y-%m-%d %H:%M:%S') , end_date = tmp_end_date.strftime('%Y-%m-%d %H:%M:%S') , adjfactor = True , factors = ['tor', 'vr'] , asset = 'E')
                     #df = ts.pro_bar( ts_code = '601318.sh' , freq = '1min' , adj = None , start_date = '2022-09-01 09:00:00' , end_date = '2022-10-01 16:00:00' , adjfactor = True , factors = ['tor', 'vr'] , asset = 'E')
                     #最大数据量校验（此处保留校验，本模块做了月度更新处理，理论上不会触发超8000行）
                     if df.shape[0] >= max_row:
@@ -272,7 +277,7 @@ class hdf5(data):
                 #print(df_db.groupby(pd.Grouper(level='date', freq='D')).size())
                 ###3. 检查两个版本的差集
                 df_add = pd.concat([df_tspro , df_db , df_db ]).drop_duplicates( keep = False)
-                print(df_add)
+                #print(df_add)
 
                 ###4. 追加保存HDF5文件
                 if df_add.shape[0] >0 :
@@ -289,13 +294,14 @@ class hdf5(data):
                 df_store.to_hdf(path_or_buf = full_path , mode = 'w' , append  = True , complevel  = 5 , complib  = 'blosc' , format = "table" , key = self.key)
 
 if __name__ == '__main__':
+    #已更新2023年前的数据
     a = hdf5()
-    a.start_date = datetime(2023,1,3,8)
-    a.end_date = datetime(2023,3,7,16)
+    a.start_date = datetime(2009,1,1,8)
+    a.end_date = datetime(2009,12,31,16)
     a.code = '000001.SZ'
     a.ktype = '1min'
     #df = a.data_query()
     #print(df)
-    #a.update_sequence_add()
+    a.update_sequence_add()
     a.update_sequence_launch()
     
