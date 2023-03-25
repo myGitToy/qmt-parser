@@ -296,8 +296,8 @@ class hdf5(data):
 if __name__ == '__main__':
     #已更新2023年前的数据
     a = hdf5()
-    a.start_date = datetime(2009,1,1,8)
-    a.end_date = datetime(2009,12,31,16)
+    a.start_date = datetime(2013,1,1,8)
+    a.end_date = datetime(2013,12,31,16)
     a.code = '000001.SZ'
     a.ktype = '1min'
     #df = a.data_query()
