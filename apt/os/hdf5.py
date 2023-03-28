@@ -220,6 +220,12 @@ class hdf5(data):
             #有数据，进行更新
             #设定最大更新行数
             max_row = self.max_row
+            #设定总更新数据
+            update_count = df_sequence.shape[0]
+            #设定当前更新进读
+            n = 1
+            #设定更新开始时间
+            update_start_time = datetime.now()
             for index , row in df_sequence.iterrows():
                 id = row['uuid']
                 code = row['code']
@@ -267,6 +273,10 @@ class hdf5(data):
                 #########临时模块END#########
 
                 ###2. 读取H5文件（指定日期间的数据）
+                #计算更新耗时
+                total_time = datetime.now() - update_start_time\
+                #计算更新结束时间
+                update_end_time = datetime.now() + total_time / n * update_count
                 file_path_h5 = f'{self.file_path}\\{code}.h5'
                 df_db = pd.DataFrame()
                 if os.path.exists(file_path_h5):
@@ -283,16 +293,17 @@ class hdf5(data):
                 if df_add.shape[0] >0 :
                     #有数据，则差集写入H5
                     df_add.to_hdf(path_or_buf = file_path_h5 , mode = 'a' , append  = True , complevel  = 5 , complib  = 'blosc' , format="table" , key = self.key)
-                    print(f'已更新{code}，时间范围{start_date.date()}-{end_date.date()}，总写入数据量{df_add.shape[0]};')
+                    print(f'{n}/{update_count} 已更新{code}，时间范围{start_date.date()}-{end_date.date()}，总写入数据量{df_add.shape[0]}|预计更新完成时间{update_end_time};')
                 else:
                     #无数据 跳过更新
-                    print(f'{code}无数据，跳过更新;')
+                    print(f'{n}/{update_count} {code}无数据，跳过更新;')
                 ###5. 数据已更新，删除该条UUID的更新请求
                 #目前实现方法是重新打开数据->读取全部记录->删除特定uuid的记录->写回文件
                 df_store = pd.read_hdf(full_path, key = self.key)
                 df_store = df_store[df_store['uuid'] != id]
                 df_store.to_hdf(path_or_buf = full_path , mode = 'w' , append  = True , complevel  = 5 , complib  = 'blosc' , format = "table" , key = self.key)
-
+                #进读+1
+                n = n + 1
 if __name__ == '__main__':
     #已更新2023年前的数据
     a = hdf5()
