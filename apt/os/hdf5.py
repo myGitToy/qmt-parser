@@ -294,14 +294,15 @@ class hdf5(data):
                 df_store.to_hdf(path_or_buf = full_path , mode = 'w' , append  = True , complevel  = 5 , complib  = 'blosc' , format = "table" , key = self.key)
 
 if __name__ == '__main__':
-    #已更新2023年前的数据
+    #2014年数据 2600条 全部更新完毕约7小时
+    #2016年数据已更新完毕
     a = hdf5()
-    a.start_date = datetime(2013,1,1,8)
-    a.end_date = datetime(2013,12,31,16)
+    a.start_date = datetime(2018,1,1,8)
+    a.end_date = datetime(2018,12,31,16)    #正在更新2018年数据
     a.code = '000001.SZ'
     a.ktype = '1min'
     #df = a.data_query()
     #print(df)
-    a.update_sequence_add()
+    #a.update_sequence_add()
     a.update_sequence_launch()
     

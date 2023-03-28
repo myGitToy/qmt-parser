@@ -50,5 +50,6 @@ if __name__ == '__main__':
     a.end_date = datetime(2023,3,20,16)
     a.code = '159949.SZ'
     a.ktype = '1min'
-    a.stock_basic()
+    df = a.stock_basic()
+    print(df)
     
