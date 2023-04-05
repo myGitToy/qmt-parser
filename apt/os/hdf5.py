@@ -276,7 +276,7 @@ class hdf5(data):
                 #计算更新耗时
                 total_time = datetime.now() - update_start_time\
                 #计算更新结束时间
-                update_end_time = datetime.now() + total_time / n * (update_count - n)
+                update_end_time = datetime.now() + total_time / n * update_count
                 file_path_h5 = f'{self.file_path}\\{code}.h5'
                 df_db = pd.DataFrame()
                 if os.path.exists(file_path_h5):
@@ -306,14 +306,14 @@ class hdf5(data):
                 n = n + 1
 if __name__ == '__main__':
     #2014年数据 2600条 全部更新完毕约7小时
-    #2022年数据已更新完毕
+    #2016年数据已更新完毕
     a = hdf5()
-    a.start_date = datetime(2023,1,1,8)
-    a.end_date = datetime(2023,3,31,16)    #正在更新2023Q1数据
+    a.start_date = datetime(2018,1,1,8)
+    a.end_date = datetime(2018,12,31,16)    #正在更新2018年数据
     a.code = '000001.SZ'
     a.ktype = '1min'
     #df = a.data_query()
     #print(df)
-    a.update_sequence_add()
+    #a.update_sequence_add()
     a.update_sequence_launch()
     
