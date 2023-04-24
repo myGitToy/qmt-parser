@@ -149,10 +149,23 @@
     <Compile Include="demo\demo_akshare_init.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="demo\demo_backtrader_夏普比率_作图测试.py" />
+    <Compile Include="demo\demo_finanace_net_income.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="demo\demo_mtm.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_qsp通用接口测试.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_turtle.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_turtle_read.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_加权中位数测试.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_机构调研.py">
@@ -337,6 +350,7 @@
   <ItemGroup>
     <Content Include="pip更新规范.txt" />
     <Content Include="readme.txt" />
+    <Content Include="requirements.txt" />
     <Content Include="更新日志.txt" />
   </ItemGroup>
   <ItemGroup>
