@@ -186,6 +186,7 @@
     <Compile Include="macro\macro_get_percentile.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="macro\macro_tspro_更新1分钟数据入序列.py" />
     <Compile Include="macro\macro_资金流向1m.py" />
     <Compile Include="demo\demo_tspro_基金份额走势.py" />
     <Compile Include="demo\demo_tspro_75分位数测试.py">
