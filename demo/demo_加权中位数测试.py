@@ -2,6 +2,10 @@
 测试背景：对于一些冲高回落的股票，如果单纯从中位数的角度去统计均值，因为成交量不同，因此会产生误差
 解决方案就是计算加权价格，去统计对应的中位数或者75%分位数
 
+重要提示：
+此处演示了传统中位数（方法1）and 加权中位数（方法2）的差异
+方法3改进了方法2的不足，同时也改进了精度不足的问题，在生产状态下推荐使用方法3
+
 bing提问：我有一组数据，是股票的成交价格和成交量，现在要计算根据成交量分布的成交价格中位数和75%分位数，用python代码呈现
 
 bing回答：
@@ -32,9 +36,9 @@ pd.set_option('display.unicode.east_asian_width', True)
 #pd.set_option('display.max_rows', None)
 ############1. 基础数据参数设置
 a = data()
-a.code = '002049.SZ'
-a.start_date = datetime(2023,3,23,8,0,0)
-a.end_date = datetime(2023,4,21,15,59,0)
+a.code = '300343.SZ'
+a.start_date = datetime(2023,2,13,8,0,0)
+a.end_date = datetime(2023,4,19,15,59,0)
 a.fq = data.复权.动态复权
 a.ktype = '1m'
 a.vendor = a.vendor.tusharePro
@@ -49,10 +53,38 @@ volume = df['volume'] # 取出成交量
 # 根据成交量对价格进行加权
 #weighted_price = np.repeat(price, volume)
 #print(weighted_price)
+########方法1（算数平均值）：计算中位数和75%分位数
+m_p50 = np.percentile(df['close'], 50)
+m_p75 = np.percentile(df['close'], 75)
+print(f"算数平均值：中位数{m_p50}|75分位数数{m_p75}")
+
+########方法2（加权平均值）：计算中位数和75%分位数
+#此方法最大的问题是运算速度极慢，且内存占用大
+# 根据成交量对价格进行加权
+weighted_price = np.repeat(price, volume)
 # 计算中位数和75%分位数
-median = np.percentile(df['close'], 50)
-q75 = np.percentile(df['close'], 75)
-print(median, q75)
+w_p50 = np.percentile(weighted_price, 50)
+w_p75 = np.percentile(weighted_price, 75)
+#print(f"加权平均值：中位数{w_p50}|75分位数数{w_p75}")
+
+
+########方法3（加权平均值 z-score方法）：计算中位数和75%分位数
+#目的：增加方法2的运行速度以及内存占用
+# 根据成交量对价格进行加权
+#z-score均一
+min = df['volume'].min()
+max = df['volume'].max()
+df['score'] = (df['volume'] - min)/(max - min)
+score = df['score']*10000   #正常情况下*1000精度已经满足要求，保守处理可以*10000
+print(score)
+score_price = np.repeat(price, score)
+# 计算中位数和75%分位数
+s_p50 = np.percentile(score_price, 50)
+s_p75 = np.percentile(score_price, 75)
+print(f"加权平均值：中位数{s_p50}|75分位数数{s_p75}")
+
+
+
 
 """
 # 对加权后的价格进行排序(速度加快版)
