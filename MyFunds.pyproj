@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>fe9172f0-51b0-485c-8b74-a2d125475bfa</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>apt\os\得到重复文件删除.py</StartupFile>
+    <StartupFile>macro\macro_资金流向_实时绘图.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -12,10 +12,11 @@
     <Name>MyFunds</Name>
     <RootNamespace>MyFunds</RootNamespace>
     <InterpreterId>MSBuild|env_myfund|$(MSBuildProjectFullPath)</InterpreterId>
-    <TestFramework>pytest</TestFramework>
+    <TestFramework>unittest</TestFramework>
     <SuppressEnvironmentCreationPrompt>True</SuppressEnvironmentCreationPrompt>
     <UnitTestPattern>test*.py</UnitTestPattern>
     <UnitTestRootDirectory>.</UnitTestRootDirectory>
+    <IsWindowsApplication>False</IsWindowsApplication>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -117,6 +118,9 @@
     <Compile Include="apt\vendor\tspro\data.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="apt\vendor\tspro\pro_api.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="apt\vendor\tspro\security.py">
       <SubType>Code</SubType>
     </Compile>
@@ -145,10 +149,26 @@
     <Compile Include="demo\demo_akshare_init.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="demo\demo_backtrader_夏普比率_作图测试.py" />
+    <Compile Include="demo\demo_finanace_net_income.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="demo\demo_mtm.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_qsp通用接口测试.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_turtle.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_turtle_read.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_加权中位数测试.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_机构调研.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_绘图_布林线.py" />
@@ -166,6 +186,7 @@
     <Compile Include="macro\macro_get_percentile.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="macro\macro_tspro_更新1分钟数据入序列.py" />
     <Compile Include="macro\macro_资金流向1m.py" />
     <Compile Include="demo\demo_tspro_基金份额走势.py" />
     <Compile Include="demo\demo_tspro_75分位数测试.py">
@@ -325,10 +346,12 @@
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="CondaEnv|CondaEnv|Anaconda3" />
+    <InterpreterReference Include="CondaEnv|CondaEnv|myFunds" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="pip更新规范.txt" />
     <Content Include="readme.txt" />
+    <Content Include="requirements.txt" />
     <Content Include="更新日志.txt" />
   </ItemGroup>
   <ItemGroup>
