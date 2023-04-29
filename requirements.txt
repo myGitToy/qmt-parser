@@ -1,0 +1,11 @@
+numpy==1.21.4
+pandas==1.2.3
+tushare==1.2.71
+akshare==1.6.13
+jqdatasdk==1.8.10
+backtrader==1.9.76.123
+h5py==3.8.0
+mpl-finance==0.10.1
+matplotlib==3.2.2
+TA-Lib==0.4.21
+talib==3.1.0
