@@ -1,0 +1,8 @@
+#!C:\Users\GHUIQ\OneDrive\python项目\MyFunds\MyFunds\env_myfund\Scripts\python.exe
+# -*- coding: UTF-8 -*-
+from __future__ import print_function, division, absolute_import
+
+from numba.misc.numba_entry import main
+
+if __name__ == "__main__":
+    main()
