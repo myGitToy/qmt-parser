@@ -889,13 +889,73 @@ class data(base,stock):
                 raise ValueError(f'不支持的复权模式，请检查！')
                 return df_db
 
+    def fix_1min_error(self, day = datetime(2023,5,1)):
+        """
+        本模块需要修复的内容：
+        1. 修复1分钟线历史数据开盘价格为0的问题
+        2. 修复停牌当日1分钟线仍然有数据的情况
+        详细描述参见task473
+        输入：
+            day 校验的起始日期，由于校验日期的第一条代码9:30的可能为0，所以需要前一天的数据
+        """
+        #1. 获取开始日期至今的全部代码
+        sql_code = 'select code from akshare_1m_test group by code'
+        df_code = pd.read_sql_query(sql_code , self.engine)
+        print(df_code)
+        for code in df_code['code']:
+            #按照每个代码进行修正
+            sql_1min = f"select id,code,date,open,close,volume from akshare_1m_test where code ='{code}' and date(date) >='{day.date()}'"
+            sql_60min = f"select id,code,date,open,close,volume from akshare_60m where code ='{code}' and date(date) >='{day.date()}'"
+            df_db_1min = pd.read_sql_query(sql_1min , self.engine)
+            df_db_60min = pd.read_sql_query(sql_60min , self.engine)
+            #df_db_1min['date'] = pd.to_datetime(df_db_1min['date'])
+            #df_db_60min['date'] = pd.to_datetime(df_db_60min['date'])
+            #默认修正模式为无需修正
+            df_db_1min['fix_mode'] = 0
+            ###1. 构造1min矩阵
+            #取出09:30 10:30 14:00 15:00的数据
+            df_db_1min.loc[(df_db_1min.open == 0) & (df_db_1min.date.dt.time == datetime.strptime("09:30","%H:%M").time()), "fix_mode"] = '60min_mode1'
+            df_db_1min.loc[(df_db_1min.open == 0) & (df_db_1min.date.dt.time == datetime.strptime("10:31","%H:%M").time()), "fix_mode"] = '60min_mode2'
+            df_db_1min.loc[(df_db_1min.open == 0) & (df_db_1min.date.dt.time == datetime.strptime("13:01","%H:%M").time()), "fix_mode"] = '60min_mode2'
+            df_db_1min.loc[(df_db_1min.open == 0) & (df_db_1min.date.dt.time == datetime.strptime("14:01","%H:%M").time()), "fix_mode"] = '60min_mode2'
+            #设置其余开盘价为0的数据为offset模式
+            df_db_1min.loc[(df_db_1min.open == 0) & (df_db_1min['fix_mode'] == 0), "fix_mode"] = 'offset'
+            #初始化fix_date（分成两个模式，有不同的规则 +60和+59）
+            df_db_1min.loc[(df_db_1min.fix_mode == '60min_mode1'), "fix_date"] = df_db_1min.loc[(df_db_1min.fix_mode == '60min_mode1'), "date"] + timedelta(minutes = 60)
+            df_db_1min.loc[(df_db_1min.fix_mode == '60min_mode2'), "fix_date"] = df_db_1min.loc[(df_db_1min.fix_mode == '60min_mode2'), "date"] + timedelta(minutes = 59)
+            #df_db_1min['fix_date'] = pd.to_datetime(df_db_1min['fix_date'])
+            #print(df_db_1min.query("fix_mode in ['60min_mode1','60min_mode2']"))
+            ####2. 60分钟线中的数据open填充至1分钟线
+            df_db_1min = pd.merge(df_db_1min[['id','code','date','open','close','fix_date','fix_mode']], df_db_60min[['code', 'date','open']], left_on=['code', 'fix_date'], right_on=['code', 'date'], how='left')
+            df_db_1min.loc[(df_db_1min.fix_mode == '60min_mode1'), "open_x"] = df_db_1min.loc[(df_db_1min.fix_mode == '60min_mode1'), "open_y"] 
+            df_db_1min.loc[(df_db_1min.fix_mode == '60min_mode2'), "open_x"] = df_db_1min.loc[(df_db_1min.fix_mode == '60min_mode2'), "open_y"] 
+            ####3. 对于offset的数据进行填充
+            df_db_1min.loc[(df_db_1min.fix_mode == 'offset'), "open_x"] = df_db_1min['close'].shift(1).fillna(df_db_1min['close'])           
+            df_db = df_db_1min[['id','code','date_x','open_x','close','fix_mode']]
+            df_db.to_csv('.\\data\\海龟模型\\1min_fix.csv', encoding = 'utf_8_sig')
+            ####4. 重新写回数据库
+            df_db = df_db_1min.query("fix_mode in ['60min_mode1','60min_mode2','offset']")
+            db_count = df_db.shape[0]
+            n = 1
+            for id in df_db['id']:
+                open = df_db.loc[df_db.id == id].iloc[0].at['open_x']
+                sql_update = f"update akshare_1m_test set open = {open} where id = {id}"
+                try:
+                    df_db_update = pd.read_sql_query(sql_update , self.engine)                    
+                except exc.ResourceClosedError:
+                    print(f'正在更新{code}，已更新{n}/{db_count}')  #详细版
+                    print(f'正在更新{code}')  #简略版
+                n += 1    
+
 if __name__=="__main__":
+    pd.set_option('display.max_rows', None)
     tspro = data()
+    
+
     tspro.code ='601318.sh'
     tspro.start_date= datetime(2022,1,1,8)
     tspro.end_date = datetime(2022,7,8,16)
     #ETF数据1998/10/19 含
     tspro.fq = tspro.复权.动态复权
     tspro.ktype = '1d'
-    tspro.update_day_ETF()
-    tspro.update_factor_ETF()
+    tspro.fix_1min_error()
