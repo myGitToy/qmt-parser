@@ -104,7 +104,6 @@ class base():
             df = a.get_k_data(code = self.code , start_date = self.start_date , end_date = self.end_date , ktype = self.ktype , fq = self.fq , count = count , flag_forward = flag_forward)
             return df
         elif self.vendor == self.vendor.akshare:
-            print("展示不支持akshare数据获取")
             a = akdata()
             a.myauth = self.myauth
             a.数据源 = self.server
@@ -120,7 +119,7 @@ class base():
 
     def get_all_code(self , type = type):
         """
-        通用数据接口 获取证券代码列表
+        通用数据接口 获取指定日期节点依旧上市的证券代码列表
         输入：
             type 证券类别 默认为['stock','etf']
         返回：
@@ -135,7 +134,10 @@ class base():
             #获取证券列表
             return a.get_all_code(day = self.end_date , type = type)
         elif self.vendor == self.vendor.akshare:
-            return pd.DataFrame()
+            #目前akshare采用tspro证券列表
+            a = tssec()
+            #获取证券列表            
+            return a.get_all_code(day = self.end_date)
         else:
             raise ValueError(f'不支持此数据供应商，请检查输入！')
 
@@ -160,8 +162,10 @@ class base():
             #获取证券列表
             return a.get_security(code = code)
         elif self.vendor == self.vendor.akshare:
-            print("暂时不支持akshare数据获取")
-            return pd.DataFrame()
+            #目前akshare采用tspro证券列表
+            a = tssec()
+            #获取证券列表            
+            return a.get_security(code = code)
         else:
             raise ValueError(f'不支持此数据供应商，请检查输入！')
 
