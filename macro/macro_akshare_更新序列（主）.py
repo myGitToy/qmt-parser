@@ -9,7 +9,7 @@ from apt.vendor.akshare.data import data as data
 a = data(myauth = True)
 ak = data(myauth = True)
 a.code = ak.code = '600038.sh'
-a.start_date = ak.start_date =  datetime(2022,5,23,8) #1998/10/20日开始有ETF数据    ETF日线数据和复权数据已更新完毕
+a.start_date = ak.start_date =  datetime(2023,6,15,8) #1998/10/20日开始有ETF数据    ETF日线数据和复权数据已更新完毕
 a.end_date = ak.end_date =  datetime.now()
 #2. 更新证券代码库(stock和ETF资产)
 sec = security()
@@ -21,11 +21,11 @@ sec.update_calendar()
 
 #3. 更新股票日线数据和复权因子（忽略）
 a.ktype = '1d'
-a.update_day(flag_verify_db = False)          #最后更新日期2022/7/8含
+a.update_day(flag_verify_db = False)
 a.update_factor(flag_verify_db = False)
 
 #5. 更新ETF日线数据和复权因子
-a.update_day_ETF()          #包含2020年起的数据  最后更新日期2022/7/8含
+a.update_day_ETF()          #包含2020年起的数据
 a.update_factor_ETF() 
 
 #4. 更新股票小时线数据   60分钟线最后更新日期2022/7/6含；1分钟线2020全年写入更新序列
@@ -39,5 +39,5 @@ ak.update_sequence_add(myclass = 'stock' , type = '5m' , priority = 0) #更新st
 ak.update_sequence_add(myclass = 'etf' , type = '5m' , priority = 0) #更新etf
 
 ak.ktype = '1m' #更新5分钟线 起始日期2023/6/7
-ak.update_sequence_add(myclass = 'stock' , type = '1m' , priority = 0) #更新stock
-ak.update_sequence_add(myclass = 'etf' , type = '1m' , priority = 0) #更新etf
+ak.update_sequence_add(myclass = 'stock' , type = '1m' , priority = 1) #更新stock
+ak.update_sequence_add(myclass = 'etf' , type = '1m' , priority = 1) #更新etf
