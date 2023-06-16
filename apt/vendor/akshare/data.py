@@ -296,11 +296,12 @@ class data(base,stock):
             else:
                 raise ValueError(f'无效的输入')
 
-    def update_sequence_launch(self , priority = 0 ):
+    def update_sequence_launch(self , priority = 0 , sleep = 0.05):
         '''
         task346更改了分时线数据更新的逻辑，拆分成add和launch两部分
         launch模块主要进行数据更新任务，支持点断续传
         priority 是否优先更新 默认为0
+        sleep 每条数据更新的间隔时间 默认0.05 需要流出一定的间隔，否则会被服务器强制下线
         '''
         #处理是否优先更新
         if priority == 1:
@@ -410,7 +411,7 @@ class data(base,stock):
                             if_exists = 'append')
                     print(f"{code}数据已上传完成({type}，新增数据{df_diff.shape[0]})")
                     #数据导入增加XX毫秒的延迟（akshare专有，速度太快会被限制）
-                    time.sleep(0.05)
+                    time.sleep(sleep)
                 #7. 将此条目从更新序列中删除
                 sql_delete = f'delete from akshare_update_sequence where id = {id}'
                 try:    #删除需捕捉异常，否则会报错
@@ -662,9 +663,14 @@ class data(base,stock):
         #获取tspro数据
         query_tspro = f"select code,date,open,high,low,close,volume,money from tspro_{self.ktype} where code = '{self.code}' and date BETWEEN '{self.start_date}' and '{self.end_date}' order by date asc"         
         df_tspro = pd.read_sql_query(query_tspro , self.engine)
-        #获取akshare数据
-        query_ak = f"select code,date,open,high,low,close,volume,money from akshare_{self.ktype} where code = '{self.code}' and date BETWEEN '{self.start_date}' and '{self.end_date}' order by date asc"         
-        df_ak = pd.read_sql_query(query_ak , self.engine)
+        #获取akshare数据（目前ak只有分时数据，无日线数据）
+        if self.ktype =='1d':
+            #日线返回空
+            df_ak = pd.DataFrame()
+        else:
+            #分时线查询ak
+            query_ak = f"select code,date,open,high,low,close,volume,money from akshare_{self.ktype} where code = '{self.code}' and date BETWEEN '{self.start_date}' and '{self.end_date}' order by date asc"         
+            df_ak = pd.read_sql_query(query_ak , self.engine)
         #取数据交集
         #df_db = pd.merge(df_tspro,df_ak,on=['code','date'],how='inner')
         df_db = pd.concat([df_tspro , df_ak ] ).drop_duplicates(subset=['date'] , keep = 'first')
