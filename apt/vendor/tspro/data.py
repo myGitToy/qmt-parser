@@ -588,7 +588,7 @@ class data(base,stock):
             在这种模式下，start_date为基准日期，先后输出count条数据
             其余模式end_date均为基准日期
             详见https://huiqiao.visualstudio.com/MyFunds/_workitems/edit/296
-        flag_resample：T/F 用于标识是否进行重采样
+        flag_resample：T/F 用于标识是否进行重采样 60分钟线目前无法重采样，因为默认按照整点小时划分
             目前仅对60分钟线有效
             True：进行重采样
             False：不进行重采样，舍弃9:30单根数据
