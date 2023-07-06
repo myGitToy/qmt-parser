@@ -899,12 +899,15 @@ class data(base,stock):
             day 校验的起始日期，由于校验日期的第一条代码9:30的可能为0，所以需要前一天的数据
         """
         #1. 获取开始日期至今的全部代码
-        sql_code = 'select code from akshare_1m_test group by code'
+        #还有一种sql语句的处理方法是先取出open=0的数据，再group
+        #优点：点断续传后，已修正的代码就不会重复计算，节约时间
+        #缺点：会历遍整个数据库，目前大约需要耗时1分钟，将来会显著增加，而且如果当天没有更新完毕，后面一天的数据进来后，优势就不存在了，因为又需要从头开始进行修正
+        sql_code = 'select code from akshare_1m group by code'
         df_code = pd.read_sql_query(sql_code , self.engine)
         print(df_code)
         for code in df_code['code']:
             #按照每个代码进行修正
-            sql_1min = f"select id,code,date,open,close,volume from akshare_1m_test where code ='{code}' and date(date) >='{day.date()}'"
+            sql_1min = f"select id,code,date,open,close,volume from akshare_1m where code ='{code}' and date(date) >='{day.date()}'"
             sql_60min = f"select id,code,date,open,close,volume from akshare_60m where code ='{code}' and date(date) >='{day.date()}'"
             df_db_1min = pd.read_sql_query(sql_1min , self.engine)
             df_db_60min = pd.read_sql_query(sql_60min , self.engine)
@@ -932,19 +935,22 @@ class data(base,stock):
             ####3. 对于offset的数据进行填充
             df_db_1min.loc[(df_db_1min.fix_mode == 'offset'), "open_x"] = df_db_1min['close'].shift(1).fillna(df_db_1min['close'])           
             df_db = df_db_1min[['id','code','date_x','open_x','close','fix_mode']]
-            df_db.to_csv('.\\data\\海龟模型\\1min_fix.csv', encoding = 'utf_8_sig')
+            #df_db.to_csv('.\\data\\海龟模型\\1min_fix.csv', encoding = 'utf_8_sig')
             ####4. 重新写回数据库
             df_db = df_db_1min.query("fix_mode in ['60min_mode1','60min_mode2','offset']")
             db_count = df_db.shape[0]
             n = 1
+            print(f'正在更新{code}')  #简略版
             for id in df_db['id']:
                 open = df_db.loc[df_db.id == id].iloc[0].at['open_x']
-                sql_update = f"update akshare_1m_test set open = {open} where id = {id}"
+                sql_update = f"update akshare_1m set open = {open} where id = {id}"
                 try:
                     df_db_update = pd.read_sql_query(sql_update , self.engine)                    
                 except exc.ResourceClosedError:
-                    print(f'正在更新{code}，已更新{n}/{db_count}')  #详细版
-                    print(f'正在更新{code}')  #简略版
+                    #提示信息暂时挪到外测，因为点断续传后，更新过的内容没有打印输出，因此会空白很久
+                    #print(f'正在更新{code}，已更新{n}/{db_count}')  #详细版
+                    #print(f'正在更新{code}')  #简略版
+                    pass
                 n += 1    
 
 if __name__=="__main__":
