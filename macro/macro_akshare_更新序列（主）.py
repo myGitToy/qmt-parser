@@ -9,7 +9,7 @@ from apt.vendor.akshare.data import data as data
 a = data(myauth = True)
 ak = data(myauth = True)
 a.code = ak.code = '600038.sh'
-a.start_date = ak.start_date =  datetime(2023,6,15,8) #1998/10/20日开始有ETF数据    ETF日线数据和复权数据已更新完毕
+a.start_date = ak.start_date =  datetime(2023,7,6,8) #1998/10/20日开始有ETF数据    ETF日线数据和复权数据已更新完毕
 a.end_date = ak.end_date =  datetime.now()
 #2. 更新证券代码库(stock和ETF资产)
 sec = security()

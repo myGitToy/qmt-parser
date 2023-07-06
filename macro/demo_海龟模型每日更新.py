@@ -60,13 +60,13 @@ code_list = df_code_main['code'].tolist()
 
 #更新日线和60分钟线数据
 dt = akdata(myauth = True)
-#dt.start_date = datetime(2023,6,2,8) #数据更新的开始日期
-#dt.end_date = datetime.now()
-#dt.ktype = '60m'
-#dt.update_sequence_add(code_list = code_list , type = '60m')
-#dt.ktype = '1m'
-#dt.update_sequence_add(code_list = code_list , type = '1m')
-#dt.update_sequence_launch(priority = 1 , sleep = 0.05)
+dt.start_date = datetime(2023,7,2,8) #数据更新的开始日期
+dt.end_date = datetime.now()
+dt.ktype = '60m'
+dt.update_sequence_add(code_list = code_list , type = '60m')
+dt.ktype = '1m'
+dt.update_sequence_add(code_list = code_list , type = '1m')
+dt.update_sequence_launch(priority = 1 , sleep = 0.05)
 
 
 #######3. 获取ATR数据
