@@ -23,7 +23,7 @@ if __name__=="__main__":
     for code in code_list:
         a.code = code
         if (a.A04B02_EMA均线多头排列()[1] == True and \
-                a.A04B06_EMA均线_线性回归角度(ma = 20 , adjust_N = 20 , count = 18 , low_value=-0.003 , upper_value= 0.003)) == True:  
+                a.A04B06_EMA均线_线性回归角度(ma = 20 , N_day = 20 , count = 18 , low_value=-0.003 , upper_value= 0.003)) == True:  
            print(f"{code}均线平台整理且多头排列" )
            lst.append(code)
     print(lst)

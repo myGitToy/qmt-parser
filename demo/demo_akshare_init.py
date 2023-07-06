@@ -43,19 +43,19 @@ hfq_factor_df = ak.stock_zh_a_daily(symbol="sh600038", adjust="hfq-factor")
 #print(fund_etf_fund_info_em_df)
 
 #获取场内基金分时线数据 (1 分钟数据返回近 5 个交易日数据且不复权)
-fund_etf_hist_min_em = ak.fund_etf_hist_min_em(symbol="510300", start_date="2021-06-14 09:30:00", end_date="2023-06-14 16:30:00", period='1', adjust='')
+fund_etf_hist_min_em = ak.fund_etf_hist_min_em(symbol="510300", start_date="2021-06-14 09:30:00", end_date="2023-06-17 16:30:00", period='1', adjust='')
 print(fund_etf_hist_min_em)
 
 #获取股票分时数据（ 1 分钟数据返回近 5 个交易日数据且不复权）
-stock_zh_a_hist_min_em_df = ak.stock_zh_a_hist_min_em(symbol="601318", start_date="2021-06-14 09:30:00", end_date="2023-06-14 16:32:00", period='1', adjust='')
+stock_zh_a_hist_min_em_df = ak.stock_zh_a_hist_min_em(symbol="601318", start_date="2021-06-14 09:30:00", end_date="2023-06-17 16:32:00", period='1', adjust='')
 print(stock_zh_a_hist_min_em_df)
 
 
 #获取分笔数据 163（只能返回最近5天的数据，且目前无法获取上交所数据）
-#stock_zh_a_tick_163_df = ak.stock_zh_a_tick_163(symbol="sz000001", trade_date="20220507")
-#print(stock_zh_a_tick_163_df)
+stock_zh_a_tick_163_df = ak.stock_zh_a_tick_163(symbol="sz000001", trade_date="20220507")
+print(stock_zh_a_tick_163_df)
 
 
 #获取分笔数据 腾讯（目前该接口无法使用）
-#stock_zh_a_tick_tx_df = ak.stock_zh_a_tick_tx(symbol="sz000001", trade_date="20220607")
-#print(stock_zh_a_tick_tx_df)
+stock_zh_a_tick_tx_df = ak.stock_zh_a_tick_tx(symbol="sz000001", trade_date="20220607")
+print(stock_zh_a_tick_tx_df)
