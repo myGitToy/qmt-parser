@@ -254,13 +254,13 @@ class A(base):
         #返回最后的结果 目前为元组类型，第一列为DataFrame 第二列为T/F值       
         return df[['code','date','result']] , last_row 
 
-    def A04B04_EMA均线_收盘价大于均线(self , ma= '10' , adjust_N = 1 , count = 1):
+    def A04B04_EMA均线_收盘价大于均线(self , ma= '10' , N_day = 1 , count = 1):
         """
         收盘价大于某条EMA均线
         输入：
             证券代码，起止日期按照默认
             ma：某条均线 默认为10日均线
-            adjust_N : N天内符合条件就返回T 默认为当天
+            N_day : N天内符合条件就返回T 默认为当天
             count: N天内符合count次就返回True 默认为1
             例子：最后一个交易日收盘价大于EMA均线  adjust_ N = 1 ; count = 1
                     最后5个交易日出现2次大于EMA均线 adjust_ N = 5 ; count = 2
@@ -279,8 +279,8 @@ class A(base):
         df['position'] = np.where(df['close'] >= df[f'EMA{ma}'] , 'A' , 'B')
         #下面这个方法也是可以的
         #df.loc[df['close'] >= df['EMA120'],['position2']] = 'A'
-        #截取最后adjust_N的矩阵
-        df = df[-adjust_N :]
+        #截取最后N_day的矩阵
+        df = df[-N_day :]
         #print(df)
         #print(df['position'].isin(['A']))  返回是否包含A T/F
         #获取A出现的次数
@@ -294,13 +294,13 @@ class A(base):
         else:
             return False
 
-    def A04B05_EMA均线_收盘价小于均线(self , ma= '10' , adjust_N = 1 , count = 1):
+    def A04B05_EMA均线_收盘价小于均线(self , ma= '10' , N_day = 1 , count = 1):
         """
         收盘价小于某条EMA均线
         输入：
             证券代码，起止日期按照默认
             ma：某条均线 默认为10日均线
-            adjust_N : N天内符合条件就返回T 默认为当天
+            N_day : N天内符合条件就返回T 默认为当天
             count: N天内符合count次就返回True 默认为1
             例子：最后一个交易日收盘价小于EMA均线  adjust_ N = 1 ; count = 1
                     最后5个交易日出现2次小于EMA均线 adjust_ N = 5 ; count = 2
@@ -319,8 +319,8 @@ class A(base):
         df['position'] = np.where(df['close'] >= df[f'EMA{ma}'] , 'A' , 'B')
         #下面这个方法也是可以的
         #df.loc[df['close'] >= df['EMA120'],['position2']] = 'A'
-        #截取最后adjust_N的矩阵
-        df = df[-adjust_N :]
+        #截取最后N_day的矩阵
+        df = df[-N_day :]
         #print(df)
         #print(df['position'].isin(['A']))  返回是否包含A T/F
         #获取B出现的次数
@@ -334,7 +334,7 @@ class A(base):
         else:
             return False
 
-    def A04B06_EMA均线_线性回归角度(self , ma= '20' , period = 2 , low_value = - 0.005 , upper_value = 0.005 , adjust_N = 1 , count = 1):
+    def A04B06_EMA均线_线性回归角度(self , ma= '20' , period = 2 , low_value = - 0.005 , upper_value = 0.005 , N_day = 1 , count = 1):
             """
             计算EMA均线的斜率角度
             备注：此方法对斜率角做了均一化处理。但不同周期下的数据略有不同，但是趋势是可以标准化的
@@ -344,7 +344,7 @@ class A(base):
                 period：talib必要参数，默认计算相邻两根 = 2
                 low_value: 线性回归角度的下限值
                 upper_value：线性回归角度的上限值 默认为-5至5的区间，定义为平台整理
-                adjust_N : N天内符合条件就返回T 默认为当天 如果要计算平台整理，建议设置N = 20
+                N_day : N天内符合条件就返回T 默认为当天 如果要计算平台整理，建议设置N = 20
                 count: N天内符合count次就返回True 默认为1；如果要计算平台整理，建议设置count >=15
                 例子：要计算最近20天内是否存在平台整理的情况  adjust_ N = 20 ; count = 15 ，value取值区间为（-5，5）
                         要计算最近20天内存在向上突破的情况  adjust_ N = 20 ; count = 8 ，value取值区间为（8，100）
@@ -373,7 +373,7 @@ class A(base):
             df.fillna({'result':0} , inplace = True)
             #df['result'] = np.where((df['EMA_ANGLE'] >= low_value) and (df['EMA_ANGLE'] <= upper_value) , 1 , 0)
             #对结果进行求和
-            df['result_sum'] = df['result'].rolling(adjust_N).sum()
+            df['result_sum'] = df['result'].rolling(N_day).sum()
             #print(df.tail(20))
             #返回结果
             if df.iloc[-1].at['result_sum'] >= count :
@@ -381,7 +381,7 @@ class A(base):
             else:
                 return False
 
-    def A04B07_EMA均线_线性回归角度_传统计算方法(self , ma= '20' , period = 2 , low_value = - 0.005 , upper_value = 0.005 , adjust_N = 1 , count = 1):
+    def A04B07_EMA均线_线性回归角度_传统计算方法(self , ma= '20' , period = 2 , low_value = - 0.005 , upper_value = 0.005 , N_day = 1 , count = 1):
         """
         计算EMA均线的斜率角度
         备注：对于EMA均线的话，其实使用收盘价与均线的偏离度也可以解释均线的斜率，并且和ATR数据结合，可以做到均一化处理
@@ -391,7 +391,7 @@ class A(base):
             period：talib必要参数，默认计算相邻两根 = 2
             low_value: 线性回归角度的下限值
             upper_value：线性回归角度的上限值 默认为-5至5的区间，定义为平台整理
-            adjust_N : N天内符合条件就返回T 默认为当天 如果要计算平台整理，建议设置N = 20
+            N_day : N天内符合条件就返回T 默认为当天 如果要计算平台整理，建议设置N = 20
             count: N天内符合count次就返回True 默认为1；如果要计算平台整理，建议设置count >=15
             例子：要计算最近20天内是否存在平台整理的情况  adjust_ N = 20 ; count = 15 ，value取值区间为（-5，5）
                     要计算最近20天内存在向上突破的情况  adjust_ N = 20 ; count = 8 ，value取值区间为（8，100）
@@ -420,7 +420,7 @@ class A(base):
         df.fillna({'result':0} , inplace = True)
         #df['result'] = np.where((df['EMA_ANGLE'] >= low_value) and (df['EMA_ANGLE'] <= upper_value) , 1 , 0)
         #对结果进行求和
-        df['result_sum'] = df['result'].rolling(adjust_N).sum()
+        df['result_sum'] = df['result'].rolling(N_day).sum()
         #print(df.tail(20))
         #返回结果
         if df.iloc[-1].at['result_sum'] >= count :
@@ -433,9 +433,9 @@ if __name__ == "__main__":
     pd.set_option('display.max_rows', None)
     demo = A(myauth = False)
     demo.code = '600313.sh'
-    demo.vendor = demo.vendor.tusharePro
-    demo.start = datetime(2021,1,1)
-    demo.end = datetime(2022,7,7)
+    demo.vendor = demo.vendor.akshare
+    demo.start = datetime(2023,1,1)
+    demo.end = datetime(2023,7,7)
     a = demo.A04B02_EMA均线多头排列()
     print(a[0])
 
