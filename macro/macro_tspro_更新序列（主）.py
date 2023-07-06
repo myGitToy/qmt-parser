@@ -8,7 +8,7 @@ from apt.vendor.tspro.data import data as data
 #1. 初始化
 a = data(myauth = True)
 a.code ='600038.sh'
-a.start_date= datetime(2023,4,29,8) #1998/10/20日开始有ETF数据    ETF日线数据和复权数据已更新完毕
+a.start_date= datetime(2023,5,23,8) #1998/10/20日开始有ETF数据    ETF日线数据和复权数据已更新完毕
 a.end_date = datetime.now()
 #2. 更新证券代码库(stock和ETF资产)
 sec = security()

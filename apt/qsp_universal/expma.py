@@ -26,5 +26,5 @@ class expma(base):
             df_main = pd.concat([df_main, df] , sort = False)
         #保存数据
         if to_csv == True:
-            df_main.to_csv('.\\data\\海龟模型\\expma_tspro.csv', encoding = 'utf_8_sig')
+            df_main.to_csv(f'.\\data\\海龟模型\\expma_{self.vendor}.csv', encoding = 'utf_8_sig')
         return df_main

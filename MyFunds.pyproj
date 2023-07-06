@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>fe9172f0-51b0-485c-8b74-a2d125475bfa</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>macro\macro_资金流向_实时绘图.py</StartupFile>
+    <StartupFile>macro\macro_akshare_更新序列（仅更新序列）.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -17,6 +17,7 @@
     <UnitTestPattern>test*.py</UnitTestPattern>
     <UnitTestRootDirectory>.</UnitTestRootDirectory>
     <IsWindowsApplication>False</IsWindowsApplication>
+    <SuppressPackageInstallationPrompt>True</SuppressPackageInstallationPrompt>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -94,6 +95,10 @@
     <Compile Include="apt\testB\A.py" />
     <Compile Include="apt\testB\B.py" />
     <Compile Include="apt\testB\__init__.py" />
+    <Compile Include="apt\vendor\akshare\base.py" />
+    <Compile Include="apt\vendor\akshare\data.py" />
+    <Compile Include="apt\vendor\akshare\security.py" />
+    <Compile Include="apt\vendor\akshare\__init__.py" />
     <Compile Include="apt\vendor\jqdata\base.py" />
     <Compile Include="apt\vendor\jqdata\ETF.py">
       <SubType>Code</SubType>
@@ -146,10 +151,16 @@
     </Compile>
     <Compile Include="centos9\macro_tspro_更新序列%28centos9%29（主）.py" />
     <Compile Include="centos9\macro_tspro_更新序列%28centos9%29（仅更新序列）.py" />
+    <Compile Include="demo\demo_akshare_获取K线数据.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="demo\demo_akshare_init.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_backtrader_夏普比率_作图测试.py" />
+    <Compile Include="demo\demo_bilibili爬图片.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="demo\demo_finanace_net_income.py">
       <SubType>Code</SubType>
     </Compile>
@@ -171,22 +182,39 @@
     <Compile Include="demo\demo_机构调研.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="demo\demo_滚动窗口测试_.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="demo\demo_绘图_布林线.py" />
     <Compile Include="demo\hdf5演示模块_ 数据更新.py" />
     <Compile Include="demo\hdf5数据读取和查看.py" />
     <Compile Include="demo\hdf5数据读取写入测试.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="demo\demo_加权中位数测试%28滚动窗口法%29.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\demo_quantile.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="demo\同花顺正则表达式测试.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="demo\套图下载.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\测试模块.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="macro\demo_海龟模型每日更新%28tspro%29.py" />
     <Compile Include="macro\macro_get_percentile.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="macro\macro_akshare_更新1分钟数据入序列.py" />
     <Compile Include="macro\macro_tspro_更新1分钟数据入序列.py" />
+    <Compile Include="macro\macro_akshare_更新序列（仅更新序列）.py" />
+    <Compile Include="macro\macro_akshare_更新序列（主）.py" />
+    <Compile Include="macro\macro_当日分时入库状态 - Copy.py" />
     <Compile Include="macro\macro_资金流向1m.py" />
     <Compile Include="demo\demo_tspro_基金份额走势.py" />
     <Compile Include="demo\demo_tspro_75分位数测试.py">
@@ -363,6 +391,7 @@
     <Folder Include="apt\vendor\jqdata\" />
     <Folder Include="apt\vendor\jqdata\finance\" />
     <Folder Include="apt\vendor\jqdata\hk\" />
+    <Folder Include="apt\vendor\akshare\" />
     <Folder Include="apt\vendor\tspro\" />
     <Folder Include="fund\" />
     <Folder Include="apt\" />

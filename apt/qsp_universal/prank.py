@@ -14,6 +14,7 @@ class prank(base):
         """
         获取当前bar位于前N个bar的分位数数据
         目前仅兼容60分钟线
+        主要提示：加入针对成交量权重的分位数的计算，理论的最优解应该采用1分钟线，但是由于数据更新无法保证时效性，所以目前用60分钟线来代替
         """
         #获取K线数据
         self.ktype = '60m'
@@ -46,5 +47,5 @@ class prank(base):
         #保存数据
         if to_csv == True:
             #print(df_main)
-            df_main.to_csv('.\\trade\\prank_jqdata.csv', encoding = 'utf_8_sig')
+            df_main.to_csv(f'.\\trade\\prank_{self.vendor}.csv', encoding = 'utf_8_sig')
         return df_main

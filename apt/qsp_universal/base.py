@@ -2,6 +2,7 @@
 from apt.vendor.jqdata.jqdata import data as jqdata
 from apt.vendor.jqdata.base import base as jqbase
 from apt.vendor.tspro.data import data as tsdata
+from apt.vendor.akshare.data import data as akdata
 from apt.vendor.tspro.security import security as tssec
 from apt.vendor.jqdata.security import security as jqsec
 from datetime import datetime , timedelta
@@ -22,7 +23,7 @@ class base():
         tushare = 0 #tushare（未实装）
         tusharePro = 1 #tusharePro
         jqdata = 2 #jqdata
-        akshare = 3   #akshare（未实装）
+        akshare = 3   #akshare
     class 复权(Enum):
         """
         选择复权类型
@@ -103,14 +104,22 @@ class base():
             df = a.get_k_data(code = self.code , start_date = self.start_date , end_date = self.end_date , ktype = self.ktype , fq = self.fq , count = count , flag_forward = flag_forward)
             return df
         elif self.vendor == self.vendor.akshare:
-            print("展示不支持akshare数据获取")
-            return pd.DataFrame()
+            a = akdata()
+            a.myauth = self.myauth
+            a.数据源 = self.server
+            a.start_date = self.start_date
+            a.end_date = self.end_date
+            a.fq = self.fq
+            a.code = self.code
+            a.ktype = self.ktype
+            df = a.get_k_data(count = count , col = col , flag_forward = flag_forward , flag_resample = flag_resample)
+            return df
         else:
             raise ValueError(f'不支持此数据供应商，请检查输入！')
 
     def get_all_code(self , type = type):
         """
-        通用数据接口 获取证券代码列表
+        通用数据接口 获取指定日期节点依旧上市的证券代码列表
         输入：
             type 证券类别 默认为['stock','etf']
         返回：
@@ -125,8 +134,10 @@ class base():
             #获取证券列表
             return a.get_all_code(day = self.end_date , type = type)
         elif self.vendor == self.vendor.akshare:
-            print("暂时不支持akshare数据获取")
-            return pd.DataFrame()
+            #目前akshare采用tspro证券列表
+            a = tssec()
+            #获取证券列表            
+            return a.get_all_code(day = self.end_date)
         else:
             raise ValueError(f'不支持此数据供应商，请检查输入！')
 
@@ -151,8 +162,10 @@ class base():
             #获取证券列表
             return a.get_security(code = code)
         elif self.vendor == self.vendor.akshare:
-            print("暂时不支持akshare数据获取")
-            return pd.DataFrame()
+            #目前akshare采用tspro证券列表
+            a = tssec()
+            #获取证券列表            
+            return a.get_security(code = code)
         else:
             raise ValueError(f'不支持此数据供应商，请检查输入！')
 

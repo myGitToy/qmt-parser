@@ -1,0 +1,3 @@
+#!C:\Users\GHUIQ\OneDrive\python项目\MyFunds\MyFunds\env_myfund\Scripts\python.exe
+from numba.pycc import main
+main()

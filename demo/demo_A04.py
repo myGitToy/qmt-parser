@@ -16,10 +16,10 @@ a.end = datetime(2021,10,26)
 a.myauth = False
 #df = a.A04B01_EMA均线数据()
 #测试A04B04
-#df = a.A04B05_EMA均线_收盘价小于均线(ma = '120', adjust_N = 10 , count = 10)
+#df = a.A04B05_EMA均线_收盘价小于均线(ma = '120', N_day = 10 , count = 10)
 
 #测试A04B06
-df = a.A04B06_EMA均线_线性回归角度(ma = '20', adjust_N = 20 , count = 16)
+df = a.A04B06_EMA均线_线性回归角度(ma = '20', N_day = 20 , count = 16)
 print(df)
 
 #测试均线多头排列
