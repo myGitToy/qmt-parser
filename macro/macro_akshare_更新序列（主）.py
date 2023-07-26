@@ -4,12 +4,13 @@ import tushare as ts
 from datetime import datetime,timedelta
 from apt.vendor.tspro.security import security  as security
 from apt.vendor.akshare.data import data as data
+from apt.vendor.tspro.money_flow import money_flow as money
 
 #1. 初始化
 a = data(myauth = True)
 ak = data(myauth = True)
 a.code = ak.code = '600038.sh'
-a.start_date = ak.start_date =  datetime(2023,7,6,8) #1998/10/20日开始有ETF数据    ETF日线数据和复权数据已更新完毕
+a.start_date = ak.start_date =  datetime(2023,7,27,8) #1998/10/20日开始有ETF数据    ETF日线数据和复权数据已更新完毕
 a.end_date = ak.end_date =  datetime.now()
 #2. 更新证券代码库(stock和ETF资产)
 sec = security()
@@ -18,6 +19,12 @@ sec.update_security_ETF()
 
 #更新交易日历
 sec.update_calendar()
+
+#更新资金流向
+flow = money()
+flow.start_date = a.start_date
+flow.end_date = a.end_date
+flow.daily_update(sleep = 0.2)
 
 #3. 更新股票日线数据和复权因子（忽略）
 a.ktype = '1d'
