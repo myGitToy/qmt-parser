@@ -20,6 +20,9 @@ sec.update_security_ETF()
 #更新交易日历
 sec.update_calendar()
 
+#更新基础信息daily basic
+sec.update_basic(sleep = 0.2)
+
 #更新资金流向
 flow = money()
 flow.start_date = a.start_date
