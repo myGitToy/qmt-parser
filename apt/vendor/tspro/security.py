@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import tushare as ts
 import sqlalchemy
+import time
 from datetime import datetime
 from apt.vendor.tspro.base import base as base
 from apt.vendor.tspro.base import stock as stock
@@ -259,12 +260,68 @@ class security(base , stock):
         else:
             #返回stock
             return df[['code','market','name']] ,'stock'
-               
+
+    def update_basic(self , sleep = 0.2):
+        """
+        接口：daily_basic，可以通过数据工具调试和查看数据。
+        更新时间：交易日每日15点～17点之间
+        描述：获取全部股票每日重要的基本面指标，可用于选股分析、报表展示等。
+        数据自1991年开始
+        """
+        #获取更新列表（按交易日）
+        trade_day = pd.DataFrame(columns = ['date'])
+        trade_day = self.get_calendar(is_open = 1)
+        #获取资金流向库中存在的日期列表
+        query_daysql = f"select distinct date FROM tspro_basic FORCE INDEX (main) WHERE date BETWEEN '{self.start_date.date()}' and '{self.end_date.date()}'  ORDER BY date asc" 
+        df_dbday = pd.read_sql_query(query_daysql , self.engine)
+        if df_dbday.empty == True:
+            #数据库不存在数据
+            df_dbday = pd.DataFrame(columns = ['date'])
+        else:
+            #数据库存在数据
+            df_dbday['date'] = pd.to_datetime(df_dbday['date']) #时间日期ns64化
+            pass
+        #数据拼接，最终需要更新的日期是trade_day中包含且df_dbday不包含的数据
+        day_diff = pd.concat([trade_day , df_dbday , df_dbday]).drop_duplicates(subset = ['date'] , keep = False)
+        print(day_diff)
+        #打印标题
+        print("############正在准备更新每日指标信息###########")
+        """
+        更新逻辑：
+            1. 需要更新的日期
+                1.1 取出区间内的交易日
+                1.2 取出数据库中存在每日指标信息的日期
+                1.3 两者取差集就是需要更新的日期
+            2. 按照日期循环，获取每日的指标信息
+            3. 数据写入数据库
+        逻辑优点和不足：
+            1. 一次性提取每日的指标信息，运行效率较高
+            2. 智能化更新，跳过重复的日期
+            3. 缺点：更新限制每次5000条，后续可能会超过限制值
+        """
+        for day in day_diff['date']:
+            #获取数据库中存在的数据最后更新日期（加入强制使用索引的内容）
+            df = self.pro.daily_basic(trade_date = day.strftime("%Y%m%d"))
+            #重命名列（money_flow中的证券代码sec_code和数据库中的不一致）
+            df.rename(columns = {'ts_code':'code','trade_date':'date'} , inplace = True)
+            df['date'] = pd.to_datetime(df['date']) #时间日期ns64化
+            #保存至数据库 
+            if df.empty == True:
+                print(f"{day.date()}数据为空，跳过上传")
+            else:
+                df.to_sql(
+                        name = 'tspro_basic',
+                        con = self.engine,
+                        index = False,
+                        if_exists = 'append')
+                print(f"{day.date()} 数据已上传完成，更新条目数{df.shape[0]} (daily basic)")
+                time.sleep(sleep)
 if __name__=="__main__":
     #测试交易日历功能
     cal = security()
-    cal.start_date = datetime(1991,1,1)
-    cal.end_date = datetime(2022,7,1)
+    cal.start_date = datetime(2023,1,1)
+    cal.end_date = datetime(2023,7,29)
+    cal.update_basic()
     a =cal.get_security('601318.sh')
     print(a)
     print(cal.dict[cal.ktype])
