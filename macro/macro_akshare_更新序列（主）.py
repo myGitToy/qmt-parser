@@ -10,7 +10,7 @@ from apt.vendor.tspro.money_flow import money_flow as money
 a = data(myauth = True)
 ak = data(myauth = True)
 a.code = ak.code = '600038.sh'
-a.start_date = ak.start_date =  datetime(2023,7,29,8) #1998/10/20日开始有ETF数据    ETF日线数据和复权数据已更新完毕
+a.start_date = ak.start_date =  datetime(2023,8,4,8) #1998/10/20日开始有ETF数据    ETF日线数据和复权数据已更新完毕
 a.end_date = ak.end_date =  datetime.now()
 #2. 更新证券代码库(stock和ETF资产)
 sec = security()
@@ -23,7 +23,7 @@ sec.update_calendar()
 #更新基础信息daily basic（1991年至今）
 sec.update_basic(sleep = 0.2)
 
-#更新资金流向（2007年至今）
+#更新资金流向（2007年至今） 数据更新时间20：00
 flow = money()
 flow.start_date = a.start_date
 flow.end_date = a.end_date
