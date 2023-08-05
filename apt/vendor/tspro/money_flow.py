@@ -47,7 +47,7 @@ class money_flow(tspro_data):
             pass
         #数据拼接，最终需要更新的日期是trade_day中包含且df_dbday不包含的数据
         day_diff = pd.concat([trade_day , df_dbday , df_dbday]).drop_duplicates(subset = ['date'] , keep = False)
-        print(day_diff)
+        #print(day_diff)
         #打印标题
         print("############正在准备更新资金流向信息###########")
         """
@@ -119,12 +119,12 @@ class money_flow(tspro_data):
         for n in rolling_list:
             #滚动窗口累计计算
             #df[f'小单金额_r{n}'] = df['小单净额'].rolling(n).mean().apply(lambda x: '%.2f'%x)  #小数点截取范例
-            df[f'小单金额_r{n}'] = df['小单净额'].rolling(n).mean()
-            df[f'中单净额_r{n}'] = df['中单净额'].rolling(n).mean()
-            df[f'大单净额_r{n}'] = df['大单净额'].rolling(n).mean()
-            df[f'超单大净额_r{n}'] = df['超单大净额'].rolling(n).mean()
-            df[f'散户净额_r{n}'] = df['散户净额'].rolling(n).mean()
-            df[f'主力净额_r{n}'] = df['主力净额'].rolling(n).mean()
+            df[f'小单金额_r{n}'] = df['小单净额'].rolling(n).sum()
+            df[f'中单净额_r{n}'] = df['中单净额'].rolling(n).sum()
+            df[f'大单净额_r{n}'] = df['大单净额'].rolling(n).sum()
+            df[f'超单大净额_r{n}'] = df['超单大净额'].rolling(n).sum()
+            df[f'散户净额_r{n}'] = df['散户净额'].rolling(n).sum()
+            df[f'主力净额_r{n}'] = df['主力净额'].rolling(n).sum()
             #滚动窗口
             df[f'小单金额_p{n}'] =  df[f'小单金额_r{n}'].rolling(n).apply(lambda x: stats.percentileofscore(x, x.iloc[-1]))
             df[f'中单净额_p{n}'] =  df[f'中单净额_r{n}'].rolling(n).apply(lambda x: stats.percentileofscore(x, x.iloc[-1]))
@@ -165,10 +165,6 @@ class money_flow(tspro_data):
         return df
         #合并文件
         df_main = pd.concat([df_main, df],sort = False)
-
-    def get_k(self):
-        df = self.get_k_data()
-        print(df)
 
     def get_money_flow_v2(self , to_excel = False):
         """
@@ -255,7 +251,7 @@ if __name__=="__main__":
     money.start_date = datetime(2021,1,1)
     money.end_date = datetime(2023,7,31)
     money.ktype = '1m'
-    df = money.daily_update()
+    df = money.get_money_flow()
     print(df)
     money.start_date = datetime(2021,1,1) 
     money.end_date = datetime(2023,7,26)
