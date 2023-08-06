@@ -316,19 +316,45 @@ class security(base , stock):
                         if_exists = 'append')
                 print(f"{day.date()} 数据已上传完成，更新条目数{df.shape[0]} (daily basic)")
                 time.sleep(sleep)
+
+    def get_basic(self , to_csv = True):
+        """
+        获取区间内最新的每日基本面数据
+        """
+        ###取出区间内的最后一个有效日期
+        query_day = f"select distinct date FROM tspro_basic WHERE date BETWEEN '{self.start_date.date()}' and '{self.end_date.date()}'" 
+        df_day = pd.read_sql_query(query_day , self.engine)
+        if df_day.empty == True:
+            #数据库不存在数据
+            return pd.DataFrame()
+        else:
+            #数据库存在数据
+            last_day = df_day.iloc[-1].at['date']
+        ###通过区间内的最后一个有效日期来获取数据
+        query_day = f"select * FROM tspro_basic WHERE date = '{last_day}'" 
+        df_db = pd.read_sql_query(query_day , self.engine)
+        if df_day.empty == True:
+            #数据库不存在数据
+            return pd.DataFrame()
+        else:
+            #数据库存在数据
+            if to_csv ==  True:
+                df_db.to_csv('.\\data\\海龟模型\\每日指标.csv', encoding = 'utf_8_sig')
+            return df_db
+
 if __name__=="__main__":
     #测试交易日历功能
     cal = security()
     cal.start_date = datetime(2023,1,1)
-    cal.end_date = datetime(2023,7,29)
-    cal.update_basic()
+    cal.end_date = datetime(2023,8,9)
+    cal.get_basic()
     a =cal.get_security('601318.sh')
     print(a)
     print(cal.dict[cal.ktype])
 
     #测试ETF类资产更新
     #df = cal.update_security_ETF()
-    #print(df)
+    #print(df)          
 
     #测试stock和ETF类资产的读取 2022/7/10
     df = cal.get_all_code(type = ['etf','stock'] , day = cal.end_date)
