@@ -342,13 +342,14 @@ class security(base , stock):
                 df_db.to_csv('.\\data\\海龟模型\\每日指标.csv', encoding = 'utf_8_sig')
             return df_db
 
+
 if __name__=="__main__":
     #测试交易日历功能
     cal = security()
     cal.start_date = datetime(2023,1,1)
     cal.end_date = datetime(2023,8,9)
-    cal.get_basic()
-    a =cal.get_security('601318.sh')
+    a = cal.get_cal_k()
+    #a =cal.get_security('601318.sh')
     print(a)
     print(cal.dict[cal.ktype])
 

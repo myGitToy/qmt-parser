@@ -434,8 +434,8 @@ if __name__ == "__main__":
     demo = A(myauth = False)
     demo.code = '600313.sh'
     demo.vendor = demo.vendor.akshare
-    demo.start = datetime(2023,1,1)
-    demo.end = datetime(2023,7,7)
+    demo.start_date = datetime(2023,1,1)
+    demo.end_date = datetime(2023,8,7)
     a = demo.A04B02_EMA均线多头排列()
     print(a[0])
 
