@@ -144,7 +144,26 @@ class money_flow(tspro_data):
             #输出EXCEL
             df.to_excel(f'.\\data\\测试数据\\资金流向{self.code}.xlsx', sheet_name = f'sheet1' ,  header=True, index=False)
         return df
- 
+    def get_cal_k(self , rolling_list = [3,5,10,20,30,60,120] , to_csv = False):
+        """
+        获取计算后的K线数据
+        
+        """
+        ###取出区间内的K线数据
+        self.ktype = '1d'
+        df =  self.get_k_data()
+        df = df[['date','code','close','money']]
+        for n in rolling_list:
+            #滚动窗口累计计算
+            df[f'money_r{n}'] = df['money'].rolling(n).sum()
+            #分位数计算
+            df[f'close_p{n}'] =  df['close'].rolling(n).apply(lambda x: stats.percentileofscore(x, x.iloc[-1]))
+            #df[f'money_p{n}'] =  df[f'money_r{n}'].rolling(n).apply(lambda x: stats.percentileofscore(x, x.iloc[-1]))
+        if to_csv ==True:
+            #输出csv文件
+            df.to_excel(f'.\\data\\测试数据\\K线数据_{self.code}.xlsx', sheet_name = f'sheet1' ,  header = True, index = True)
+        #print(df_flow)
+        return df
 if __name__=="__main__":
     #模块参数初始化
     money = money_flow()
@@ -152,5 +171,5 @@ if __name__=="__main__":
     money.start_date = datetime(2021,1,1)
     money.end_date = datetime(2023,7,31)
     money.ktype = '1m'
-    df = money.get_money_flow()
+    df = money.get_cal_k(to_csv = True)
     print(df)
