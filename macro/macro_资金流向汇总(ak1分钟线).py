@@ -34,7 +34,7 @@ df_code_main = pd.concat([df_code_main, df_code1 , df_code2 , df_code3] , sort =
 df_code_main.drop_duplicates(subset = ['证券代码'], keep = 'first', inplace = True)
 #print(df_code_main)
 
-df_main = pd.DataFrame()
+df_main = pd.DataFrame() 
 n = 0
 print("#############开始更新资金流向数据####################")
 for code in df_code_main['证券代码']:

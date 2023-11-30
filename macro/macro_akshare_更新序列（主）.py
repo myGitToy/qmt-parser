@@ -10,7 +10,8 @@ from apt.vendor.tspro.money_flow import money_flow as money
 a = data(myauth = True)
 ak = data(myauth = True)
 a.code = ak.code = '600038.sh'
-a.start_date = ak.start_date =  datetime(2023,8,5,8) #1998/10/20日开始有ETF数据    ETF日线数据和复权数据已更新完毕
+#全市场数据校验下次起始日期2023/10/23
+a.start_date = ak.start_date =  datetime(2023,11,30,8) #1998/10/20日开始有ETF数据    ETF日线数据和复权数据已更新完毕
 a.end_date = ak.end_date =  datetime.now()
 #2. 更新证券代码库(stock和ETF资产)
 sec = security()
