@@ -257,10 +257,11 @@ class data(base,stock):
 
             elif result == '2':             #删除后添加
                 sql_count = 'delete from tspro_update_sequence'
-                try:    #删除需捕捉异常，否则会报错
-                    pd.read_sql_query(sql_count , self.engine)
+                try:
+                    with self.engine.begin() as connection:
+                        connection.execute(sql_count)
                 except exc.ResourceClosedError:
-                    pass
+                    print(f"删除更新序列失败！")
                 #以下代码与选项1保持一致
                 #1. 获取区间最后一天所对应的全部证券列表
                 sec = security()
@@ -283,11 +284,12 @@ class data(base,stock):
 
             elif result == '3':             #直接删除
                 sql_count = 'delete from tspro_update_sequence'
-                try:    #删除需捕捉异常，否则会报错
-                    pd.read_sql_query(sql_count , self.engine)
+                try:
+                    with self.engine.begin() as connection:
+                        connection.execute(sql_count)
                 except exc.ResourceClosedError:
-                    print('更新序列已删除！')
-
+                    print(f"删除更新序列失败！")
+                    
             elif result == '4':          #不做任何更改，直接跳出
                 return 
             else:
