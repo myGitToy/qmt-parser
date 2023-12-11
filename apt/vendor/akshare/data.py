@@ -65,7 +65,7 @@ class data(base,stock):
         for day in trade_days['cal_date']:
             #print(f"##############正在更新%s数据##############" % day.strftime("%Y-%m-%d"))
             #检查数据库是否存在数据（目前跳过验证，数据查询耗时较长）
-            query = f"select date , count(date) as num from tspro_{self.ktype} where date(date) = '{day.date()}'"
+            query = f"select MIN(date) , count(date) as num from tspro_{self.ktype} where date(date) = '{day.date()}'"
             df_old = pd.read_sql_query(query , self.engine)
             count = df_old.loc[0 , 'num']
             if count > 0 and flag_verify_db == True:
@@ -96,6 +96,9 @@ class data(base,stock):
                     query = f"select code , date from tspro_{self.ktype} where date(date) = '{day.date()}'"
                     df_db = pd.read_sql_query(query , self.engine)
                     df_db['date'] = pd.to_datetime(df_db['date'])
+                    #Feature Warning Fix
+                    df = df.dropna(how='all', axis=1)
+                    df_db = df_db.dropna(how='all', axis=1)
                     df = pd.concat([df , df_db , df_db ]).drop_duplicates(subset = ['code','date'] , keep = False)
                 else:
                     #分时数据正常处理
@@ -164,7 +167,10 @@ class data(base,stock):
             df['money'] = df['money'] * 1000
             #日线数据特殊处理，因为数据库中的格式是date，不是datetime
             #两者取差集(df-df_db)主要目的是为了导入ETF复权因子，因此主集设定为df
-            df = pd.concat([df , df_db , df_db] ).drop_duplicates(subset=['code','date'] , keep = False)
+            #Feature Warning Fix
+            df = df.dropna(how='all', axis=1)
+            df_db = df_db.dropna(how='all', axis=1)
+            df = pd.concat([df , df_db , df_db]).drop_duplicates(subset=['code','date'] , keep = False)
             #print(df)
             #保存至数据库
             if df.empty == True:
@@ -406,6 +412,11 @@ class data(base,stock):
                 #print(df_ak)
                 #print(df_db)
                 #5. 两个DataFrame进行差值处理
+                #Feature Warning: 在当前的版本中，如果你连接的 DataFrame 中有一列全部是空值或 NA
+                #那么这一列将不会被包含在结果的数据类型决定中。但在未来的版本中，
+                #这种行为将不再存在，即使一列全部是空值或 NA，它也会被包含在结果的数据类型决定中。
+                df_ak = df_ak.dropna(how='all', axis=1)
+                df_db = df_db.dropna(how='all', axis=1)
                 df_diff = pd.concat([df_ak , df_db , df_db] ).drop_duplicates(subset=['date'] , keep = False)
                 #6. 差值数据写入数据库
                 if df_diff.empty == True:
@@ -506,6 +517,9 @@ class data(base,stock):
             df_db['date'] = pd.to_datetime(df_db['date'])
             #print(df_tspro)
             #5. 两个DataFrame进行差值处理
+            #Feature Warning Fix
+            df_tspro = df_tspro.dropna(how='all', axis=1)
+            df_db = df_db.dropna(how='all', axis=1)
             df_diff = pd.concat([df_tspro , df_db , df_db] ).drop_duplicates(subset=['date'] , keep = False)
             #6. 差值数据写入数据库
             if df_diff.empty == True:
@@ -578,7 +592,7 @@ class data(base,stock):
         for day in trade_days['cal_date']:
             #print(f"##############正在更新%s数据##############" % day.strftime("%Y-%m-%d"))
             #检查数据库是否存在数据（目前跳过验证，数据查询耗时较长）
-            query = f"select date , count(date) as num from tspro_factor where date(date) = '{day.date()}'"
+            query = f"select MIN(date) , count(date) as num from tspro_factor where date(date) = '{day.date()}'"
             df_old = pd.read_sql_query(query , self.engine)
             count = df_old.loc[0 , 'num']
             if count > 0 and flag_verify_db == True:
@@ -601,6 +615,9 @@ class data(base,stock):
                 query = f"select code , date from tspro_factor where date(date) = '{day.date()}'"
                 df_db = pd.read_sql_query(query , self.engine)
                 df_db['date'] = pd.to_datetime(df_db['date'])
+                #Feature Warning Fix
+                df = df.dropna(how='all', axis=1)
+                df_db = df_db.dropna(how='all', axis=1)
                 df = pd.concat([df , df_db , df_db ]).drop_duplicates(subset = ['code','date'] , keep = False)
                 #保存至数据库
                 if df.empty == True:
@@ -642,6 +659,9 @@ class data(base,stock):
             df['date'] = pd.to_datetime(df['date'])
             df_db['date'] = pd.to_datetime(df_db['date'])
             #两者取差集(df-df_db)主要目的是为了导入ETF复权因子，因此主集设定为df
+            #Feature Warning Fix
+            df = df.dropna(how='all', axis=1)
+            df_db = df_db.dropna(how='all', axis=1)            
             df = pd.concat([df , df_db , df_db] ).drop_duplicates(subset=['code','date'] , keep = False)
             #保存至数据库
             if df.empty == True:
@@ -693,6 +713,9 @@ class data(base,stock):
             df_ak = pd.read_sql_query(query_ak , self.engine)
         #取数据交集
         #df_db = pd.merge(df_tspro,df_ak,on=['code','date'],how='inner')
+        #Feature Warning Fix
+        df_tspro = df.dropna(how='all', axis=1)
+        df_ak = df_db.dropna(how='all', axis=1)
         df_db = pd.concat([df_tspro , df_ak ] ).drop_duplicates(subset=['date'] , keep = 'first')
         #print(df_db)
         #处理需要返回的个数
@@ -725,6 +748,9 @@ class data(base,stock):
                     #取出09:30数据
                     df_drop = df_db.query('date.dt.time == datetime.strptime("09:30","%H:%M").time()')
                     #两者取差集
+                    #Feature Warning Fix
+                    df_drop = df_drop.dropna(how='all', axis=1)
+                    df_db = df_db.dropna(how='all', axis=1)                  
                     df_db = pd.concat([df_db , df_drop , df_drop] ).drop_duplicates(subset=['date'] , keep = False)
                 else:
                     #重采样
