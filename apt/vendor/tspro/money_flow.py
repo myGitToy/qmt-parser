@@ -65,7 +65,29 @@ class money_flow(tspro_data):
         """
         for day in day_diff['date']:
             #获取数据库中存在的数据最后更新日期（加入强制使用索引的内容）
-            df = self.pro.moneyflow(trade_date = day.strftime("%Y%m%d"))
+            df = self.pro.moneyflow(trade_date = day.strftime("%Y%m%d"), fields=[
+                                                                        "ts_code",
+                                                                        "trade_date",
+                                                                        "buy_sm_vol",
+                                                                        "buy_sm_amount",
+                                                                        "sell_sm_vol",
+                                                                        "sell_sm_amount",
+                                                                        "buy_md_vol",
+                                                                        "buy_md_amount",
+                                                                        "sell_md_vol",
+                                                                        "sell_md_amount",
+                                                                        "buy_lg_vol",
+                                                                        "buy_lg_amount",
+                                                                        "sell_lg_vol",
+                                                                        "sell_lg_amount",
+                                                                        "buy_elg_vol",
+                                                                        "buy_elg_amount",
+                                                                        "sell_elg_vol",
+                                                                        "sell_elg_amount",
+                                                                        "net_mf_vol",
+                                                                        "net_mf_amount",
+                                                                        "trade_count"
+                                                                    ])
             #重命名列（money_flow中的证券代码sec_code和数据库中的不一致）
             df.rename(columns = {'ts_code':'code','trade_date':'date'} , inplace = True)
             df['date'] = pd.to_datetime(df['date']) #时间日期ns64化
