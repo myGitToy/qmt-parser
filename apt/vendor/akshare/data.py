@@ -4,12 +4,15 @@ import tushare as ts
 import sqlalchemy
 import akshare as ak
 import time
-from sqlalchemy import create_engine,exc   #用来捕捉sqlalchemy的异常
+from sqlalchemy import create_engine,exc,delete   #用来捕捉sqlalchemy的异常
 from datetime import datetime,timedelta
 from apt.vendor.tspro.security import security  as security
 from apt.vendor.akshare.base import base as base
 from apt.vendor.akshare.base import stock as stock
 from apt.vendor.tspro.security import security
+from pandas.io import sql as con
+from sqlalchemy import text
+
 #from apt.vendor.tspro.security import get_calendar
 
 class data(base,stock):
@@ -413,15 +416,27 @@ class data(base,stock):
                     #数据导入增加XX毫秒的延迟（akshare专有，速度太快会被限制）
                     time.sleep(sleep)
                 #7. 将此条目从更新序列中删除
-                sql_delete = f'delete from akshare_update_sequence where id = {id}'
+                """
+                sql_delete = text(f'delete from tspro_update_sequence where id = {id}')
                 try:    #删除需捕捉异常，否则会报错
                     pd.read_sql_query(sql_delete , self.engine)
                 except exc.ResourceClosedError:
                     pass
+                """
+                sql_delete = text(f"delete from akshare_update_sequence where id = {id}")
+                try:
+                    with self.engine.begin() as connection:
+                        connection.execute(sql_delete)
+                except exc.ResourceClosedError:
                     #print('更新序列已删除！')
+                    pass
+                
         else:
             #无数据，跳过
             print("更新序列无数据，跳过更新")
+
+    def new_method(self):
+        self.engine.ex
 
     def update_min(self):
         """
