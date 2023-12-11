@@ -180,6 +180,7 @@ class data(base,stock):
             myclass 一级目录 默认stock  目前可接受参数stock|etf
             type 二级目录 默认60m；目前可接受参数：60m/1m
             priority 优先更新标识 默认为0
+            此处未作auto_update的适配，因为目前tspro无分时权限，因此维持手动更新
         '''
         if code_list != None:
             ######流程1：优先更新逻辑，混合代码，需要拉取证券列表的类型等数据

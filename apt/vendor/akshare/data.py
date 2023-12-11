@@ -238,7 +238,7 @@ class data(base,stock):
                 if auto_select == True:
                     result = '1'
                 else: #数据库存在数据，且不自动选择
-                    result = input('''数据库不存在数据，请选择更新方式 \n
+                    result = input('''数据库存在数据，请选择更新方式 \n
                     1. 保留原有更新序列，添加新的序列 \n
                     2. 删除原有更新序列，添加新的序列 \n
                     3. 删除原有更新序列 \n
