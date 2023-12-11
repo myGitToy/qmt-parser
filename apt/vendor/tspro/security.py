@@ -308,7 +308,27 @@ class security(base , stock):
         """
         for day in day_diff['date']:
             #获取数据库中存在的数据最后更新日期（加入强制使用索引的内容）
-            df = self.pro.daily_basic(trade_date = day.strftime("%Y%m%d"))
+            df = self.pro.daily_basic(trade_date = day.strftime("%Y%m%d"), fields=[
+                                                                        "ts_code",
+                                                                        "trade_date",
+                                                                        "close",
+                                                                        "turnover_rate",
+                                                                        "turnover_rate_f",
+                                                                        "volume_ratio",
+                                                                        "pe",
+                                                                        "pe_ttm",
+                                                                        "pb",
+                                                                        "ps",
+                                                                        "ps_ttm",
+                                                                        "dv_ratio",
+                                                                        "dv_ttm",
+                                                                        "total_share",
+                                                                        "float_share",
+                                                                        "free_share",
+                                                                        "total_mv",
+                                                                        "circ_mv",
+                                                                        "limit_status"
+                                                                    ])
             #重命名列（money_flow中的证券代码sec_code和数据库中的不一致）
             df.rename(columns = {'ts_code':'code','trade_date':'date'} , inplace = True)
             df['date'] = pd.to_datetime(df['date']) #时间日期ns64化
