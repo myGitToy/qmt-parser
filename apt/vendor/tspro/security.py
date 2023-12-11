@@ -137,9 +137,12 @@ class security(base , stock):
 
             with self.engine.connect() as con:
                 #设置主键
-                con.execute('ALTER TABLE `tspro_fund_basic` ADD PRIMARY KEY (`code`);')
-                #设置索引（其实主键和索引一致的话，是可以不需要设置索引的）
-                #con.execute('CREATE INDEX index `tspro_security` (`code`);')
+                try:
+                    con.execute('ALTER TABLE `tspro_fund_basic` ADD PRIMARY KEY (`code`);')
+                    #设置索引（其实主键和索引一致的话，是可以不需要设置索引的）
+                    #con.execute('CREATE INDEX index `tspro_security` (`code`);')
+                except :
+                    pass
             print(f"ETF数据已上传完成(security),新增数据{df_security.shape[0]}条")
 
     def update_security(self ,type = ['stock','index','fund','etf','lof','fja','fjb']):
@@ -147,7 +150,7 @@ class security(base , stock):
         security日常更新
         type jqdata证券类型，此处予以保留，实际无效果
         """
-        pro = ts.pro_api()
+        pro = ts.pro_api(self.token)
         #打印标题
         print("############正在准备更新security证券代码信息###########")
         df_security = pd.DataFrame()
@@ -195,9 +198,13 @@ class security(base , stock):
 
             with self.engine.connect() as con:
                 #设置主键
-                con.execute('ALTER TABLE `tspro_security` ADD PRIMARY KEY (`code`);')
-                #设置索引（其实主键和索引一致的话，是可以不需要设置索引的）
-                #con.execute('CREATE INDEX index `tspro_security` (`code`);')
+                try:
+                    con.execute('ALTER TABLE `tspro_security` ADD PRIMARY KEY (`code`);')
+                    #设置索引（其实主键和索引一致的话，是可以不需要设置索引的）
+                    #con.execute('CREATE INDEX index `tspro_security` (`code`);')
+                except:
+                    pass
+
             print(f"数据已上传完成(security),新增数据{df_security.shape[0]}条")
 
     def get_all_code(self , market = ['主板','创业板','中小板','科创板','CDR','北交所'] , day = datetime.now() , type = ['stock','etf']):
