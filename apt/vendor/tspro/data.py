@@ -3,7 +3,7 @@ import pandas as pd
 import tushare as ts
 import sqlalchemy
 import akshare as ak
-from sqlalchemy import create_engine,exc   #用来捕捉sqlalchemy的异常
+from sqlalchemy import create_engine,exc,delete,text   #用来捕捉sqlalchemy的异常
 from datetime import datetime,timedelta
 from apt.vendor.tspro.security import security  as security
 from apt.vendor.tspro.base import base as base
@@ -359,12 +359,22 @@ class data(base,stock):
                             if_exists = 'append')
                     print(f"{code}数据已上传完成({type}，新增数据{df_diff.shape[0]})")
                 #7. 将此条目从更新序列中删除
-                sql_delete = f'delete from tspro_update_sequence where id = {id}'
+                """
+                这部分代码注释，原因是用pd.read_sql_query方法，在现有版本中无法对数据条目做删除操作
+                详见https://huiqiao.visualstudio.com/MyFunds/_workitems/edit/499/
+                sql_delete = text(f'delete from tspro_update_sequence where id = {id}')
                 try:    #删除需捕捉异常，否则会报错
                     pd.read_sql_query(sql_delete , self.engine)
                 except exc.ResourceClosedError:
                     pass
-                    #print('更新序列已删除！')
+                """
+                sql_delete = text(f"delete from tspro_update_sequence where id = {id}")
+                try:
+                    with self.engine.begin() as connection:
+                        connection.execute(sql_delete)
+                except exc.ResourceClosedError:
+                    print(f"删除{code}更新序列失败！")
+                    pass      
         else:
             #无数据，跳过
             print("更新序列无数据，跳过更新")

@@ -4,7 +4,7 @@ import tushare as ts
 import sqlalchemy
 import akshare as ak
 import time
-from sqlalchemy import create_engine,exc,delete   #用来捕捉sqlalchemy的异常
+from sqlalchemy import create_engine,exc,delete,text   #用来捕捉sqlalchemy的异常
 from datetime import datetime,timedelta
 from apt.vendor.tspro.security import security  as security
 from apt.vendor.akshare.base import base as base
@@ -262,11 +262,12 @@ class data(base,stock):
                 print(f"上传已完成，新增{code_list.shape[0]}条更新序列！")
 
             elif result == '2':             #删除后添加
-                sql_count = 'delete from akshare_update_sequence'
-                try:    #删除需捕捉异常，否则会报错
-                    pd.read_sql_query(sql_count , self.engine)
+                sql_count = text('delete from akshare_update_sequence')
+                try:
+                    with self.engine.begin() as connection:
+                        connection.execute(sql_count)
                 except exc.ResourceClosedError:
-                    pass
+                    print(f"删除更新序列失败！")
                 #以下代码与选项1保持一致
                 #1. 获取区间最后一天所对应的全部证券列表
                 sec = security()
@@ -288,11 +289,12 @@ class data(base,stock):
                 print(f"上传已完成，新增{code_list.shape[0]}条更新序列！")
 
             elif result == '3':             #直接删除
-                sql_count = 'delete from akshare_update_sequence'
-                try:    #删除需捕捉异常，否则会报错
-                    pd.read_sql_query(sql_count , self.engine)
+                sql_count = text('delete from akshare_update_sequence')
+                try:
+                    with self.engine.begin() as connection:
+                        connection.execute(sql_count)
                 except exc.ResourceClosedError:
-                    print('更新序列已删除！')
+                    print(f"删除更新序列失败！")
 
             elif result == '4':          #不做任何更改，直接跳出
                 return 
@@ -417,6 +419,8 @@ class data(base,stock):
                     time.sleep(sleep)
                 #7. 将此条目从更新序列中删除
                 """
+                这部分代码注释，原因是用pd.read_sql_query方法，在现有版本中无法对数据条目做删除操作
+                详见https://huiqiao.visualstudio.com/MyFunds/_workitems/edit/499/
                 sql_delete = text(f'delete from tspro_update_sequence where id = {id}')
                 try:    #删除需捕捉异常，否则会报错
                     pd.read_sql_query(sql_delete , self.engine)
@@ -428,9 +432,8 @@ class data(base,stock):
                     with self.engine.begin() as connection:
                         connection.execute(sql_delete)
                 except exc.ResourceClosedError:
-                    #print('更新序列已删除！')
-                    pass
-                
+                    print(f"删除{code}更新序列失败！")
+                    pass                
         else:
             #无数据，跳过
             print("更新序列无数据，跳过更新")
