@@ -177,7 +177,7 @@ class data(base,stock):
                         if_exists = 'append')
                 print(f"{day.strftime('%Y%m%d')}数据已上传完成(ETF日线)")    
 
-    def update_sequence_add(self , code_list = None , myclass = 'stock' , type = '60m'  , priority = 0 ):
+    def update_sequence_add(self , code_list = None , myclass = 'stock' , type = '60m'  , priority = 0 , auto_select = True):
         '''
         task346更改了分时线数据更新的逻辑，拆分成add和launch两部分
         add模块主要进行数据更新任务的导入
@@ -186,6 +186,7 @@ class data(base,stock):
             myclass 一级目录 默认stock  目前可接受参数stock|etf
             type 二级目录 默认60m；目前可接受参数：60m/1m
             priority 优先更新标识 默认为0
+            auto_select 是否自动选择1，默认为True
         '''
         if code_list != None:
             ######流程1：优先更新逻辑，混合代码，需要拉取证券列表的类型等数据
@@ -231,16 +232,17 @@ class data(base,stock):
             df_db = pd.read_sql_query(sql_count , self.engine)
             if df_db.iloc[0].at['count'] == 0:
                 #数据库不存在数据
-                result = '1'
+                result = '1' 
             else:
-                #数据库存在数据，进行选择
-                result = input('''数据库存在数据，请选择更新方式 \n
-                1. 保留原有更新序列，添加新的序列 \n
-                2. 删除原有更新序列，添加新的序列 \n
-                3. 删除原有更新序列 \n
-                4. 退出（不做任何处理）\n''')
-            #无论数据库是否存在数据，到这里进行选择
-            #无数据的直接进入1，有数据的按选择进行跳转
+                #数据库存在数据
+                if auto_select == True:
+                    result = '1'
+                else: #数据库存在数据，且不自动选择
+                    result = input('''数据库不存在数据，请选择更新方式 \n
+                    1. 保留原有更新序列，添加新的序列 \n
+                    2. 删除原有更新序列，添加新的序列 \n
+                    3. 删除原有更新序列 \n
+                    4. 退出（不做任何处理）\n''')
             if result == '1':               #添加新数据
                 #1. 获取区间最后一天所对应的全部证券列表
                 sec = security()
