@@ -11,7 +11,7 @@
     <OutputPath>.</OutputPath>
     <Name>MyFunds</Name>
     <RootNamespace>MyFunds</RootNamespace>
-    <InterpreterId>MSBuild|env_myfund|$(MSBuildProjectFullPath)</InterpreterId>
+    <InterpreterId>CondaEnv|CondaEnv|conda_myfund</InterpreterId>
     <TestFramework>unittest</TestFramework>
     <SuppressEnvironmentCreationPrompt>True</SuppressEnvironmentCreationPrompt>
     <UnitTestPattern>test*.py</UnitTestPattern>
@@ -383,7 +383,9 @@
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="CondaEnv|CondaEnv|Anaconda3" />
+    <InterpreterReference Include="CondaEnv|CondaEnv|conda_myfund" />
     <InterpreterReference Include="CondaEnv|CondaEnv|myFunds" />
+    <InterpreterReference Include="Global|VisualStudio|env_myfund" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="pip更新规范.txt" />
