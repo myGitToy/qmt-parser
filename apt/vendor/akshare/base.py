@@ -54,6 +54,7 @@ class base():
                 self.token = '55297f16c0119146589e059db315ba28a9412e89ec9f91e538e655b2'
         elif rds_host == self.数据源.localhost:
             self.engine = sqlalchemy.create_engine('mysql+pymysql://stock_user:atp73V4@localhost:3306/stock')
+            #self.engine = sqlalchemy.create_engine('mysql+pymysql://root:sal62688558@localhost:3306/stock')
             #本地数据源支持脱机访问，其他数据源则不支持脱机
             if self.myauth == True:
                 #初始化ts接口
