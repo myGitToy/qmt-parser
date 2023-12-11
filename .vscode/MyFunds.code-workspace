@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		}
+	],
+	"settings": {
+		"python.terminal.executeInFileDir": true
+	},
+	"launch": {
+		"version": "0.2.0",
+		"configurations": [
+			
+
+		]
+	}
+}
