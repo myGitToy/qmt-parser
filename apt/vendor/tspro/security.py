@@ -38,6 +38,9 @@ class security(base , stock):
         #数据类型转换(否则差值计算会出错)
         df_db['date'] = pd.to_datetime(df_db['date'])
         #3. 将两者进行比较
+        #Feature Warning Fix
+        df_cal = df_cal.dropna(how='all', axis=1)
+        df_db = df_db.dropna(how='all', axis=1)        
         df_diff = pd.concat([df_cal , df_db , df_db] ).drop_duplicates(subset=['date'],keep = False)
         #4. 数据保存至数据库
         if df_diff.empty == True:
