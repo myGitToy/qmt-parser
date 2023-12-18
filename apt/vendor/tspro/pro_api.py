@@ -44,12 +44,42 @@ class pro_api(data):
         df = df.loc[(df['list_date'] <= self.end_date) & (df['delist_date'] >= self.end_date)]
         return df
 
+    def suspend_k(self ,  suspend_type = 'S') -> pd.DataFrame:
+        """
+        获取某一天停牌的股票
+        【输入】
+            start_date:开始日期（系统自带）
+            end_date:结束日期 （系统自带）
+            suspend_type:停牌类型：S-停牌 R-复牌
+        【输出】
+            dataframe:code 证券代码|trade_date 交易日期|suspend_timing 停牌时间段|suspend_type 停牌类型：S-停牌 R-复牌
+        【格式】
+            125  831039.BJ 2023-03-03           None            S
+            126  001337.SZ 2023-03-03    09:30-10:00            S
+            127  603061.SH 2023-03-03    09:30-10:00            S
+            128  830974.BJ 2023-03-03           None            S
+        """
+        df = self.pro.suspend_d(start_date = self.start_date.strftime('%Y%m%d') , end_date = self.end_date.strftime('%Y%m%d') , suspend_type = suspend_type)
+        if df.shape[0] >= 4999:
+            raise Exception(f'停牌数据超过5000条，请检查起止时间段')
+        df.rename(columns={"ts_code": "code" ,"trade_date" : "date"} , errors="raise" , inplace = True)
+        df["date"] = pd.to_datetime(df["date"])
+        return df
+    
+
 if __name__ == '__main__':
     a = pro_api()
-    a.start_date = datetime(2020,1,1,8)
+    a.start_date = datetime(2023,3,1,8)
     a.end_date = datetime(2023,3,20,16)
     a.code = '159949.SZ'
     a.ktype = '1min'
-    df = a.stock_basic()
-    print(df)
+    #df = a.stock_basic()
+    df = a.suspend_k()
+    pd.set_option('display.max_rows', None)  # Set display option to show all rows
+    df = df.dropna(subset=['suspend_timing'])  # Filter out rows with 'None' values in 'suspend_timing' column
+    #print(df)
+    print(df.query(IsNot("suspend_timing", None)))
+    for timing in df['suspend_timing']:
+        if timing is not None and timing != 'None':
+            print(f"{timing}")
     
