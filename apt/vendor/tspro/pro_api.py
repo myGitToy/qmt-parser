@@ -52,12 +52,16 @@ class pro_api(data):
             end_date:结束日期 （系统自带）
             suspend_type:停牌类型：S-停牌 R-复牌
         【输出】
-            dataframe:code 证券代码|trade_date 交易日期|suspend_timing 停牌时间段|suspend_type 停牌类型：S-停牌 R-复牌
+            dataframe:code 证券代码|date 交易日期|suspend_timing 停牌时间段|suspend_type 停牌类型：S-停牌 R-复牌
         【格式】
             125  831039.BJ 2023-03-03           None            S
             126  001337.SZ 2023-03-03    09:30-10:00            S
             127  603061.SH 2023-03-03    09:30-10:00            S
             128  830974.BJ 2023-03-03           None            S
+
+        拆分全天停牌和临时停牌
+            全天停牌：df.query('suspend_timing != suspend_timing')
+            临时停牌：df.query('suspend_timing == suspend_timing')
         """
         df = self.pro.suspend_d(start_date = self.start_date.strftime('%Y%m%d') , end_date = self.end_date.strftime('%Y%m%d') , suspend_type = suspend_type)
         if df.shape[0] >= 4999:
