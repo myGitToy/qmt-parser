@@ -14,6 +14,7 @@ from pandas.io import sql as con
 from sqlalchemy import text
 from apt.vendor.tspro.pro_api import pro_api as pro_api
 from apt.vendor.tspro.security import security as security
+from apt.vendor.tspro.data import data as tspro_data
 
 #from apt.vendor.tspro.security import get_calendar
 
@@ -700,7 +701,7 @@ class data(base,stock):
         if self.start_date  > self.end_date:
             raise ValueError(f'开始日期必须早于结束日期')
         if self.ktype not in ['1d','1m','5m','30m','60m']:
-            raise ValueError(f'不合规的K线类型: {ktype}')
+            raise ValueError(f'不合规的K线类型: {self.ktype}')
         if self.code == None :
             raise ValueError(f'证券代码不能为空')
         #获取tspro数据
@@ -717,8 +718,8 @@ class data(base,stock):
         #取数据交集
         #df_db = pd.merge(df_tspro,df_ak,on=['code','date'],how='inner')
         #Feature Warning Fix
-        df_tspro = df.dropna(how='all', axis=1)
-        df_ak = df_db.dropna(how='all', axis=1)
+        df_tspro = df_tspro.dropna(how='all', axis=1)
+        df_ak = df_ak.dropna(how='all', axis=1)
         df_db = pd.concat([df_tspro , df_ak ] ).drop_duplicates(subset=['date'] , keep = 'first')
         #print(df_db)
         #处理需要返回的个数
@@ -1118,13 +1119,26 @@ class data(base,stock):
                     print(f'更新{code}出现错误！')
                 n += 1    
 
+    def update_cumulative_turnover(self):
+        """
+        继承和调用tspro同名函数
+        """
+        return tspro_data.update_cumulative_turnover(self)
+
+    def analyse_cumulative_turnover(self):
+        """
+        继承和调用tspro同名函数
+        """
+        return tspro_data.analyse_cumulative_turnover(self) 
+       
 if __name__=="__main__":
     pd.set_option('display.max_rows', None)
     tspro = data()
     tspro.code ='601318.sh'
-    tspro.start_date= datetime(2023,12,18,8)
+    tspro.start_date= datetime(2023,1,18,8)
     tspro.end_date = datetime(2023,12,28,16)
     #ETF数据1998/10/19 含
     tspro.fq = tspro.复权.动态复权
     tspro.ktype = '1d'
+    tspro.update_cumulative_turnover()
     tspro.fix_1min_error_v2()
