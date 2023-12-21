@@ -546,6 +546,26 @@ class data(base,stock):
             return self.code[7:9] + self.code[0:6]
         else:
             return self.code
+        
+    def code_ak_to_ts(self , code_ak):
+        """
+        将akshare代码类型转换成tushare类型
+        """
+        #代码类型校验
+        if len(code_ak) == 6:
+            #这是akshare数据类型，返回tushare代码code 
+            query = f"select code from tspro_security where symbol = '{code_ak}'"
+            df_db = pd.read_sql_query(query , self.engine)
+            #如果dataframe不为空且数据仅有一行，返回code
+            if df_db.shape[0] == 1:
+                return df_db.loc[0 , 'code']
+            else:
+                raise ValueError(f'无效的证券代码')
+        elif len(self.code) == 9:
+            #9位数字，则默认为tushare代码，直接返回
+            return self.code
+        else:
+            raise ValueError(f'无效的证券代码')
 
     def get_ak_factor(self):
         """
