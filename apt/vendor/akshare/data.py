@@ -15,7 +15,6 @@ from sqlalchemy import text
 from apt.vendor.tspro.pro_api import pro_api as pro_api
 from apt.vendor.tspro.security import security as security
 from apt.vendor.tspro.data import data as tspro_data
-
 #from apt.vendor.tspro.security import get_calendar
 
 class data(base,stock):
@@ -713,11 +712,13 @@ class data(base,stock):
             无论设置如何，resample只对tushare数据有效，akshare60分钟线每日正常有4条数据，无需重采样
             目前仅对60分钟线有效
             True：进行重采样
-            False：不进行重采样，舍弃9:30单根数据
+            False：不进行重采样，舍弃9:30单根数据（akshare的数据格式无9:30数据）
         接受前复权 后复权 不复权 动态复权四种复权模式
         成交量、成交额目前未进行复权处理
         返回的数据按照升序排列（backtrader要求的数据格式）
         """
+        #akshare数据无需重采样
+        self.resample = False
         if self.start_date  > self.end_date:
             raise ValueError(f'开始日期必须早于结束日期')
         if self.ktype not in ['1d','1m','5m','30m','60m']:
@@ -726,7 +727,10 @@ class data(base,stock):
             raise ValueError(f'证券代码不能为空')
         #获取tspro数据
         query_tspro = f"select code,date,open,high,low,close,volume,money from tspro_{self.ktype} where code = '{self.code}' and date BETWEEN '{self.start_date}' and '{self.end_date}' order by date asc"         
-        df_tspro = pd.read_sql_query(query_tspro , self.engine)
+        try:
+            df_tspro = pd.read_sql_query(query_tspro , self.engine)
+        except:
+            df_tspro = pd.DataFrame()
         #获取akshare数据（目前ak只有分时数据，无日线数据）
         if self.ktype =='1d':
             #日线返回空
@@ -763,26 +767,7 @@ class data(base,stock):
             df_db = pd.merge(df_db, tspro_factor[['factor_date','factor']] , on = ['factor_date'] , how = 'left')
             #复权因子修正完毕，填充后进入复权处理（tspro每天均有复权因子，此处无需填充）
             #df_db.ffill(axis=0, inplace=True, limit=None, downcast=None)
-            #进行60分钟线修正
-            if self.ktype =='60m':
-                #判断使用何种方式进行60分钟线修正
-                if flag_resample == False:
-                    #去除9：30数据
-                    #df_db = df_db.drop(df_db[df_db['date'].dt.time == '09:30:00'].index)
-                    #取出09:30数据
-                    df_drop = df_db.query('date.dt.time == datetime.strptime("09:30","%H:%M").time()')
-                    #两者取差集
-                    #Feature Warning Fix
-                    df_drop = df_drop.dropna(how='all', axis=1)
-                    df_db = df_db.dropna(how='all', axis=1)                  
-                    df_db = pd.concat([df_db , df_drop , df_drop] ).drop_duplicates(subset=['date'] , keep = False)
-                else:
-                    #重采样
-                    raise ValueError('暂不支持重采样')
-                    df_db['date'] = pd.to_datetime(df_db['date'])
-                    df_db.set_index('date',inplace = True)
-                    df_db = df_db.resample('60min').agg({'open':'first','high':'max','low':'min','close':'last','volume':'sum','money':'sum','factor':'first'}).dropna(axis=0)
-                    print(df_db)
+            #进行60分钟线修正（akshare无需修正）
 
             if self.fq.value == 0:  #不复权
                 if flag_forward == False:
@@ -1152,7 +1137,7 @@ class data(base,stock):
         return tspro_data.analyse_cumulative_turnover(self) 
        
 if __name__=="__main__":
-    pd.set_option('display.max_rows', None)
+    #pd.set_option('display.max_rows', None)
     tspro = data()
     tspro.code ='601318.sh'
     tspro.start_date= datetime(2023,1,18,8)
@@ -1160,5 +1145,7 @@ if __name__=="__main__":
     #ETF数据1998/10/19 含
     tspro.fq = tspro.复权.动态复权
     tspro.ktype = '1d'
+    df = tspro.get_k_data()
+    print(df)
     tspro.update_cumulative_turnover()
     tspro.fix_1min_error_v2()
