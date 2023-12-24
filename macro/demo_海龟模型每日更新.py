@@ -18,6 +18,7 @@ from apt.qsp_universal.base import base as data
 from apt.vendor.akshare.data import data as akdata
 from apt.qsp_universal.prank import prank
 from apt.qsp_universal.expma import expma as EXP
+from apt.qsp_universal.A  import A as A
 
 #pd.set_option('display.max_rows',   None)
 #pd.set_option('display.max_columns', None)
@@ -107,5 +108,18 @@ df_prank.to_csv('.\\data\\海龟模型\\prank_tspro.csv', encoding = 'utf_8_sig'
 
 #######7. 更新EXPMA数据
 df_exp = exp.daily_update(code_list = code_list , to_csv = True)
+
+#######7. 更新均线多头排列
+df_EMA_up = pd.DataFrame()
+for code in code_list:
+    ema = A() 
+    ema.ktype =  exp.ktype
+    ema.start_date = exp.start_date
+    ema.end_date  = exp.end_date 
+    ema.vendor  =  exp.vendor  
+    ema.code = code
+    df_EMA_up = pd.merge(df_EMA_up , ema.A01B02_MA均线多头排列(ma_list = [10,20,30]) , how = 'outer' , on = 'code')
+df_EMA_up.to_csv('.\\data\\海龟模型\\EMA_up.csv', encoding = 'utf_8_sig')
+
 
 print('海龟模型更新完毕！')
