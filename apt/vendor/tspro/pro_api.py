@@ -81,9 +81,3 @@ if __name__ == '__main__':
     df = a.suspend_k()
     pd.set_option('display.max_rows', None)  # Set display option to show all rows
     df = df.dropna(subset=['suspend_timing'])  # Filter out rows with 'None' values in 'suspend_timing' column
-    #print(df)
-    print(df.query(IsNot("suspend_timing", None)))
-    for timing in df['suspend_timing']:
-        if timing is not None and timing != 'None':
-            print(f"{timing}")
-    

@@ -13,7 +13,6 @@ import pandas as pd
 class base():
     """
     量化选股系统的基类(通用数据接口)
-    使用jqdata.base作为基类
     """
     class vendor(Enum): 
         """
@@ -112,7 +111,7 @@ class base():
             a.fq = self.fq
             a.code = self.code
             a.ktype = self.ktype
-            df = a.get_k_data(count = count , col = col , flag_forward = flag_forward , flag_resample = flag_resample)
+            df = a.get_k_data(count = count , col = col , flag_forward = flag_forward , flag_resample = False)
             return df
         else:
             raise ValueError(f'不支持此数据供应商，请检查输入！')
@@ -122,6 +121,7 @@ class base():
         通用数据接口 获取指定日期节点依旧上市的证券代码列表
         输入：
             type 证券类别 默认为['stock','etf']
+            隐藏层 day = self.end_date
         返回：
             dataframe ：
         """
@@ -171,7 +171,7 @@ class base():
 
     def get_rolling_k_等待删除(self , ktype = "1d"):
         """
-        【此处不确定是否需要删除】
+        【此处不确定是否需要删除 目前看没有引用】
         抽取出来的总类，用于获取最新的K线数据，含自动更新
         输入：
             ktype：K线类型 e.g. D 60 30

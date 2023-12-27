@@ -4,7 +4,10 @@ from apt.qsp_universal.base import base
 #from apt.vendor.jqdata.jqdata import data as data
 import numpy as np
 import pandas as pd
-import talib as ta
+#备注：2023年底电脑重装，使用特别方法安装TA-Lib，目前导入包显示异常，但是实际是可以使用的
+#详见https://huiqiao.visualstudio.com/MyFunds/_search?text=talib*&type=workitem&lp=workitems-Team&filters=Projects%7BMyFunds%7D&pageSize=25
+import talib as ta  
+
 """
 【选股系统A】
 目录树：
@@ -46,7 +49,7 @@ class A(base):
         """
         #数据校验
         if count > N_day:
-            raise ValueError(f'无法计算{N}天内出现{count}次的情况，请检查逻辑')
+            raise ValueError(f'无法计算{N_day}天内出现{count}次的情况，请检查逻辑')
         #多导入的均线顺序进行排序
         ma_list.sort(key = int) #将K线列表以int整数的形式进行排列
         df = self.A01B01_MA均线数据(ma_list = ma_list)
@@ -102,7 +105,7 @@ class A(base):
         """
         #数据校验
         if count > N_day:
-            raise ValueError(f'无法计算{N}天内出现{count}次的情况，请检查逻辑')
+            raise ValueError(f'无法计算{N_day}天内出现{count}次的情况，请检查逻辑')
         #多导入的均线顺序进行排序
         ma_list.sort(key = int) #将K线列表以int整数的形式进行排列
         df = self.A01B01_MA均线数据(ma_list = ma_list)
@@ -175,7 +178,7 @@ class A(base):
         """
         #数据校验
         if count > N_day:
-            raise ValueError(f'无法计算{N}天内出现{count}次的情况，请检查逻辑')
+            raise ValueError(f'无法计算{N_day}天内出现{count}次的情况，请检查逻辑')
         #多导入的均线顺序进行排序
         ma_list.sort(key = int) #将K线列表以int整数的形式进行排列
         df = self.A04B01_EMA均线数据(ma_list = ma_list)
@@ -222,7 +225,7 @@ class A(base):
         """
         #数据校验
         if count > N_day:
-            raise ValueError(f'无法计算{N}天内出现{count}次的情况，请检查逻辑')
+            raise ValueError(f'无法计算{N_day}天内出现{count}次的情况，请检查逻辑')
         #多导入的均线顺序进行排序
         ma_list.sort(key = int) #将K线列表以int整数的形式进行排列
         df = self.A04B01_EMA均线数据(ma_list = ma_list)
@@ -431,11 +434,17 @@ class A(base):
 
 if __name__ == "__main__":
     pd.set_option('display.max_rows', None)
+    #pd.set_option('display.max_columns', None)
     demo = A(myauth = False)
-    demo.code = '600313.sh'
+    demo.code = '603501.sh'
+    demo.ktype = '5m'
     demo.vendor = demo.vendor.akshare
-    demo.start_date = datetime(2023,1,1)
-    demo.end_date = datetime(2023,8,7)
-    a = demo.A04B02_EMA均线多头排列()
+    demo.start_date = datetime(2023,12,15)
+    demo.end_date = datetime(2023,12,23)
+    #显示df中的全部行
+    #无法显示df中的全部行
+    #60m存在错误，需要修复
+    print(demo.get_k_data())
+    a = demo.A04B02_EMA均线多头排列(ma_list=[10,20,60])
     print(a[0])
 

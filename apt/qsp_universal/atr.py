@@ -104,7 +104,7 @@ class ATR(base):
             raise ValueError(f'无法计算{N}天内出现{count}次的情况，请检查逻辑')
         #1. 默认使用日线 目前暂不受理非日线的计算
         if self.ktype != '1d':
-            raise ValueError(f'目前暂不受理非日线ATR的计算 {ktype}')
+            raise ValueError(f'目前暂不受理非日线ATR的计算 {self.ktype}')
         #获取数据
         df = self.get_atr(N = atr_ma)[['date','close','TR','ATR']]
         df['tr_ratial'] = df['TR'] / df['ATR']
