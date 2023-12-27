@@ -831,13 +831,96 @@ class data(base,stock):
                 raise ValueError(f'不支持的复权模式，请检查！')
                 return df_db
 
+    def update_cumulative_turnover(self):
+        """
+        更新累计换手率入库
+        """
+        df_basic = pd.read_sql_query(f"select code,date from tspro_basic force index (date) where date between '{self.start_date.date()}' and '{self.end_date.date()}'" , self.engine)
+        df_cumulative_turnover = pd.read_sql_query(f"select code,date from tspro_cumulative_turnover force index (date) where date between '{self.start_date.date()}' and '{self.end_date.date()}'" , self.engine)
+        df_db = pd.concat([df_basic, df_cumulative_turnover]).drop_duplicates(subset=['code','date'], keep=False)
+        # Get rows from df_basic that are not in df_cumulative_turnover
+        #df_missing_rows = df_basic[~df_basic[['code', 'date']].isin(df_cumulative_turnover[['code', 'date']])].dropna()
+        #保存至数据库
+        if df_db.empty == True:
+            print("差集为空，跳过写入数据库")
+        else:
+            df_db.to_sql(
+                    name = f'tspro_cumulative_turnover',
+                    con = self.engine,
+                    index = False,
+                    if_exists = 'append')
+            print(f"数据上传完成(tspro_cumulative_turnover)|新增数据{df_db.shape[0]}")
+        
+    def analyse_cumulative_turnover(self):
+        """
+        更新和分析累计换手率
+        目前需要更新turnover_date,turnover_date_f这两个字段
+        """
+        sql_basic = f"select code,date,turnover_rate,turnover_rate_f from tspro_basic force index(date) where date between '{self.start_date.date()}' and '{self.end_date.date()}'"
+        print(sql_basic)
+        df_basic = pd.read_sql_query(sql_basic , self.engine)
+        df_cumulative_turnover = pd.read_sql_query(f"select code,date,turnover_valid from tspro_cumulative_turnover force index(date) where date between '{self.start_date.date()}' and '{self.end_date.date()}'" , self.engine)
+        df_cum_na = df_cumulative_turnover[df_cumulative_turnover['turnover_valid'].isnull()]
+        #历遍df_cum_na
+        for index , row in df_cum_na.iterrows():
+            code = row['code']
+            e_date = row['date']
+            for n in [100,300,500,1000,5000]:
+                s_date = e_date - timedelta(days = n)
+                #df_db为tspro_basic数据查询中以e_date为基准的数据，降序排列
+                df_db = pd.read_sql_query(f"select code,date,turnover_rate,turnover_rate_f from tspro_basic where code = '{code}' and date between '{s_date}' and '{e_date}'" , self.engine).sort_values('date', ascending=False)
+                #数据条目的最后一个日期，用来进行比较
+                last_date = df_db.iloc[-1]['date']
+                #计算换手率累计值
+                df_db['cum_turnover'] = df_db['turnover_rate'].cumsum()
+                df_db['cum_turnover_f'] = df_db['turnover_rate_f'].cumsum()
+                #需要df_db累加后的turnover_rate和turnover_rate_f均大于100                
+                if df_db.query('cum_turnover >= 100').empty == False and df_db.query('cum_turnover_f >= 100').empty == False:
+                    #累加值超过100，数据有效
+                    turnover_date = df_db[df_db['cum_turnover'] >= 100].iloc[0]['date']
+                    turnover_date_f = df_db[df_db['cum_turnover_f'] >= 100].iloc[0]['date']
+                    turnover_days = df_db.query('cum_turnover <= 100').shape[0]
+                    turnover_days_f = df_db.query('cum_turnover_f <= 100').shape[0]
+                    bit = 1
+                    #检查100%换手率的数据
+                    #print(df_db.query('cum_turnover <= 100'))
+                    print(f"{code}前数{n}日数据有效，对应换手日期{turnover_date}|{turnover_date_f}；交易日{turnover_days}|{turnover_days_f}")
+                    #更新数据库
+                    sql_update = text(f"update tspro_cumulative_turnover set turnover_date = '{turnover_date}' , turnover_date_f = '{turnover_date_f}' , turnover_days = {turnover_days} , turnover_days_f = {turnover_days_f} , turnover_valid = {bit} where code = '{code}' and date = '{e_date}'")
+                    try:
+                        with self.engine.begin() as connection:
+                            connection.execute(sql_update)
+                    except exc.ResourceClosedError:
+                        print(f"更新{code}|{e_date}序列失败！")                    
+                    #数据有效，跳出for循环
+                    break
+                else:
+                    #累加值未超过100，数据无效
+                    print(f"{code}前数{n}日数据无效，继续增加天数")
+                    turnover_date = None
+                    turnover_date_f = None
+                    #这里还有一种情况，就是for列表循环完毕，数据依旧无效
+                    if n == 5000:
+                        print(f"未找到100%换手数据，可能数据无效也可能是新股、次新股")
+                        bit = 0
+                        sql_update = text(f"update tspro_cumulative_turnover set turnover_valid = {bit}  where code = '{code}' and date = '{e_date}'")
+                        try:
+                            with self.engine.begin() as connection:
+                                connection.execute(sql_update)
+                        except exc.ResourceClosedError:
+                            print(f"更新{code}|{e_date}序列失败！")                             
+                        #raise ValueError(f"{code}前数{n}日数据无效，程序终止")
+    
 if __name__=="__main__":
     tspro = data()
     tspro.code ='601318.sh'
-    tspro.start_date= datetime(2022,1,1,8)
-    tspro.end_date = datetime(2022,7,8,16)
+    tspro.start_date= datetime(2023,1,1,8)
+    tspro.end_date = datetime(2023,12,20,16)
     #ETF数据1998/10/19 含
     tspro.fq = tspro.复权.动态复权
     tspro.ktype = '1d'
+    #tspro.update_cumulative_turnover()
+    tspro.analyse_cumulative_turnover()
+    
     tspro.update_day_ETF()
     tspro.update_factor_ETF()
