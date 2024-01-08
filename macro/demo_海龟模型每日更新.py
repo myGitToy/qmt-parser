@@ -48,9 +48,9 @@ df_code2 = data.read_excel(file_name = '.\\data\\海龟模型\\自选股列表.x
 df_code3 = data.read_excel(file_name = '.\\data\\海龟模型\\自选股列表.xlsx' , sheet_name = 'ETF')
 #合并表格
 df_code_main = pd.concat([df_code_main, df_code1 , df_code2 , df_code3] , sort = False)
-print(df_code_main)
+#print(df_code_main)
 df = df_code_main.query('证券代码 == "688349.SH"')
-print(df)
+#print(df)
 #更改列名
 df_code_main.rename(columns={"证券代码": "code", "证券名称": "name"} , errors="raise" , inplace = True)
 #去重
@@ -118,7 +118,9 @@ for code in code_list:
     ema.end_date  = exp.end_date 
     ema.vendor  =  exp.vendor  
     ema.code = code
-    df_EMA_up = pd.merge(df_EMA_up , ema.A01B02_MA均线多头排列(ma_list = [10,20,30]) , how = 'outer' , on = 'code')
+    #print(ema.A04B02_EMA均线多头排列(ma_list = [10,20,30])[0])
+    df_EMA_up = pd.concat([df_EMA_up , ema.A04B02_EMA均线多头排列(ma_list = [10,20,30])[0]] , sort = False)
+    #df_EMA_up = pd.merge(df_EMA_up , ema.A04B02_EMA均线多头排列(ma_list = [10,20,30])[0]  , how = 'outer' , on = 'code')
 df_EMA_up.to_csv('.\\data\\海龟模型\\EMA_up.csv', encoding = 'utf_8_sig')
 
 
