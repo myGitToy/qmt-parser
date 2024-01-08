@@ -11,12 +11,12 @@ pd.set_option('display.unicode.east_asian_width', True)
 # 显示所有列
 #pd.set_option('display.max_columns', None)
 a = data()
-a.code = '688349.sH'
-a.start_date = datetime(2022,7,28,4)
-a.end_date = datetime(2022,7,29,16)
+a.code = '300033.sz'
+a.start_date = datetime(2023,7,1,4)
+a.end_date = datetime(2023,7,25,16)
 a.fq = data.复权.动态复权
 a.ktype = '1m'
-a.vendor = a.vendor.tusharePro
+a.vendor = a.vendor.akshare
 name = a.get_security(code = a.code)[0].iloc[0].at['name']    #获取证券名称
 df = a.get_k_data().sort_values(by = ['date'] )
 #删除9:30和15:00的数据

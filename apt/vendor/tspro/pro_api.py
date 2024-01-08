@@ -44,12 +44,107 @@ class pro_api(data):
         df = df.loc[(df['list_date'] <= self.end_date) & (df['delist_date'] >= self.end_date)]
         return df
 
+    def suspend_k(self ,  suspend_type = 'S') -> pd.DataFrame:
+        """
+        获取某一天停牌的股票
+        【输入】
+            start_date:开始日期（系统自带）
+            end_date:结束日期 （系统自带）
+            suspend_type:停牌类型：S-停牌 R-复牌
+        【输出】
+            dataframe:code 证券代码|date 交易日期|suspend_timing 停牌时间段|suspend_type 停牌类型：S-停牌 R-复牌
+        【格式】
+            125  831039.BJ 2023-03-03           None            S
+            126  001337.SZ 2023-03-03    09:30-10:00            S
+            127  603061.SH 2023-03-03    09:30-10:00            S
+            128  830974.BJ 2023-03-03           None            S
+
+        拆分全天停牌和临时停牌
+            全天停牌：df.query('suspend_timing != suspend_timing')
+            临时停牌：df.query('suspend_timing == suspend_timing')
+        """
+        df = self.pro.suspend_d(start_date = self.start_date.strftime('%Y%m%d') , end_date = self.end_date.strftime('%Y%m%d') , suspend_type = suspend_type)
+        if df.shape[0] >= 4999:
+            raise Exception(f'停牌数据超过5000条，请检查起止时间段')
+        df.rename(columns={"ts_code": "code" ,"trade_date" : "date"} , errors="raise" , inplace = True)
+        df["date"] = pd.to_datetime(df["date"])
+        return df
+    
+    def stk_holdertrade(self) -> pd.DataFrame:
+        """
+        股东增减持
+        【输入】
+            code:证券代码（系统自带）
+            start_date:开始日期（系统自带）
+            end_date:结束日期 （系统自带）            
+        【输出】
+            dataframe:
+                ts_code	str	TS代码
+                ann_date	str	公告日期
+                holder_name	str	股东名称
+                holder_type	str	股东类型G高管P个人C公司
+                in_de	str	类型IN增持DE减持
+                change_vol	float	变动数量
+                change_ratio	float	占流通比例（%）
+                after_share	float	变动后持股
+                after_ratio	float	变动后占流通比例（%）
+                avg_price	float	平均价格
+                total_share	float	持股总数
+                begin_date	str	增减持开始日期
+                close_date	str	增减持结束日期
+        【格式】
+        """
+        df_tspro = self.pro.stk_holdertrade(**{
+                "ts_code": self.code,
+                "ann_date": "",
+                "start_date": self.start_date.strftime('%Y%m%d'),
+                "end_date": self.end_date.strftime('%Y%m%d'),
+                "trade_type": "",
+                "holder_type": "",
+                "limit": "",
+                "offset": ""
+            }, fields=[
+                "ts_code",
+                "ann_date",
+                "holder_name",
+                "holder_type",
+                "in_de",
+                "change_vol",
+                "change_ratio",
+                "after_share",
+                "after_ratio",
+                "avg_price",
+                "total_share",
+                "begin_date",
+                "close_date"
+            ])
+        df_tspro.rename(columns={"ts_code": "code" ,"ann_date" : "date"} , errors="raise" , inplace = True)
+        df_tspro["date"] = pd.to_datetime(df_tspro["date"])
+        df_tspro["begin_date"] = pd.to_datetime(df_tspro["begin_date"])
+        df_tspro["close_date"] = pd.to_datetime(df_tspro["close_date"])
+
+        #取出avg_price为空的数据
+        df_tspro_tmp = df_tspro[df_tspro['avg_price'].isnull()]
+        print(df_tspro_tmp[['code','date','holder_name','avg_price','total_share']])
+        #对avg_price为空的数据进行平均收盘价填充
+        for index, row in df_tspro_tmp.iterrows():
+            a = data()
+            self.code = row['code']
+            self.start_date = row['date']
+            self.end_date = row['date']
+        self.fq = data.复权.不复权
+        df_close = self.get_k_data()
+        self.fq = data.复权.动态复权
+        df_tspro_tmp = df_tspro_tmp.groupby(['code','date','holder_name'])['total_share'].sum().reset_index()        
+        return df_tspro
 if __name__ == '__main__':
     a = pro_api()
-    a.start_date = datetime(2020,1,1,8)
+    a.start_date = datetime(2020,3,1,8)
     a.end_date = datetime(2023,3,20,16)
-    a.code = '159949.SZ'
+    a.code = '300224.SZ'
     a.ktype = '1min'
-    df = a.stock_basic()
-    print(df)
-    
+    print(a.stk_holdertrade())
+    #df = a.stock_basic()
+    df = a.suspend_k()
+    pd.set_option('display.max_rows', None)  # Set display option to show all rows
+    df = df.dropna(subset=['suspend_timing'])  # Filter out rows with 'None' values in 'suspend_timing' column

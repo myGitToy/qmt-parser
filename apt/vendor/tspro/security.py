@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import tushare as ts
 import sqlalchemy
+import time
 from datetime import datetime
 from apt.vendor.tspro.base import base as base
 from apt.vendor.tspro.base import stock as stock
@@ -37,6 +38,9 @@ class security(base , stock):
         #数据类型转换(否则差值计算会出错)
         df_db['date'] = pd.to_datetime(df_db['date'])
         #3. 将两者进行比较
+        #Feature Warning Fix
+        df_cal = df_cal.dropna(how='all', axis=1)
+        df_db = df_db.dropna(how='all', axis=1)        
         df_diff = pd.concat([df_cal , df_db , df_db] ).drop_duplicates(subset=['date'],keep = False)
         #4. 数据保存至数据库
         if df_diff.empty == True:
@@ -136,9 +140,12 @@ class security(base , stock):
 
             with self.engine.connect() as con:
                 #设置主键
-                con.execute('ALTER TABLE `tspro_fund_basic` ADD PRIMARY KEY (`code`);')
-                #设置索引（其实主键和索引一致的话，是可以不需要设置索引的）
-                #con.execute('CREATE INDEX index `tspro_security` (`code`);')
+                try:
+                    con.execute('ALTER TABLE `tspro_fund_basic` ADD PRIMARY KEY (`code`);')
+                    #设置索引（其实主键和索引一致的话，是可以不需要设置索引的）
+                    #con.execute('CREATE INDEX index `tspro_security` (`code`);')
+                except :
+                    pass
             print(f"ETF数据已上传完成(security),新增数据{df_security.shape[0]}条")
 
     def update_security(self ,type = ['stock','index','fund','etf','lof','fja','fjb']):
@@ -146,7 +153,7 @@ class security(base , stock):
         security日常更新
         type jqdata证券类型，此处予以保留，实际无效果
         """
-        pro = ts.pro_api()
+        pro = ts.pro_api(self.token)
         #打印标题
         print("############正在准备更新security证券代码信息###########")
         df_security = pd.DataFrame()
@@ -194,9 +201,13 @@ class security(base , stock):
 
             with self.engine.connect() as con:
                 #设置主键
-                con.execute('ALTER TABLE `tspro_security` ADD PRIMARY KEY (`code`);')
-                #设置索引（其实主键和索引一致的话，是可以不需要设置索引的）
-                #con.execute('CREATE INDEX index `tspro_security` (`code`);')
+                try:
+                    con.execute('ALTER TABLE `tspro_security` ADD PRIMARY KEY (`code`);')
+                    #设置索引（其实主键和索引一致的话，是可以不需要设置索引的）
+                    #con.execute('CREATE INDEX index `tspro_security` (`code`);')
+                except:
+                    pass
+
             print(f"数据已上传完成(security),新增数据{df_security.shape[0]}条")
 
     def get_all_code(self , market = ['主板','创业板','中小板','科创板','CDR','北交所'] , day = datetime.now() , type = ['stock','etf']):
@@ -259,25 +270,128 @@ class security(base , stock):
         else:
             #返回stock
             return df[['code','market','name']] ,'stock'
-               
+
+    def update_basic(self , sleep = 0.2):
+        """
+        接口：daily_basic，可以通过数据工具调试和查看数据。
+        更新时间：交易日每日15点～17点之间
+        描述：获取全部股票每日重要的基本面指标，可用于选股分析、报表展示等。
+        数据自1991年开始
+        """
+        #获取更新列表（按交易日）
+        trade_day = pd.DataFrame(columns = ['date'])
+        trade_day = self.get_calendar(is_open = 1)
+        #获取资金流向库中存在的日期列表
+        query_daysql = f"select distinct date FROM tspro_basic FORCE INDEX (main) WHERE date BETWEEN '{self.start_date.date()}' and '{self.end_date.date()}'  ORDER BY date asc" 
+        df_dbday = pd.read_sql_query(query_daysql , self.engine)
+        if df_dbday.empty == True:
+            #数据库不存在数据
+            df_dbday = pd.DataFrame(columns = ['date'])
+        else:
+            #数据库存在数据
+            df_dbday['date'] = pd.to_datetime(df_dbday['date']) #时间日期ns64化
+            pass
+        #数据拼接，最终需要更新的日期是trade_day中包含且df_dbday不包含的数据
+        day_diff = pd.concat([trade_day , df_dbday , df_dbday]).drop_duplicates(subset = ['date'] , keep = False)
+        print(day_diff)
+        #打印标题
+        print("############正在准备更新每日指标信息###########")
+        """
+        更新逻辑：
+            1. 需要更新的日期
+                1.1 取出区间内的交易日
+                1.2 取出数据库中存在每日指标信息的日期
+                1.3 两者取差集就是需要更新的日期
+            2. 按照日期循环，获取每日的指标信息
+            3. 数据写入数据库
+        逻辑优点和不足：
+            1. 一次性提取每日的指标信息，运行效率较高
+            2. 智能化更新，跳过重复的日期
+            3. 缺点：更新限制每次5000条，后续可能会超过限制值
+        """
+        for day in day_diff['date']:
+            #获取数据库中存在的数据最后更新日期（加入强制使用索引的内容）
+            df = self.pro.daily_basic(trade_date = day.strftime("%Y%m%d"), fields=[
+                                                                        "ts_code",
+                                                                        "trade_date",
+                                                                        "close",
+                                                                        "turnover_rate",
+                                                                        "turnover_rate_f",
+                                                                        "volume_ratio",
+                                                                        "pe",
+                                                                        "pe_ttm",
+                                                                        "pb",
+                                                                        "ps",
+                                                                        "ps_ttm",
+                                                                        "dv_ratio",
+                                                                        "dv_ttm",
+                                                                        "total_share",
+                                                                        "float_share",
+                                                                        "free_share",
+                                                                        "total_mv",
+                                                                        "circ_mv",
+                                                                        "limit_status"
+                                                                    ])
+            #重命名列（money_flow中的证券代码sec_code和数据库中的不一致）
+            df.rename(columns = {'ts_code':'code','trade_date':'date'} , inplace = True)
+            df['date'] = pd.to_datetime(df['date']) #时间日期ns64化
+            #保存至数据库 
+            if df.empty == True:
+                print(f"{day.date()}数据为空，跳过上传")
+            else:
+                df.to_sql(
+                        name = 'tspro_basic',
+                        con = self.engine,
+                        index = False,
+                        if_exists = 'append')
+                print(f"{day.date()} 数据已上传完成，更新条目数{df.shape[0]} (daily basic)")
+                time.sleep(sleep)
+
+    def get_basic(self , to_csv = True):
+        """
+        获取区间内最新的每日基本面数据
+        """
+        ###取出区间内的最后一个有效日期
+        query_day = f"select distinct date FROM tspro_basic WHERE date BETWEEN '{self.start_date.date()}' and '{self.end_date.date()}'" 
+        df_day = pd.read_sql_query(query_day , self.engine)
+        if df_day.empty == True:
+            #数据库不存在数据
+            return pd.DataFrame()
+        else:
+            #数据库存在数据
+            last_day = df_day.iloc[-1].at['date']
+        ###通过区间内的最后一个有效日期来获取数据
+        query_day = f"select * FROM tspro_basic WHERE date = '{last_day}'" 
+        df_db = pd.read_sql_query(query_day , self.engine)
+        if df_day.empty == True:
+            #数据库不存在数据
+            return pd.DataFrame()
+        else:
+            #数据库存在数据
+            if to_csv ==  True:
+                df_db.to_csv('.\\data\\海龟模型\\每日指标.csv', encoding = 'utf_8_sig')
+            return df_db
+
+
 if __name__=="__main__":
     #测试交易日历功能
     cal = security()
-    cal.start_date = datetime(1991,1,1)
-    cal.end_date = datetime(2022,7,1)
-    a =cal.get_security('601318.sh')
+    cal.start_date = datetime(2023,1,1)
+    cal.end_date = datetime(2023,8,9)
+    a = cal.get_cal_k()
+    #a =cal.get_security('601318.sh')
     print(a)
     print(cal.dict[cal.ktype])
 
     #测试ETF类资产更新
     #df = cal.update_security_ETF()
-    #print(df)
+    #print(df)          
 
     #测试stock和ETF类资产的读取 2022/7/10
     df = cal.get_all_code(type = ['etf','stock'] , day = cal.end_date)
     print(df)
 
-
+     
     #df_up = cal.pro.query('limit_list_d' , trade_date = '20220616')
     #print(df_up)
     df_sec = cal.get_security(day = datetime(2001,1,1))

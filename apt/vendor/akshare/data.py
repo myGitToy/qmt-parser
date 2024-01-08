@@ -4,12 +4,17 @@ import tushare as ts
 import sqlalchemy
 import akshare as ak
 import time
-from sqlalchemy import create_engine,exc   #用来捕捉sqlalchemy的异常
+from sqlalchemy import create_engine,exc,delete,text   #用来捕捉sqlalchemy的异常
 from datetime import datetime,timedelta
 from apt.vendor.tspro.security import security  as security
 from apt.vendor.akshare.base import base as base
 from apt.vendor.akshare.base import stock as stock
 from apt.vendor.tspro.security import security
+from pandas.io import sql as con
+from sqlalchemy import text
+from apt.vendor.tspro.pro_api import pro_api as pro_api
+from apt.vendor.tspro.security import security as security
+from apt.vendor.tspro.data import data as tspro_data
 #from apt.vendor.tspro.security import get_calendar
 
 class data(base,stock):
@@ -62,7 +67,7 @@ class data(base,stock):
         for day in trade_days['cal_date']:
             #print(f"##############正在更新%s数据##############" % day.strftime("%Y-%m-%d"))
             #检查数据库是否存在数据（目前跳过验证，数据查询耗时较长）
-            query = f"select date , count(date) as num from tspro_{self.ktype} where date(date) = '{day.date()}'"
+            query = f"select MIN(date) , count(date) as num from tspro_{self.ktype} where date(date) = '{day.date()}'"
             df_old = pd.read_sql_query(query , self.engine)
             count = df_old.loc[0 , 'num']
             if count > 0 and flag_verify_db == True:
@@ -76,6 +81,7 @@ class data(base,stock):
                     #根据wiki描述的数据库一致性的要求，进行列名的变更 https://huiqiao.visualstudio.com/MyFunds/_wiki/wikis/MyFunds.wiki/19/tusharePro%E6%95%B0%E6%8D%AE%E8%AF%8D%E5%85%B8
                     #df.rename(columns={'ts_code': 'code', 'trade_date': 'date' , 'vol': 'volume' , 'amount': 'money'} , errors="raise")
                     #df.rename(columns={"ts_code": "code", "trade_date": "date" } , errors="raise")
+                    #TO DO: 如果数据集为空，会报错，需要增加一个判断
                     df.rename(columns={"ts_code": "code", "trade_date": "date" ,"vol" : "volume" , "amount" : "money"} , errors="raise" , inplace = True)
                     #删除列
                     df.drop(columns = ['pre_close','change','pct_chg'] , inplace = True)                 
@@ -89,10 +95,13 @@ class data(base,stock):
                     df['money'] = df['money'] * 1000
                     #日线数据特殊处理，因为数据库中的格式是date，不是datetime
                     #df = df[(df.date == day)]
-                    #差集处理
-                    query = f"select code , date from tspro_{self.ktype} where date(date) = '{day.date()}'"
+                    #差集处理，此处更新了SQL语句，解决查询时间过慢的问题
+                    query = f"select code , date from tspro_{self.ktype} where date = '{day.date()}'"
                     df_db = pd.read_sql_query(query , self.engine)
                     df_db['date'] = pd.to_datetime(df_db['date'])
+                    #Feature Warning Fix
+                    df = df.dropna(how='all', axis=1)
+                    df_db = df_db.dropna(how='all', axis=1)
                     df = pd.concat([df , df_db , df_db ]).drop_duplicates(subset = ['code','date'] , keep = False)
                 else:
                     #分时数据正常处理
@@ -109,7 +118,7 @@ class data(base,stock):
                         #df = df[(df.date >= datetime.datetime(day.year,day.month,day.day,1)) & (df.date <= datetime.datetime(day.year,day.month,day.day,16))]
                 #保存至数据库
                 if df.empty == True:
-                    print("%s 当日数据为空，跳过上传" % (day.strftime('%Y%m%d')))
+                    print("%s 当日数据为空或者差集为空，跳过上传" % (day.strftime('%Y%m%d')))
                 else:
                     df.to_sql(
                             name = f'tspro_{self.ktype}',
@@ -161,7 +170,10 @@ class data(base,stock):
             df['money'] = df['money'] * 1000
             #日线数据特殊处理，因为数据库中的格式是date，不是datetime
             #两者取差集(df-df_db)主要目的是为了导入ETF复权因子，因此主集设定为df
-            df = pd.concat([df , df_db , df_db] ).drop_duplicates(subset=['code','date'] , keep = False)
+            #Feature Warning Fix
+            df = df.dropna(how='all', axis=1)
+            df_db = df_db.dropna(how='all', axis=1)
+            df = pd.concat([df , df_db , df_db]).drop_duplicates(subset=['code','date'] , keep = False)
             #print(df)
             #保存至数据库
             if df.empty == True:
@@ -174,7 +186,7 @@ class data(base,stock):
                         if_exists = 'append')
                 print(f"{day.strftime('%Y%m%d')}数据已上传完成(ETF日线)")    
 
-    def update_sequence_add(self , code_list = None , myclass = 'stock' , type = '60m'  , priority = 0 ):
+    def update_sequence_add(self , code_list = None , myclass = 'stock' , type = '60m'  , priority = 0 , auto_select = True):
         '''
         task346更改了分时线数据更新的逻辑，拆分成add和launch两部分
         add模块主要进行数据更新任务的导入
@@ -183,6 +195,7 @@ class data(base,stock):
             myclass 一级目录 默认stock  目前可接受参数stock|etf
             type 二级目录 默认60m；目前可接受参数：60m/1m
             priority 优先更新标识 默认为0
+            auto_select 是否自动选择1，默认为True
         '''
         if code_list != None:
             ######流程1：优先更新逻辑，混合代码，需要拉取证券列表的类型等数据
@@ -194,7 +207,10 @@ class data(base,stock):
                 myclass = sec.get_security(code = code)[1]
                 if myclass != np.nan:
                     record = {'code':code,'start_date':self.start_date,'end_date':self.end_date,'class':myclass,'type':type,'priority':1}                             
-                    df_main = df_main.append(record , ignore_index = True)
+                    df_main = pd.concat([df_main,pd.DataFrame(record,index = [0])])
+                                         
+                    #pd.DataFrame(record,ignore_index = True)]) #pandas 2.0版本后，不再支持append
+                    #df_main.append(record , ignore_index = True)
                     #df = pd.DataFrame()
                     #df['code'] = code
                     #df['start_date'] = self.start_date
@@ -228,16 +244,17 @@ class data(base,stock):
             df_db = pd.read_sql_query(sql_count , self.engine)
             if df_db.iloc[0].at['count'] == 0:
                 #数据库不存在数据
-                result = '1'
+                result = '1' 
             else:
-                #数据库存在数据，进行选择
-                result = input('''数据库存在数据，请选择更新方式 \n
-                1. 保留原有更新序列，添加新的序列 \n
-                2. 删除原有更新序列，添加新的序列 \n
-                3. 删除原有更新序列 \n
-                4. 退出（不做任何处理）\n''')
-            #无论数据库是否存在数据，到这里进行选择
-            #无数据的直接进入1，有数据的按选择进行跳转
+                #数据库存在数据
+                if auto_select == True:
+                    result = '1'
+                else: #数据库存在数据，且不自动选择
+                    result = input('''数据库存在数据，请选择更新方式 \n
+                    1. 保留原有更新序列，添加新的序列 \n
+                    2. 删除原有更新序列，添加新的序列 \n
+                    3. 删除原有更新序列 \n
+                    4. 退出（不做任何处理）\n''')
             if result == '1':               #添加新数据
                 #1. 获取区间最后一天所对应的全部证券列表
                 sec = security()
@@ -259,11 +276,12 @@ class data(base,stock):
                 print(f"上传已完成，新增{code_list.shape[0]}条更新序列！")
 
             elif result == '2':             #删除后添加
-                sql_count = 'delete from akshare_update_sequence'
-                try:    #删除需捕捉异常，否则会报错
-                    pd.read_sql_query(sql_count , self.engine)
+                sql_count = text('delete from akshare_update_sequence')
+                try:
+                    with self.engine.begin() as connection:
+                        connection.execute(sql_count)
                 except exc.ResourceClosedError:
-                    pass
+                    print(f"删除更新序列失败！")
                 #以下代码与选项1保持一致
                 #1. 获取区间最后一天所对应的全部证券列表
                 sec = security()
@@ -285,11 +303,12 @@ class data(base,stock):
                 print(f"上传已完成，新增{code_list.shape[0]}条更新序列！")
 
             elif result == '3':             #直接删除
-                sql_count = 'delete from akshare_update_sequence'
-                try:    #删除需捕捉异常，否则会报错
-                    pd.read_sql_query(sql_count , self.engine)
+                sql_count = text('delete from akshare_update_sequence')
+                try:
+                    with self.engine.begin() as connection:
+                        connection.execute(sql_count)
                 except exc.ResourceClosedError:
-                    print('更新序列已删除！')
+                    print(f"删除更新序列失败！")
 
             elif result == '4':          #不做任何更改，直接跳出
                 return 
@@ -342,7 +361,7 @@ class data(base,stock):
                         df_ak =  ak.fund_etf_hist_min_em(symbol = symbol , start_date = start_date.strftime('%Y%m%d %H:%M:%S'), end_date = end_date.strftime('%Y%m%d %H:%M:%S'), period = self.dict[type], adjust = '')                
                     except :
                         df_ak = pd.DataFrame()
-                        print(f"{code} akshare更新错误！！")
+                        print(f"{code} akshare ETF/LOF数据更新错误！！")
                 #print(df_ak)
                 #最大数据量校验
                 if df_ak.shape[0] >= max_row:
@@ -399,6 +418,11 @@ class data(base,stock):
                 #print(df_ak)
                 #print(df_db)
                 #5. 两个DataFrame进行差值处理
+                #Feature Warning: 在当前的版本中，如果你连接的 DataFrame 中有一列全部是空值或 NA
+                #那么这一列将不会被包含在结果的数据类型决定中。但在未来的版本中，
+                #这种行为将不再存在，即使一列全部是空值或 NA，它也会被包含在结果的数据类型决定中。
+                df_ak = df_ak.dropna(how='all', axis=1)
+                df_db = df_db.dropna(how='all', axis=1)
                 df_diff = pd.concat([df_ak , df_db , df_db] ).drop_duplicates(subset=['date'] , keep = False)
                 #6. 差值数据写入数据库
                 if df_diff.empty == True:
@@ -413,12 +437,22 @@ class data(base,stock):
                     #数据导入增加XX毫秒的延迟（akshare专有，速度太快会被限制）
                     time.sleep(sleep)
                 #7. 将此条目从更新序列中删除
-                sql_delete = f'delete from akshare_update_sequence where id = {id}'
+                """
+                这部分代码注释，原因是用pd.read_sql_query方法，在现有版本中无法对数据条目做删除操作
+                详见https://huiqiao.visualstudio.com/MyFunds/_workitems/edit/499/
+                sql_delete = text(f'delete from tspro_update_sequence where id = {id}')
                 try:    #删除需捕捉异常，否则会报错
                     pd.read_sql_query(sql_delete , self.engine)
                 except exc.ResourceClosedError:
                     pass
-                    #print('更新序列已删除！')
+                """
+                sql_delete = text(f"delete from akshare_update_sequence where id = {id}")
+                try:
+                    with self.engine.begin() as connection:
+                        connection.execute(sql_delete)
+                except exc.ResourceClosedError:
+                    print(f"删除{code}更新序列失败！")
+                    pass                
         else:
             #无数据，跳过
             print("更新序列无数据，跳过更新")
@@ -446,6 +480,7 @@ class data(base,stock):
                 2.2 没有数据则直接写入操作
                 2.3 存在数据，则去重后写入
         """
+        raise ValueError
         #分时线类型校验
         if self.ktype == '1d':
             raise ValueError(f'日线数据请使用update_day函数进行更新')
@@ -482,10 +517,15 @@ class data(base,stock):
             #分时线数据不需要进行成交量和成交额修正
             #4. 获取数据库对应日期的数据
             query_db = f"select code,date,open,close,high,low,volume,money from tspro_{self.ktype} where date(date) between '{self.start_date.date()}' and '{self.end_date.date()}' and code = '{code}'"
+            #TO DO：上述查询语句是否可以做优化？
+            
             df_db = pd.read_sql_query(query_db , self.engine)
             df_db['date'] = pd.to_datetime(df_db['date'])
             #print(df_tspro)
             #5. 两个DataFrame进行差值处理
+            #Feature Warning Fix
+            df_tspro = df_tspro.dropna(how='all', axis=1)
+            df_db = df_db.dropna(how='all', axis=1)
             df_diff = pd.concat([df_tspro , df_db , df_db] ).drop_duplicates(subset=['date'] , keep = False)
             #6. 差值数据写入数据库
             if df_diff.empty == True:
@@ -508,6 +548,26 @@ class data(base,stock):
             return self.code[7:9] + self.code[0:6]
         else:
             return self.code
+        
+    def code_ak_to_ts(self , code_ak):
+        """
+        将akshare代码类型转换成tushare类型
+        """
+        #代码类型校验
+        if len(code_ak) == 6:
+            #这是akshare数据类型，返回tushare代码code 
+            query = f"select code from tspro_security where symbol = '{code_ak}'"
+            df_db = pd.read_sql_query(query , self.engine)
+            #如果dataframe不为空且数据仅有一行，返回code
+            if df_db.shape[0] == 1:
+                return df_db.loc[0 , 'code']
+            else:
+                raise ValueError(f'无效的证券代码')
+        elif len(self.code) == 9:
+            #9位数字，则默认为tushare代码，直接返回
+            return self.code
+        else:
+            raise ValueError(f'无效的证券代码')
 
     def get_ak_factor(self):
         """
@@ -558,7 +618,7 @@ class data(base,stock):
         for day in trade_days['cal_date']:
             #print(f"##############正在更新%s数据##############" % day.strftime("%Y-%m-%d"))
             #检查数据库是否存在数据（目前跳过验证，数据查询耗时较长）
-            query = f"select date , count(date) as num from tspro_factor where date(date) = '{day.date()}'"
+            query = f"select MIN(date) , count(date) as num from tspro_factor where date = '{day.date()}'"
             df_old = pd.read_sql_query(query , self.engine)
             count = df_old.loc[0 , 'num']
             if count > 0 and flag_verify_db == True:
@@ -581,6 +641,9 @@ class data(base,stock):
                 query = f"select code , date from tspro_factor where date(date) = '{day.date()}'"
                 df_db = pd.read_sql_query(query , self.engine)
                 df_db['date'] = pd.to_datetime(df_db['date'])
+                #Feature Warning Fix
+                df = df.dropna(how='all', axis=1)
+                df_db = df_db.dropna(how='all', axis=1)
                 df = pd.concat([df , df_db , df_db ]).drop_duplicates(subset = ['code','date'] , keep = False)
                 #保存至数据库
                 if df.empty == True:
@@ -622,6 +685,9 @@ class data(base,stock):
             df['date'] = pd.to_datetime(df['date'])
             df_db['date'] = pd.to_datetime(df_db['date'])
             #两者取差集(df-df_db)主要目的是为了导入ETF复权因子，因此主集设定为df
+            #Feature Warning Fix
+            df = df.dropna(how='all', axis=1)
+            df_db = df_db.dropna(how='all', axis=1)            
             df = pd.concat([df , df_db , df_db] ).drop_duplicates(subset=['code','date'] , keep = False)
             #保存至数据库
             if df.empty == True:
@@ -649,20 +715,25 @@ class data(base,stock):
             无论设置如何，resample只对tushare数据有效，akshare60分钟线每日正常有4条数据，无需重采样
             目前仅对60分钟线有效
             True：进行重采样
-            False：不进行重采样，舍弃9:30单根数据
+            False：不进行重采样，舍弃9:30单根数据（akshare的数据格式无9:30数据）
         接受前复权 后复权 不复权 动态复权四种复权模式
         成交量、成交额目前未进行复权处理
         返回的数据按照升序排列（backtrader要求的数据格式）
         """
+        #akshare数据无需重采样
+        self.resample = False
         if self.start_date  > self.end_date:
             raise ValueError(f'开始日期必须早于结束日期')
         if self.ktype not in ['1d','1m','5m','30m','60m']:
-            raise ValueError(f'不合规的K线类型: {ktype}')
+            raise ValueError(f'不合规的K线类型: {self.ktype}')
         if self.code == None :
             raise ValueError(f'证券代码不能为空')
         #获取tspro数据
         query_tspro = f"select code,date,open,high,low,close,volume,money from tspro_{self.ktype} where code = '{self.code}' and date BETWEEN '{self.start_date}' and '{self.end_date}' order by date asc"         
-        df_tspro = pd.read_sql_query(query_tspro , self.engine)
+        try:
+            df_tspro = pd.read_sql_query(query_tspro , self.engine)
+        except:
+            df_tspro = pd.DataFrame()
         #获取akshare数据（目前ak只有分时数据，无日线数据）
         if self.ktype =='1d':
             #日线返回空
@@ -673,6 +744,9 @@ class data(base,stock):
             df_ak = pd.read_sql_query(query_ak , self.engine)
         #取数据交集
         #df_db = pd.merge(df_tspro,df_ak,on=['code','date'],how='inner')
+        #Feature Warning Fix
+        df_tspro = df_tspro.dropna(how='all', axis=1)
+        df_ak = df_ak.dropna(how='all', axis=1)
         df_db = pd.concat([df_tspro , df_ak ] ).drop_duplicates(subset=['date'] , keep = 'first')
         #print(df_db)
         #处理需要返回的个数
@@ -696,23 +770,7 @@ class data(base,stock):
             df_db = pd.merge(df_db, tspro_factor[['factor_date','factor']] , on = ['factor_date'] , how = 'left')
             #复权因子修正完毕，填充后进入复权处理（tspro每天均有复权因子，此处无需填充）
             #df_db.ffill(axis=0, inplace=True, limit=None, downcast=None)
-            #进行60分钟线修正
-            if self.ktype =='60m':
-                #判断使用何种方式进行60分钟线修正
-                if flag_resample == False:
-                    #去除9：30数据
-                    #df_db = df_db.drop(df_db[df_db['date'].dt.time == '09:30:00'].index)
-                    #取出09:30数据
-                    df_drop = df_db.query('date.dt.time == datetime.strptime("09:30","%H:%M").time()')
-                    #两者取差集
-                    df_db = pd.concat([df_db , df_drop , df_drop] ).drop_duplicates(subset=['date'] , keep = False)
-                else:
-                    #重采样
-                    raise ValueError('暂不支持重采样')
-                    df_db['date'] = pd.to_datetime(df_db['date'])
-                    df_db.set_index('date',inplace = True)
-                    df_db = df_db.resample('60min').agg({'open':'first','high':'max','low':'min','close':'last','volume':'sum','money':'sum','factor':'first'}).dropna(axis=0)
-                    print(df_db)
+            #进行60分钟线修正（akshare无需修正）
 
             if self.fq.value == 0:  #不复权
                 if flag_forward == False:
@@ -888,8 +946,107 @@ class data(base,stock):
             else:
                 raise ValueError(f'不支持的复权模式，请检查！')
                 return df_db
+    def fix_1min_error_v2(self, day = datetime(2023,12,1)):
+        """
+        本模块使用5分钟线数据对1分钟线进行数据修正，目前存在以下几个问题：
+        1. 当日停盘个股在1分钟线上是有数据的（成交量为0），如果隔日截取，则停盘日取不到1分钟数据；
+        2. 如果对历史的1分钟数据进行截取，则开盘价open均为0（1分钟线数据仅保留5天）
+        3. 当日临时停盘，未知
 
-    def fix_1min_error(self, day = datetime(2023,5,1)):
+        【输入】
+            start_date
+            end_date
+
+        """  
+        #第一部分：修正当日停盘数据
+        df_tingpai = pro_api.suspend_k(self)
+        #print(df_tingpai.query('suspend_timing == suspend_timing'))
+        for index , row in df_tingpai.query('suspend_timing != suspend_timing').iterrows():
+            code = row['code']
+            date = row['date']
+            suspend_type = row['suspend_type']
+            if suspend_type == 'S':
+                #全天停牌，删除对应的一分钟线数据
+                sql_query = text(f"delete from akshare_1m where code = '{code}' and date(date) = '{date.date()}'")
+                try:
+                    with self.engine.begin() as connection:
+                        connection.execute(sql_query)
+                        print(f"删除{code}|{date.date()} 成功！")
+                except exc.ResourceClosedError:
+                    print(f"删除{code}|{date.date()} 失败！")
+            elif suspend_type == 'R':    
+                pass    #复牌，不做任何处理
+            else:
+                pass    #其他
+        #第二部分：修正当日部分时段停盘数据
+        print(df_tingpai.query('suspend_timing == suspend_timing'))
+
+        #第三部分：开盘价Open为0的数据修正
+        #3.1 查询日期段间的交易日
+        df_trade_day = security.get_calendar(self)
+        for day in df_trade_day['date']:    #循环读取每个交易日
+            sql_code = f"select distinct code from akshare_60m where date(date) = '{day.date()}'"
+            df_code = pd.read_sql_query(sql_code , self.engine)
+            for code in df_code['code']:    #循环读取每个代码
+                sql_1m_day = f"select date(date) as date , count(date) as num  from akshare_1m where date(date) ='{day.date()}' and code = '{code}' and open = 0 group by date(date)"
+                df_1m_day = pd.read_sql_query(sql_1m_day , self.engine)
+                #print(df_1m_day)
+                if df_1m_day.empty == True:
+                    #无数据，跳过
+                    print(f"{day.date()}|{code} 无数据，跳过")
+                else:
+                    #有数据，进行修正
+                    #注：这里推送过来的数据是akshare_1m中含open=0的日期，可能有1行也可能有多行
+                    for day_need_fix in df_1m_day['date']:
+                        df_1m = pd.read_sql_query(f"select id,code,date,open,close from akshare_1m where date(date) = '{day_need_fix}' and code = '{code}'" , self.engine)
+                        df_60m = pd.read_sql_query(f"select id,code,date,open,close from akshare_60m where date(date) = '{day_need_fix}' and code = '{code}'" , self.engine)
+                        if df_60m.empty == True:
+                            raise ValueError(f"60分钟线{day_need_fix}|{code}无数据，无法修正")
+                        else:
+                            #将open = 0 的数据进行特别标注
+                            df_1m.loc[df_1m['open'] == 0 , 'need_fix'] = 1
+                            #获取需要修正的条目数
+                            num_need_fix = df_1m.loc[df_1m['open'] == 0 , 'need_fix'].count()
+                            #对df_1m第一根K线open价格进行修正
+                            df_1m.loc[df_1m.index[0], 'open'] = df_60m.loc[df_60m.index[0], 'open']
+                            #对df_1m其余K线进行修正，如果该行open价格为0，则取上一根K线的close价格
+                            df_1m.loc[df_1m['open'] == 0 , 'open'] = df_1m['close'].shift(1).fillna(df_1m['close'])
+                            #通过mysql事务的方式，一次性更新全部need_fix = 1 的数据
+                            try:
+                                with self.engine.begin() as connection:
+                                    #connection.begin()
+                                    for index, row in df_1m.query('need_fix == 1').iterrows():
+                                        id = row['id']
+                                        open_price = row['open']
+                                        sql_update= text(f"update akshare_1m set open = {open_price} where id = {id}")
+                                        connection.execute(sql_update)
+                                    connection.commit()
+                                    print(f"{day.date()}|{code} 修正成功，总计{num_need_fix}条")
+                            except:
+                                with self.engine.begin() as connection:
+                                    connection.rollback()
+                                    print(f"{day.date()}|{code} 修正失败，回滚数据")
+
+        #以下数据作为存档，已无作用
+        # 从 akshare_60m 表中获取每天的第一根 K 线的 OPEN 价格
+        """
+        另一种查询方法报错：
+        SELECT code, DATE(date) AS date, FIRST_VALUE(OPEN) OVER (PARTITION BY code, DATE(date) ORDER BY date) AS first_open
+        FROM akshare_60m
+        GROUP BY code, DATE(date)
+        """
+        #60分钟的内连接查询，用来修正无法进行group by操作的问题，这里保留
+        sql_60m = f"""
+            SELECT a.code, DATE(a.date) AS date, a.open
+            FROM akshare_60m  a
+            JOIN (
+                SELECT code, DATE(date) AS date, MIN(date) AS min_date
+                FROM akshare_60m where date between '{self.start_date}' and '{self.end_date}' 
+                GROUP BY code, DATE(date)
+            ) b ON a.code = b.code AND a.date = b.min_date
+        """
+    
+    def fix_1min_error(self, day = datetime(2023,12,1)):
         """
         本模块需要修复的内容：
         1. 修复1分钟线历史数据开盘价格为0的问题
@@ -897,12 +1054,27 @@ class data(base,stock):
         详细描述参见task473
         输入：
             day 校验的起始日期，由于校验日期的第一条代码9:30的可能为0，所以需要前一天的数据
+        V1版本修正逻辑：
+            1. 取出sql_1d 按代码排列
+            2. 取出1m的sql_code，按代码排列
+            3. 按code进行循环
+            3.1 查询1m详细数据
+            3.2 查询60m详细数据
+            3.3 1m fix_mode置0
+            3.4 1m开盘价如果为0，则对矩阵fix_mode进行设置
+            3.5 1m设置其余开盘价为0的数据为offset模式
+            3.6 60分钟线中的数据open填充至1分钟线（每天4个K线的开盘价）
+            3.7 对于offset的数据进行填充
+            3.8 对fix_mode指定的几种类型（也就是填充过的），进行写回数据库操作
         """
         #1. 获取开始日期至今的全部代码
         #还有一种sql语句的处理方法是先取出open=0的数据，再group
         #优点：点断续传后，已修正的代码就不会重复计算，节约时间
         #缺点：会历遍整个数据库，目前大约需要耗时1分钟，将来会显著增加，而且如果当天没有更新完毕，后面一天的数据进来后，优势就不存在了，因为又需要从头开始进行修正
-        sql_code = 'select code from akshare_1m group by code'
+        #TO DO: 从其他渠道取得代码，然后进行修正
+        sql_1d = f"select code from tspro_1d where date >= '{day}' group by code order by code"
+        df_1d_code = pd.read_sql_query(sql_1d , self.engine)
+        sql_code = 'select code from akshare_1m group by code' #2023/12/13查询耗时7秒
         df_code = pd.read_sql_query(sql_code , self.engine)
         print(df_code)
         for code in df_code['code']:
@@ -914,7 +1086,7 @@ class data(base,stock):
             #df_db_1min['date'] = pd.to_datetime(df_db_1min['date'])
             #df_db_60min['date'] = pd.to_datetime(df_db_60min['date'])
             #默认修正模式为无需修正
-            df_db_1min['fix_mode'] = 0
+            df_db_1min['fix_mode'] = 0  #这里如果修改成np.nan会导致后面的merge出错
             ###1. 构造1min矩阵
             #取出09:30 10:30 14:00 15:00的数据
             df_db_1min.loc[(df_db_1min.open == 0) & (df_db_1min.date.dt.time == datetime.strptime("09:30","%H:%M").time()), "fix_mode"] = '60min_mode1'
@@ -943,25 +1115,40 @@ class data(base,stock):
             print(f'正在更新{code}')  #简略版
             for id in df_db['id']:
                 open = df_db.loc[df_db.id == id].iloc[0].at['open_x']
-                sql_update = f"update akshare_1m set open = {open} where id = {id}"
+                sql_update = text(f"update akshare_1m set open = {open} where id = {id}")
                 try:
-                    df_db_update = pd.read_sql_query(sql_update , self.engine)                    
-                except exc.ResourceClosedError:
+                    with self.engine.begin() as connection:
+                        connection.execute(sql_update)
+                        #print(f'正在更新{code}，已更新{n}/{db_count}')  #详细版
+                        #print(f'正在更新{code}')  #简略版
+                        pass
+                except exc.ResourceClosedError: 
                     #提示信息暂时挪到外测，因为点断续传后，更新过的内容没有打印输出，因此会空白很久
-                    #print(f'正在更新{code}，已更新{n}/{db_count}')  #详细版
-                    #print(f'正在更新{code}')  #简略版
-                    pass
+                    print(f'更新{code}出现错误！')
                 n += 1    
 
-if __name__=="__main__":
-    pd.set_option('display.max_rows', None)
-    tspro = data()
-    
+    def update_cumulative_turnover(self):
+        """
+        继承和调用tspro同名函数
+        """
+        return tspro_data.update_cumulative_turnover(self)
 
+    def analyse_cumulative_turnover(self):
+        """
+        继承和调用tspro同名函数
+        """
+        return tspro_data.analyse_cumulative_turnover(self) 
+       
+if __name__=="__main__":
+    #pd.set_option('display.max_rows', None)
+    tspro = data()
     tspro.code ='601318.sh'
-    tspro.start_date= datetime(2022,1,1,8)
-    tspro.end_date = datetime(2022,7,8,16)
+    tspro.start_date= datetime(2023,12,22,8)
+    tspro.end_date = datetime.now()
     #ETF数据1998/10/19 含
     tspro.fq = tspro.复权.动态复权
     tspro.ktype = '1d'
-    tspro.fix_1min_error()
+    df = tspro.get_k_data()
+    print(df)
+    #tspro.update_cumulative_turnover()
+    tspro.fix_1min_error_v2()

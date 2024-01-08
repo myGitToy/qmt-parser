@@ -3,7 +3,7 @@ import pandas as pd
 import tushare as ts
 import sqlalchemy
 import akshare as ak
-from sqlalchemy import create_engine,exc   #用来捕捉sqlalchemy的异常
+from sqlalchemy import create_engine,exc,delete,text   #用来捕捉sqlalchemy的异常
 from datetime import datetime,timedelta
 from apt.vendor.tspro.security import security  as security
 from apt.vendor.tspro.base import base as base
@@ -180,6 +180,7 @@ class data(base,stock):
             myclass 一级目录 默认stock  目前可接受参数stock|etf
             type 二级目录 默认60m；目前可接受参数：60m/1m
             priority 优先更新标识 默认为0
+            此处未作auto_update的适配，因为目前tspro无分时权限，因此维持手动更新
         '''
         if code_list != None:
             ######流程1：优先更新逻辑，混合代码，需要拉取证券列表的类型等数据
@@ -257,10 +258,11 @@ class data(base,stock):
 
             elif result == '2':             #删除后添加
                 sql_count = 'delete from tspro_update_sequence'
-                try:    #删除需捕捉异常，否则会报错
-                    pd.read_sql_query(sql_count , self.engine)
+                try:
+                    with self.engine.begin() as connection:
+                        connection.execute(sql_count)
                 except exc.ResourceClosedError:
-                    pass
+                    print(f"删除更新序列失败！")
                 #以下代码与选项1保持一致
                 #1. 获取区间最后一天所对应的全部证券列表
                 sec = security()
@@ -283,11 +285,12 @@ class data(base,stock):
 
             elif result == '3':             #直接删除
                 sql_count = 'delete from tspro_update_sequence'
-                try:    #删除需捕捉异常，否则会报错
-                    pd.read_sql_query(sql_count , self.engine)
+                try:
+                    with self.engine.begin() as connection:
+                        connection.execute(sql_count)
                 except exc.ResourceClosedError:
-                    print('更新序列已删除！')
-
+                    print(f"删除更新序列失败！")
+                    
             elif result == '4':          #不做任何更改，直接跳出
                 return 
             else:
@@ -359,12 +362,22 @@ class data(base,stock):
                             if_exists = 'append')
                     print(f"{code}数据已上传完成({type}，新增数据{df_diff.shape[0]})")
                 #7. 将此条目从更新序列中删除
-                sql_delete = f'delete from tspro_update_sequence where id = {id}'
+                """
+                这部分代码注释，原因是用pd.read_sql_query方法，在现有版本中无法对数据条目做删除操作
+                详见https://huiqiao.visualstudio.com/MyFunds/_workitems/edit/499/
+                sql_delete = text(f'delete from tspro_update_sequence where id = {id}')
                 try:    #删除需捕捉异常，否则会报错
                     pd.read_sql_query(sql_delete , self.engine)
                 except exc.ResourceClosedError:
                     pass
-                    #print('更新序列已删除！')
+                """
+                sql_delete = text(f"delete from tspro_update_sequence where id = {id}")
+                try:
+                    with self.engine.begin() as connection:
+                        connection.execute(sql_delete)
+                except exc.ResourceClosedError:
+                    print(f"删除{code}更新序列失败！")
+                    pass      
         else:
             #无数据，跳过
             print("更新序列无数据，跳过更新")
@@ -818,13 +831,96 @@ class data(base,stock):
                 raise ValueError(f'不支持的复权模式，请检查！')
                 return df_db
 
+    def update_cumulative_turnover(self):
+        """
+        更新累计换手率入库
+        """
+        df_basic = pd.read_sql_query(f"select code,date from tspro_basic force index (date) where date between '{self.start_date.date()}' and '{self.end_date.date()}'" , self.engine)
+        df_cumulative_turnover = pd.read_sql_query(f"select code,date from tspro_cumulative_turnover force index (date) where date between '{self.start_date.date()}' and '{self.end_date.date()}'" , self.engine)
+        df_db = pd.concat([df_basic, df_cumulative_turnover]).drop_duplicates(subset=['code','date'], keep=False)
+        # Get rows from df_basic that are not in df_cumulative_turnover
+        #df_missing_rows = df_basic[~df_basic[['code', 'date']].isin(df_cumulative_turnover[['code', 'date']])].dropna()
+        #保存至数据库
+        if df_db.empty == True:
+            print("差集为空，跳过写入数据库")
+        else:
+            df_db.to_sql(
+                    name = f'tspro_cumulative_turnover',
+                    con = self.engine,
+                    index = False,
+                    if_exists = 'append')
+            print(f"数据上传完成(tspro_cumulative_turnover)|新增数据{df_db.shape[0]}")
+        
+    def analyse_cumulative_turnover(self):
+        """
+        更新和分析累计换手率
+        目前需要更新turnover_date,turnover_date_f这两个字段
+        """
+        sql_basic = f"select code,date,turnover_rate,turnover_rate_f from tspro_basic force index(date) where date between '{self.start_date.date()}' and '{self.end_date.date()}'"
+        print(sql_basic)
+        df_basic = pd.read_sql_query(sql_basic , self.engine)
+        df_cumulative_turnover = pd.read_sql_query(f"select code,date,turnover_valid from tspro_cumulative_turnover force index(date) where date between '{self.start_date.date()}' and '{self.end_date.date()}'" , self.engine)
+        df_cum_na = df_cumulative_turnover[df_cumulative_turnover['turnover_valid'].isnull()]
+        #历遍df_cum_na
+        for index , row in df_cum_na.iterrows():
+            code = row['code']
+            e_date = row['date']
+            for n in [100,300,500,1000,5000]:
+                s_date = e_date - timedelta(days = n)
+                #df_db为tspro_basic数据查询中以e_date为基准的数据，降序排列
+                df_db = pd.read_sql_query(f"select code,date,turnover_rate,turnover_rate_f from tspro_basic where code = '{code}' and date between '{s_date}' and '{e_date}'" , self.engine).sort_values('date', ascending=False)
+                #数据条目的最后一个日期，用来进行比较
+                last_date = df_db.iloc[-1]['date']
+                #计算换手率累计值
+                df_db['cum_turnover'] = df_db['turnover_rate'].cumsum()
+                df_db['cum_turnover_f'] = df_db['turnover_rate_f'].cumsum()
+                #需要df_db累加后的turnover_rate和turnover_rate_f均大于100                
+                if df_db.query('cum_turnover >= 100').empty == False and df_db.query('cum_turnover_f >= 100').empty == False:
+                    #累加值超过100，数据有效
+                    turnover_date = df_db[df_db['cum_turnover'] >= 100].iloc[0]['date']
+                    turnover_date_f = df_db[df_db['cum_turnover_f'] >= 100].iloc[0]['date']
+                    turnover_days = df_db.query('cum_turnover <= 100').shape[0]
+                    turnover_days_f = df_db.query('cum_turnover_f <= 100').shape[0]
+                    bit = 1
+                    #检查100%换手率的数据
+                    #print(df_db.query('cum_turnover <= 100'))
+                    print(f"{code}|{e_date}前数{n}日数据有效，对应换手日期{turnover_date}|{turnover_date_f}；交易日{turnover_days}|{turnover_days_f}")
+                    #更新数据库
+                    sql_update = text(f"update tspro_cumulative_turnover set turnover_date = '{turnover_date}' , turnover_date_f = '{turnover_date_f}' , turnover_days = {turnover_days} , turnover_days_f = {turnover_days_f} , turnover_valid = {bit} where code = '{code}' and date = '{e_date}'")
+                    try:
+                        with self.engine.begin() as connection:
+                            connection.execute(sql_update)
+                    except exc.ResourceClosedError:
+                        print(f"更新{code}|{e_date}序列失败！")                    
+                    #数据有效，跳出for循环
+                    break
+                else:
+                    #累加值未超过100，数据无效
+                    print(f"{code}前数{n}日数据无效，继续增加天数")
+                    turnover_date = None
+                    turnover_date_f = None
+                    #这里还有一种情况，就是for列表循环完毕，数据依旧无效
+                    if n == 5000:
+                        print(f"未找到100%换手数据，可能数据无效也可能是新股、次新股")
+                        bit = 0
+                        sql_update = text(f"update tspro_cumulative_turnover set turnover_valid = {bit}  where code = '{code}' and date = '{e_date}'")
+                        try:
+                            with self.engine.begin() as connection:
+                                connection.execute(sql_update)
+                        except exc.ResourceClosedError:
+                            print(f"更新{code}|{e_date}序列失败！")                             
+                        #raise ValueError(f"{code}前数{n}日数据无效，程序终止")
+    
 if __name__=="__main__":
     tspro = data()
     tspro.code ='601318.sh'
-    tspro.start_date= datetime(2022,1,1,8)
-    tspro.end_date = datetime(2022,7,8,16)
+    tspro.start_date= datetime(2023,1,1,8)
+    tspro.end_date = datetime(2023,12,20,16)
     #ETF数据1998/10/19 含
     tspro.fq = tspro.复权.动态复权
     tspro.ktype = '1d'
+    #tspro.update_cumulative_turnover()
+    tspro.analyse_cumulative_turnover()
+    
     tspro.update_day_ETF()
     tspro.update_factor_ETF()

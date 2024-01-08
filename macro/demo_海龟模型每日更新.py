@@ -18,6 +18,7 @@ from apt.qsp_universal.base import base as data
 from apt.vendor.akshare.data import data as akdata
 from apt.qsp_universal.prank import prank
 from apt.qsp_universal.expma import expma as EXP
+from apt.qsp_universal.A  import A as A
 
 #pd.set_option('display.max_rows',   None)
 #pd.set_option('display.max_columns', None)
@@ -27,7 +28,7 @@ a = ATR()
 rank = prank()
 exp = EXP()
 a.ktype = rank.ktype = exp.ktype = '1d'
-a.start_date = rank.start_date = exp.start_date = datetime(2022,1,1)    #本地数据读取的开始日期，缩小间隔可减少excel文件的体积
+a.start_date = rank.start_date = exp.start_date = datetime(2023,1,1)    #本地数据读取的开始日期，缩小间隔可减少excel文件的体积
 a.end_date  = rank.end_date = exp.end_date = datetime.now()
 a.vendor  = rank.vendor = exp.vendor = a.vendor.akshare
 
@@ -47,9 +48,9 @@ df_code2 = data.read_excel(file_name = '.\\data\\海龟模型\\自选股列表.x
 df_code3 = data.read_excel(file_name = '.\\data\\海龟模型\\自选股列表.xlsx' , sheet_name = 'ETF')
 #合并表格
 df_code_main = pd.concat([df_code_main, df_code1 , df_code2 , df_code3] , sort = False)
-print(df_code_main)
+#print(df_code_main)
 df = df_code_main.query('证券代码 == "688349.SH"')
-print(df)
+#print(df)
 #更改列名
 df_code_main.rename(columns={"证券代码": "code", "证券名称": "name"} , errors="raise" , inplace = True)
 #去重
@@ -60,7 +61,7 @@ code_list = df_code_main['code'].tolist()
 
 #更新日线和60分钟线数据
 dt = akdata(myauth = True)
-dt.start_date = datetime(2023,7,2,8) #数据更新的开始日期
+dt.start_date = datetime(2023,11,20,8) #数据更新的开始日期
 dt.end_date = datetime.now()
 dt.ktype = '60m'
 dt.update_sequence_add(code_list = code_list , type = '60m')
@@ -107,5 +108,20 @@ df_prank.to_csv('.\\data\\海龟模型\\prank_tspro.csv', encoding = 'utf_8_sig'
 
 #######7. 更新EXPMA数据
 df_exp = exp.daily_update(code_list = code_list , to_csv = True)
+
+#######7. 更新均线多头排列
+df_EMA_up = pd.DataFrame()
+for code in code_list:
+    ema = A() 
+    ema.ktype =  exp.ktype
+    ema.start_date = exp.start_date
+    ema.end_date  = exp.end_date 
+    ema.vendor  =  exp.vendor  
+    ema.code = code
+    #print(ema.A04B02_EMA均线多头排列(ma_list = [10,20,30])[0])
+    df_EMA_up = pd.concat([df_EMA_up , ema.A04B02_EMA均线多头排列(ma_list = [10,20,30])[0]] , sort = False)
+    #df_EMA_up = pd.merge(df_EMA_up , ema.A04B02_EMA均线多头排列(ma_list = [10,20,30])[0]  , how = 'outer' , on = 'code')
+df_EMA_up.to_csv('.\\data\\海龟模型\\EMA_up.csv', encoding = 'utf_8_sig')
+
 
 print('海龟模型更新完毕！')

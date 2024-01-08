@@ -11,7 +11,7 @@
     <OutputPath>.</OutputPath>
     <Name>MyFunds</Name>
     <RootNamespace>MyFunds</RootNamespace>
-    <InterpreterId>MSBuild|env_myfund|$(MSBuildProjectFullPath)</InterpreterId>
+    <InterpreterId>CondaEnv|CondaEnv|conda_myfund</InterpreterId>
     <TestFramework>unittest</TestFramework>
     <SuppressEnvironmentCreationPrompt>True</SuppressEnvironmentCreationPrompt>
     <UnitTestPattern>test*.py</UnitTestPattern>
@@ -84,6 +84,7 @@
     <Compile Include="apt\qsp_jqdata\prank.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="apt\qsp_universal\money_flow.py" />
     <Compile Include="apt\qsp_universal\NHNL.py" />
     <Compile Include="apt\testA\B.py" />
     <Compile Include="apt\testA\A.py">
@@ -97,6 +98,7 @@
     <Compile Include="apt\testB\__init__.py" />
     <Compile Include="apt\vendor\akshare\base.py" />
     <Compile Include="apt\vendor\akshare\data.py" />
+    <Compile Include="apt\vendor\akshare\money_flow.py" />
     <Compile Include="apt\vendor\akshare\security.py" />
     <Compile Include="apt\vendor\akshare\__init__.py" />
     <Compile Include="apt\vendor\jqdata\base.py" />
@@ -123,6 +125,7 @@
     <Compile Include="apt\vendor\tspro\data.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="apt\vendor\tspro\money_flow.py" />
     <Compile Include="apt\vendor\tspro\pro_api.py">
       <SubType>Code</SubType>
     </Compile>
@@ -151,6 +154,7 @@
     </Compile>
     <Compile Include="centos9\macro_tspro_更新序列%28centos9%29（主）.py" />
     <Compile Include="centos9\macro_tspro_更新序列%28centos9%29（仅更新序列）.py" />
+    <Compile Include="demo\demo_akshare_同花顺概念股.py" />
     <Compile Include="demo\demo_akshare_获取K线数据.py">
       <SubType>Code</SubType>
     </Compile>
@@ -164,12 +168,16 @@
     <Compile Include="demo\demo_finanace_net_income.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="demo\demo_list_file.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="demo\demo_mtm.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_qsp通用接口测试.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="demo\demo_tspro_停牌信息查询.py" />
     <Compile Include="demo\demo_turtle.py">
       <SubType>Code</SubType>
     </Compile>
@@ -179,7 +187,7 @@
     <Compile Include="demo\demo_加权中位数测试.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="demo\demo_机构调研.py">
+    <Compile Include="demo\demo_akshare_机构调研.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="demo\demo_滚动窗口测试_.py">
@@ -203,9 +211,6 @@
     <Compile Include="demo\套图下载.py">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="demo\测试模块.py">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="macro\demo_海龟模型每日更新%28tspro%29.py" />
     <Compile Include="macro\macro_get_percentile.py">
       <SubType>Code</SubType>
@@ -214,7 +219,6 @@
     <Compile Include="macro\macro_tspro_更新1分钟数据入序列.py" />
     <Compile Include="macro\macro_akshare_更新序列（仅更新序列）.py" />
     <Compile Include="macro\macro_akshare_更新序列（主）.py" />
-    <Compile Include="macro\macro_当日分时入库状态 - Copy.py" />
     <Compile Include="macro\macro_资金流向1m.py" />
     <Compile Include="demo\demo_tspro_基金份额走势.py" />
     <Compile Include="demo\demo_tspro_75分位数测试.py">
@@ -325,6 +329,11 @@
     <Compile Include="macro\macro_当日分时入库状态.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="macro\macro_K线数据汇总.py" />
+    <Compile Include="macro\macro_资金流向汇总%28ak1分钟线%29.py" />
+    <Compile Include="macro\macro_资金流向汇总.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="MyCashFlowTest.py">
       <SubType>Code</SubType>
     </Compile>
@@ -374,7 +383,9 @@
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="CondaEnv|CondaEnv|Anaconda3" />
+    <InterpreterReference Include="CondaEnv|CondaEnv|conda_myfund" />
     <InterpreterReference Include="CondaEnv|CondaEnv|myFunds" />
+    <InterpreterReference Include="Global|VisualStudio|env_myfund" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="pip更新规范.txt" />
