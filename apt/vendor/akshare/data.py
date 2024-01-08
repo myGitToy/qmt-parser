@@ -207,7 +207,10 @@ class data(base,stock):
                 myclass = sec.get_security(code = code)[1]
                 if myclass != np.nan:
                     record = {'code':code,'start_date':self.start_date,'end_date':self.end_date,'class':myclass,'type':type,'priority':1}                             
-                    df_main = df_main.append(record , ignore_index = True)
+                    df_main = pd.concat([df_main,pd.DataFrame(record,index = [0])])
+                                         
+                    #pd.DataFrame(record,ignore_index = True)]) #pandas 2.0版本后，不再支持append
+                    #df_main.append(record , ignore_index = True)
                     #df = pd.DataFrame()
                     #df['code'] = code
                     #df['start_date'] = self.start_date
@@ -987,7 +990,7 @@ class data(base,stock):
             for code in df_code['code']:    #循环读取每个代码
                 sql_1m_day = f"select date(date) as date , count(date) as num  from akshare_1m where date(date) ='{day.date()}' and code = '{code}' and open = 0 group by date(date)"
                 df_1m_day = pd.read_sql_query(sql_1m_day , self.engine)
-                print(df_1m_day)
+                #print(df_1m_day)
                 if df_1m_day.empty == True:
                     #无数据，跳过
                     print(f"{day.date()}|{code} 无数据，跳过")
@@ -1140,12 +1143,12 @@ if __name__=="__main__":
     #pd.set_option('display.max_rows', None)
     tspro = data()
     tspro.code ='601318.sh'
-    tspro.start_date= datetime(2023,1,18,8)
-    tspro.end_date = datetime(2023,12,28,16)
+    tspro.start_date= datetime(2023,12,22,8)
+    tspro.end_date = datetime.now()
     #ETF数据1998/10/19 含
     tspro.fq = tspro.复权.动态复权
     tspro.ktype = '1d'
     df = tspro.get_k_data()
     print(df)
-    tspro.update_cumulative_turnover()
+    #tspro.update_cumulative_turnover()
     tspro.fix_1min_error_v2()

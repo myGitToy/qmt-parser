@@ -884,7 +884,7 @@ class data(base,stock):
                     bit = 1
                     #检查100%换手率的数据
                     #print(df_db.query('cum_turnover <= 100'))
-                    print(f"{code}前数{n}日数据有效，对应换手日期{turnover_date}|{turnover_date_f}；交易日{turnover_days}|{turnover_days_f}")
+                    print(f"{code}|{e_date}前数{n}日数据有效，对应换手日期{turnover_date}|{turnover_date_f}；交易日{turnover_days}|{turnover_days_f}")
                     #更新数据库
                     sql_update = text(f"update tspro_cumulative_turnover set turnover_date = '{turnover_date}' , turnover_date_f = '{turnover_date_f}' , turnover_days = {turnover_days} , turnover_days_f = {turnover_days_f} , turnover_valid = {bit} where code = '{code}' and date = '{e_date}'")
                     try:
