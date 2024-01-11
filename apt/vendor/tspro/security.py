@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 import tushare as ts
-import sqlalchemy
 import time
+from sqlalchemy import create_engine,exc,delete,text   #用来捕捉sqlalchemy的异常
 from datetime import datetime
 from apt.vendor.tspro.base import base as base
 from apt.vendor.tspro.base import stock as stock
@@ -198,16 +198,14 @@ class security(base , stock):
                     if_exists = 'replace',
                     index_label='code' , #设置主键(设置未成功)
                     dtype=dtypedict) #映射列的数据类型
-
-            with self.engine.connect() as con:
-                #设置主键
-                try:
-                    con.execute('ALTER TABLE `tspro_security` ADD PRIMARY KEY (`code`);')
+            try:
+                with self.engine.begin() as connection:
+                    #设置主键
+                    connection.execute(text('ALTER TABLE `tspro_security` ADD PRIMARY KEY (`code`);'))
                     #设置索引（其实主键和索引一致的话，是可以不需要设置索引的）
-                    #con.execute('CREATE INDEX index `tspro_security` (`code`);')
-                except:
-                    pass
-
+                    connection.execute(text('CREATE INDEX code_index ON `tspro_security` (`code`);'))                    
+            except exc.ResourceClosedError:
+                print(f"更新主键或者索引失败（tspro_security）！")
             print(f"数据已上传完成(security),新增数据{df_security.shape[0]}条")
 
     def get_all_code(self , market = ['主板','创业板','中小板','科创板','CDR','北交所'] , day = datetime.now() , type = ['stock','etf']):
