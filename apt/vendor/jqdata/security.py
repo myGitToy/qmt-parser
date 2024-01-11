@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 import tushare as ts
-import sqlalchemy
 import datetime
+from sqlalchemy import create_engine,exc,delete,text   #用来捕捉sqlalchemy的异常
 from jqdatasdk import *
 from apt.vendor.jqdata.base import base as base
 from sqlalchemy.types import NVARCHAR , Float, Integer , Date
@@ -44,13 +44,15 @@ class security(base):
                     if_exists = 'replace',
                     index_label='code' , #设置主键(设置未成功)
                     dtype=dtypedict) #映射列的数据类型
-
-            with self.engine.connect() as con:
-                #设置主键
-                con.execute('ALTER TABLE `jqdata_security` ADD PRIMARY KEY (`code`);')
-                #设置索引（其实主键和索引一致的话，是可以不需要设置索引的）
-                #con.execute('CREATE INDEX index `jqdata_security` (`code`);')
-            print("数据已上传完成(security)")
+            try:
+                with self.engine.begin() as connection:
+                    #设置主键
+                    connection.execute(text('ALTER TABLE `jqdata_security` ADD PRIMARY KEY (`code`);'))
+                    #设置索引（其实主键和索引一致的话，是可以不需要设置索引的）
+                    connection.execute(text('CREATE INDEX code_index ON `jqdata_security` (`code`);'))                    
+            except exc.ResourceClosedError:
+                print(f"更新主键或者索引失败（jqdata_security）！")
+            print("数据已上传完成(jqdata)")
 
     def get_all_code(self , day = datetime.datetime.now() , type = ['stock','etf']):
         """
