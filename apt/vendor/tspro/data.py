@@ -15,9 +15,12 @@ class data(base,stock):
     """
     数据接口 基类
     所有需要从tusharePro获取数据的都需要从此处引用
-    引用规范：from apt.vendor.tspro.data import data as data
+    引用规范：from apt.vendor.tspro.data import data as ts_data
     例：量化选股 qsp_jqdata就是从这里作为基类引用的
-    
+    要更改数据源，只需要更改此处的引用即可，范例如下
+    a = ts_data(rds_host = ts_data.数据源.aliyun , myauth = False)
+    """
+    """
     def __init__(self, rds_host=base.数据源.localhost, myauth=True , code = None , start = datetime(2021,1,1), end = datetime.now() , ktype = "1d" , fq = base.复权.动态复权 ):
         self.__init__()
         super().__init__()
@@ -612,7 +615,7 @@ class data(base,stock):
         if self.start_date  > self.end_date:
             raise ValueError(f'开始日期必须早于结束日期')
         if self.ktype not in ['1d','1m','5m','30m','60m']:
-            raise ValueError(f'不合规的K线类型: {ktype}')
+            raise ValueError(f'不合规的K线类型: {self.ktype}')
         if self.code == None :
             raise ValueError(f'证券代码不能为空')
         query = f"select * from tspro_{self.ktype} where code = '{self.code}' and date BETWEEN '{self.start_date}' and '{self.end_date}' order by date asc"         
