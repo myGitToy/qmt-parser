@@ -149,10 +149,11 @@ class BI:
     def __init__(self):
         self.idx_sw = idx_SW()  # 创建 idx_SW 的实例
         self.idx_ths = idx_THS()  # 创建 idx_THS 的实例 
-    def dashboard_SW_10周动量(self, level = 'L2' , is_pub = 1):
+    def dashboard_SW_10周动量(self, level = 'L2' , is_pub = 1 , minimum_show = 5):
         """
         申万行业10周动量看板
         默认使用L2级别的行业分类；默认只显示有指数编制的行业分类
+        minimum_show 只显示成分股数大于等于X的行业分类 默认为5（未实装）
         输出：
         行业分级	行业名称	M0	P0	M1	P1	M2	P2
         其中M0代表T周的涨跌幅，P0代表最近T周的分位数排名（0-1之间，0.99代表排名靠前，是涨幅最大的1%）
@@ -169,39 +170,44 @@ class BI:
         #M1代表T-1周的涨跌幅，P1代表最近T-1周的排名
         #输出的报表中，行业分级和行业名称只输出一次
         #定义报表格式
-        df_report = pd.DataFrame(columns=['行业分级','行业名称','M0','P0','M1','P1','M2','P2','M3','P3','M4','P4','M5','P5','M6','P6','M7','P7','M8','P8','M9','P9','M10','P10'])
+        df_report = pd.DataFrame(columns=['行业分级','行业名称','成分股数','权重得分','M0','P0','M1','P1','M2','P2','M3','P3','M4','P4','M5','P5','M6','P6','M7','P7','M8','P8','M9','P9','M10','P10'])
+        #定义M0-M10列和P0-P10列，series类型，用于后续计算
+        cols_P = [col for col in df_report.columns if col.startswith('P')]
+        cols_M = [col for col in df_report.columns if col.startswith('M')]
         #获取该层目录的10周K线数据
-        x = 0
-        for code in df_L1['index_code']:
+        for code in df_L1.tail(2000)['index_code']:
             #行业分级 = level
             df_report.loc[df_L1[df_L1['index_code'] == code].index[0],'行业分级'] = f"申万{level}"
             #行业名称 = industry_name
             df_report.loc[df_L1[df_L1['index_code'] == code].index[0],'行业名称'] = df_L1[df_L1['index_code'] == code]['industry_name'].values[0]
+            #成分股数
+            df_report.loc[df_L1[df_L1['index_code'] == code].index[0],'成分股数'] = len(self.idx_sw.get_SW_member(index_code = code))
             df_L1_week = ak.index_hist_sw(symbol=code[0:6], period="week")
             #取最后15行数据
             df_L1_week = df_L1_week.tail(15)
             #计算涨跌幅
             df_L1_week['pct_chg'] = df_L1_week['收盘'].pct_change()
-            #证券代码
-            #倒数第一行数据填充入M0
-            #N=0-10循环
             #倒数第N行数据填充入Mn
             for n in range(11):
                 df_report.loc[df_L1[df_L1['index_code'] == code].index[0], f'M{n}'] = df_L1_week['pct_chg'].iloc[-n-1]
-                #df_report.loc[df_L1[df_L1['index_code'] == code].index[0], f'P{n}'] = df_L1_week['pct_chg'].rank(ascending=False).iloc[-n-1]
-                pass
-            #df_report.loc[df_L1[df_L1['index_code'] == code].index[0],'M0'] = df_L1_week['pct_chg'].iloc[-1]
-            #print(df_L1_week)
-            #print(df_report)
-            #计数器增加1
-            x = x + 1
-        #计算Pn列的分位数 
+        #用M列的Y轴数据计算分位数，写入P列
+        df_report[cols_P] = df_report[cols_M].apply(lambda x: x.rank(pct = True))  
+        """
+        方法2：使用for循环实现          
         for n in range(11):
-            df_report[f'P{n}'] = df_report[f'M{n}'].rank(pct = True , ascending=False)
-        #输出最终结果            
-        print(df_report)
+            #ascending=True，那么元素将按照升序进行排名，即较小的值将有较低的排名。
+            df_report[f'P{n}'] = df_report[f'M{n}'].rank(pct = True , ascending = True)
+        """
+        #计算EMA权重
+        weights = [0.1818, 0.1487, 0.1216, 0.0995, 0.0815, 0.0667, 0.0546, 0.0447, 0.0366, 0.0300, 0.0245]            
+        #对选择的列与权重进行元素级别的乘法运算
+        #权重计算公式： 0.1818*P0 + 0.1487*P1 + 0.1216*P2 + 0.0995*P3 + 0.0815*P4 + 0.0667*P5 + 0.0546*P6 + 0.0447*P7 + 0.0366*P8 + 0.0300*P9 + 0.0245*P10
+        if len(weights) != len(cols_P):
+            raise ValueError('权重和列数不匹配')
+        df_report['权重得分'] = df_report[cols_P].mul(weights, axis=1).sum(axis=1)
+        #print(df_report)
         #存盘
-        df_report.to_csv('.\\data\\申万行业10周动量看板.csv', encoding = 'utf_8_sig')
+        df_report.to_csv('.\\data\\dashboard_SW_10周动量.csv', encoding = 'utf_8_sig')
 
 class idx_THS(idx):
     """
