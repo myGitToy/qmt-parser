@@ -7,7 +7,7 @@ Prank数据
 
 """
 import pandas as pd
-from datetime import datetime
+from datetime import datetime,timedelta
 import numpy as np
 from jqdatasdk import *
 from backtrader import talib
@@ -29,7 +29,12 @@ rank = prank()
 exp = EXP()
 a.ktype = rank.ktype = exp.ktype = '1d'
 a.start_date = rank.start_date = exp.start_date = datetime(2023,1,1)    #本地数据读取的开始日期，缩小间隔可减少excel文件的体积
-a.end_date  = rank.end_date = exp.end_date = datetime.now()
+#如果是每日0-4点更新，则end_date为前一日下午16点
+if datetime.now().hour >= 0 and datetime.now().hour <= 4:
+    a.end_date  = rank.end_date = exp.end_date = datetime.now() - timedelta(hours = 4)
+else:
+    a.end_date  = rank.end_date = exp.end_date = datetime.now()
+
 a.vendor  = rank.vendor = exp.vendor = a.vendor.akshare
 
 #######00. 前置更新 更新交易日历
