@@ -1,6 +1,6 @@
 from apt.vendor.akshare.data import data as data
 from datetime import datetime
-tspro = data()
-tspro.start_date= datetime(2023,12,1,8)
-tspro.end_date = datetime.now()
-tspro.fix_1min_error_v2()
+akdata = data()
+akdata.start_date= datetime(2024,1,13,8)
+akdata.end_date = datetime.now()
+akdata.fix_1min_error_v2()
