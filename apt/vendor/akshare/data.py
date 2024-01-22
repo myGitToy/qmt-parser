@@ -729,15 +729,23 @@ class data(base,stock):
         if self.code == None :
             raise ValueError(f'证券代码不能为空')
         #获取tspro数据
-        query_tspro = f"select code,date,open,high,low,close,volume,money from tspro_{self.ktype} where code = '{self.code}' and date BETWEEN '{self.start_date}' and '{self.end_date}' order by date asc"         
+        #这里说明如下：这步的tspro数据目的是两个数据供应商之间的数据做拼接
+        #query语句需要根据日线还是分时线做不同的处理
+        if self.ktype == '1d':
+            #日线数据由于是日期格式，需要加入.date()进行格式化
+            query_tspro = f"select code,date,open,high,low,close,volume,money from tspro_{self.ktype} where code = '{self.code}' and date BETWEEN '{self.start_date.date()}' and '{self.end_date.date()}' order by date asc"   
+        else:
+            query_tspro = f"select code,date,open,high,low,close,volume,money from tspro_{self.ktype} where code = '{self.code}' and date BETWEEN '{self.start_date}' and '{self.end_date}' order by date asc"      
         try:
             df_tspro = pd.read_sql_query(query_tspro , self.engine)
+            #print(df_tspro)
         except:
+            #数据获取异常，说明数据库不存在或者有其他问题，直接返回空，表明tspro的数据没有
             df_tspro = pd.DataFrame()
-        #获取akshare数据（目前ak只有分时数据，无日线数据）
+        #获取akshare数据（目前ak只有分时数据，无日线数据，因此返回tspro的原始数据）
         if self.ktype =='1d':
             #日线返回空
-            df_ak = pd.DataFrame()
+            df_ak = df_tspro
         else:
             #分时线查询ak
             query_ak = f"select code,date,open,high,low,close,volume,money from akshare_{self.ktype} where code = '{self.code}' and date BETWEEN '{self.start_date}' and '{self.end_date}' order by date asc"         
@@ -1141,14 +1149,16 @@ class data(base,stock):
        
 if __name__=="__main__":
     #pd.set_option('display.max_rows', None)
-    tspro = data()
-    tspro.code ='601318.sh'
-    tspro.start_date= datetime(2023,12,22,8)
-    tspro.end_date = datetime.now()
+
+    #测试项目1：使用ak数据源，获取日线数据
+    akdata = data() #这里的data默认本地data源，是akdata
+    akdata.code ='601318.sh'
+    akdata.start_date= datetime(2023,4,1,8)
+    akdata.end_date = datetime.now()
     #ETF数据1998/10/19 含
-    tspro.fq = tspro.复权.动态复权
-    tspro.ktype = '1d'
-    df = tspro.get_k_data()
+    akdata.fq = akdata.复权.动态复权
+    akdata.ktype = '1d'
+    df = akdata.get_k_data()
     print(df)
     #tspro.update_cumulative_turnover()
-    tspro.fix_1min_error_v2()
+    akdata.fix_1min_error_v2()
