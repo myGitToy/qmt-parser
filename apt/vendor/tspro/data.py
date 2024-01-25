@@ -744,9 +744,11 @@ class data(base,stock):
         if f_share == True:
             f_share_name = 'price_range_1d_f'
             f_share_days = 'turnover_days_f'    #增加输出全换手天数
+            f_turnover_date = 'turnover_date_f' #增加输出全换手对应的日期
         else:
             f_share_name = 'price_range_1d'
             f_share_days = 'turnover_days'
+            f_turnover_date = 'turnover_date'
         #取出col_p的全部键值
         col_p_list = list(col_p.keys())
         #取出col_p的全部名称
@@ -756,7 +758,7 @@ class data(base,stock):
         col_p_sql = ','.join([f"{f_share_name}->'$.\"{i}\"' AS {col_p[i]}" for i in col_p_list])
         #print(col_p_sql)
         #sql语句
-        sql = f"SELECT code, date, {f_share_days} , {col_p_sql} FROM stock.tspro_cumulative_turnover where code = '{self.code}' and date(date) between '{self.start_date.date()}' and '{self.end_date.date()}'"
+        sql = f"SELECT code, date, {f_share_days} , {f_turnover_date} , {col_p_sql} FROM stock.tspro_cumulative_turnover where code = '{self.code}' and date(date) between '{self.start_date.date()}' and '{self.end_date.date()}'"
         #print(sql)
         df_p = pd.read_sql_query(sql , self.engine)
         #将df_p 拼接到df_k并最终输出
