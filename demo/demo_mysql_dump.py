@@ -3,7 +3,7 @@ import subprocess
 def import_database(db_name, dump_file_path):
     try:
         # 构建mysql命令
-        cmd = f'mysql --binary-mode=TRUE --user=root --password=sal62688558 stock {db_name} < {dump_file_path}'
+        cmd = f'mysql --binary-mode=TRUE --user=root --password=sal62688558 --default-character-set=utf8mb4 {db_name} < {dump_file_path}'
         #完整的字符串命令如下，使用mysql自带的命令行也可以，需要将bin添加到系统环境变量中
         #mysql --binary-mode=TRUE --user=root --password=sal62688558 stock < C:\mysqldump20230406\stock_tspro_1d.sql
         # 使用subprocess执行命令

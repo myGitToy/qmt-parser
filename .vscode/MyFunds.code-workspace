@@ -5,7 +5,8 @@
 		}
 	],
 	"settings": {
-		"python.terminal.executeInFileDir": true
+		"python.terminal.executeInFileDir": true,
+		"figma.autocompleteProperties": true
 	},
 	"launch": {
 		"version": "0.2.0",
