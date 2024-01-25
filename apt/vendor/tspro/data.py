@@ -9,6 +9,7 @@ from apt.vendor.tspro.security import security  as security
 from apt.vendor.tspro.base import base as base
 from apt.vendor.tspro.base import stock as stock
 from apt.vendor.tspro.security import security
+
 #from apt.vendor.tspro.security import get_calendar
 
 class data(base,stock):
@@ -711,6 +712,57 @@ class data(base,stock):
                 raise ValueError(f'不支持的复权模式，请检查！')
                 return df_db
 
+    def get_p_data(self, f_share = True , col_p = {"0.25": 'p25', "0.5": 'p50', "0.75": 'p75'}):
+        """
+        获取包含全换手区间的K线数据
+        有四种不同的选择：1d/1m/全换手（全股）/全换手（自由流通盘）
+        【输入】
+            get_k_data 只能采用默认参数，无法进行自定义参数输入
+            f_share 是否输出自由流通盘 True自由流通盘 False 总股本（如果是全流通的股票，则不影响）
+            col：需要的分位数和列名
+        """
+        #导入模块（为了避免循环引用）
+        from apt.vendor.tspro.cumulative_turnover import cum_turnover as ctr
+        #初始化
+        #第一步 根据选择的K线类型不同，进行不同级别的校验
+        a = ctr()
+        a.code = self.code
+        a.start_date = self.start_date
+        a.end_date = self.end_date
+        a.ktype = self.ktype
+        a.复权 = self.复权
+        if self.ktype == '1d':
+            #校验1d数据
+            a.update_price_range_1d_by_code()
+        elif self.ktype == '1m':
+            #校验1m数据
+            raise ValueError(f'1m数据暂不支持全换手区间')
+        else:
+            raise ValueError(f'不支持的K线类型，请检查！')
+        df_k = self.get_k_data()
+        #设定全流通列名
+        if f_share == True:
+            f_share_name = 'price_range_1d_f'
+            f_share_days = 'turnover_days_f'    #增加输出全换手天数
+        else:
+            f_share_name = 'price_range_1d'
+            f_share_days = 'turnover_days'
+        #取出col_p的全部键值
+        col_p_list = list(col_p.keys())
+        #取出col_p的全部名称
+        col_p_name = list(col_p.values())
+        #sql 语句范例SELECT code, date, price_range_1d_f->'$."0.25"' AS p25 FROM stock.tspro_cumulative_turnover
+        #将键值转换成sql语句
+        col_p_sql = ','.join([f"{f_share_name}->'$.\"{i}\"' AS {col_p[i]}" for i in col_p_list])
+        #print(col_p_sql)
+        #sql语句
+        sql = f"SELECT code, date, {f_share_days} , {col_p_sql} FROM stock.tspro_cumulative_turnover where code = '{self.code}' and date(date) between '{self.start_date.date()}' and '{self.end_date.date()}'"
+        #print(sql)
+        df_p = pd.read_sql_query(sql , self.engine)
+        #将df_p 拼接到df_k并最终输出
+        df_k = pd.merge(df_k , df_p , on = ['code','date'] , how = 'left')
+        return df_k
+
     def __get_last_factor(self , day = datetime(2020,12,1)):
         """
         获取指定股票的最后复权因子（内部函数）
@@ -938,9 +990,8 @@ if __name__=="__main__":
     #ETF数据1998/10/19 含
     tspro.fq = tspro.复权.动态复权
     tspro.ktype = '1d'
-    df = tspro.get_k_data()
-    print(df)
     #tspro.update_cumulative_turnover()
+    print(tspro.get_p_data())
     tspro.analyse_cumulative_turnover()
     
     tspro.update_day_ETF()
