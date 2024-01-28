@@ -888,10 +888,11 @@ class data(base,stock):
                 raise ValueError(f'不支持的复权模式，请检查！')
                 return df_db
 
-    def update_cumulative_turnover(self):
+    def update_cumulative_turnover2(self):
         """
         更新累计换手率入库
         """
+        raise ValueError('已移除该功能')
         df_basic = pd.read_sql_query(f"select code,date from tspro_basic force index (date) where date between '{self.start_date.date()}' and '{self.end_date.date()}'" , self.engine)
         df_cumulative_turnover = pd.read_sql_query(f"select code,date from tspro_cumulative_turnover force index (date) where date between '{self.start_date.date()}' and '{self.end_date.date()}'" , self.engine)
         df_db = pd.concat([df_basic, df_cumulative_turnover]).drop_duplicates(subset=['code','date'], keep=False)
@@ -907,7 +908,7 @@ class data(base,stock):
                     index = False,
                     if_exists = 'append')
             print(f"数据上传完成(tspro_cumulative_turnover)|新增数据{df_db.shape[0]}")
-    def __sql_execute_time(self , sql):
+    def __sql_execute_time2(self , sql):
         """
         执行SQL语句
         """
@@ -923,15 +924,15 @@ class data(base,stock):
         print(f"SQL execution time: {execution_time}")
         return df
 
-    def analyse_cumulative_turnover(self):
+    def analyse_cumulative_turnover2(self):
         """
         更新和分析累计换手率
         目前需要更新turnover_date,turnover_date_f这两个字段
         """
-        sql_basic = f"select code,date,turnover_rate,turnover_rate_f from tspro_basic FORCE INDEX(date) where date between '{self.start_date.date()}' and '{self.end_date.date()}'"
+        sql_basic = f"select code,date,turnover_rate,turnover_rate_f from tspro_basic FORCE INDEX(main) where date between '{self.start_date.date()}' and '{self.end_date.date()}'"
         print(sql_basic)
         df_basic = self.__sql_execute_time(sql_basic)
-        df_cumulative_turnover = self.__sql_execute_time(f"select code,date,turnover_valid from tspro_cumulative_turnover FORCE INDEX(date) where date between '{self.start_date.date()}' and '{self.end_date.date()}'" )
+        df_cumulative_turnover = self.__sql_execute_time(f"select code,date,turnover_valid from tspro_cumulative_turnover FORCE INDEX(main) where date between '{self.start_date.date()}' and '{self.end_date.date()}'" )
         #df_cumulative_turnover = pd.read_sql_query(f"select code,date,turnover_valid from tspro_cumulative_turnover force index(date) where date between '{self.start_date.date()}' and '{self.end_date.date()}'" , self.engine)
         df_cum_na = df_cumulative_turnover[df_cumulative_turnover['turnover_valid'].isnull()]
         #历遍df_cum_na

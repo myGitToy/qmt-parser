@@ -1135,17 +1135,19 @@ class data(base,stock):
                     print(f'更新{code}出现错误！')
                 n += 1    
 
-    def update_cumulative_turnover(self):
+    def insert_cumulative_turnover(self):
         """
         继承和调用tspro同名函数
         """
-        return tspro_data.update_cumulative_turnover(self)
+        raise ValueError(f'已移除该功能')
+        return tspro_data.insert_cumulative_turnover(self)
 
     def analyse_cumulative_turnover(self):
         """
         继承和调用tspro同名函数
         """
-        return tspro_data.analyse_cumulative_turnover(self) 
+        raise ValueError(f'已移除该功能')
+        return tspro_data.e_cumulative_turnover(self) 
        
 if __name__=="__main__":
     #pd.set_option('display.max_rows', None)
