@@ -13,14 +13,14 @@ from apt.vendor.tspro.data import data as ts_data
 from apt.vendor.akshare.data import data as ak_data    
 #------------默认参数设置----------------
 tspro = ts_data()
-tspro.code ='002352.sz'
-tspro.start_date= datetime(2021,4,1,8)
-tspro.end_date = datetime(2024,1,25,16)
+tspro.code ='600639.sH'
+tspro.start_date= datetime(2023,4,1,8)
+tspro.end_date = datetime(2024,1,26,16)
 tspro.fq = tspro.复权.动态复权
 tspro.ktype = '1d'
-day_plus = 200  #全换手多计算的天数 默认20
+day_plus = 60  #全换手多计算的天数 默认20
 #设置默认输出的分位数列
-col_p = {"0.1": 'p10',"0.25": 'p25', "0.5": 'p50', "0.75": 'p75' , "0.9": 'p90',}
+col_p = {"0.15": 'p15',"0.25": 'p25', "0.5": 'p50', "0.75": 'p75' , "0.85": 'p85',}
 f_share = True #是否进行全换手计算
 #tspro.update_cumulative_turnover()
 df_db = tspro.get_p_data(f_share=f_share , col_p = col_p)

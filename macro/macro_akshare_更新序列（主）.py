@@ -6,6 +6,7 @@ from apt.vendor.tspro.security import security  as security
 from apt.vendor.akshare.data import data as ak_data
 from apt.vendor.tspro.data import data as tspro_data
 from apt.vendor.tspro.money_flow import money_flow as money
+from apt.vendor.tspro.cumulative_turnover import cum_turnover as ct
 """
 每日更新目前需要完成的工作：
 1. 日线数据更新 重刷一编 2023/1/1 - 2023/12/11
@@ -23,7 +24,7 @@ a = ak = ak_data(myauth = True)
 a.code = ak.code = '600038.sh'
 #全市场数据校验下次起始日期2023/12/13
 #2023年已完成校验 2022可能还需要校验
-a.start_date = ak.start_date =  datetime(2024,1,1,8) #1998/10/20日开始有ETF数据    ETF日线数据和复权数据已更新完毕
+a.start_date = ak.start_date =  datetime(2024,1,29,8) #1998/10/20日开始有ETF数据    ETF日线数据和复权数据已更新完毕
 a.end_date = ak.end_date =  datetime.now()
 #2. 更新证券代码库(stock和ETF资产)
 sec = security()
@@ -35,7 +36,7 @@ sec.update_calendar()
 
 #更新基础信息daily basic（1991年至今）
 #此数据库未删除，为老版本
-sec.start_date = datetime(2024,1,1)
+sec.start_date = datetime(2023,4,1)
 sec.update_basic(sleep = 0.2)
 #sec.get_basic(to_csv = True)
 
@@ -47,7 +48,7 @@ flow.end_date = a.end_date
 flow.daily_update(sleep = 0.2)
 
 #更新累计成交数据库(目前库数据不全，2023年含零碎数据，2023年前数据无，计划更新自2006年以来的数据)
-ak.update_cumulative_turnover()
+ct.insert_cumulative_turnover(flow)
 
 #3. 更新股票日线数据和复权因子（忽略）
 a.ktype = '1d'
