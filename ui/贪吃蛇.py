@@ -45,6 +45,37 @@ def auto_play(snake, food , current_direction):
 
     return new_direction
 
+def auto_play_v2(snake, current_direction, width, height):
+    snake_head = snake[0]
+    new_direction = current_direction
+
+    # 游戏一开始，去右上角
+    if snake_head == (0, 0):
+        new_direction = 'RIGHT'
+    # 从右上角向下
+    elif snake_head[0] == width - 1 and snake_head[1] == 0:
+        new_direction = 'DOWN'
+    # 到底部倒数第三格向右走一格
+    elif snake_head[0] == width - 1 and snake_head[1] == height - 3:
+        new_direction = 'RIGHT'
+    # 随后向上，直到最顶部
+    elif snake_head[0] == width and snake_head[1] > 0:
+        new_direction = 'UP'
+    # 到达顶部后向右走一个，然后向下，直到底部倒数第三格
+    elif snake_head[0] == width and snake_head[1] == 0:
+        new_direction = 'RIGHT'
+    elif snake_head[0] == width + 1 and snake_head[1] < height - 3:
+        new_direction = 'DOWN'
+    # 到达右侧边界后延底部向左，由此往复
+    elif snake_head[0] == width + 1 and snake_head[1] == height - 3:
+        new_direction = 'LEFT'
+    elif snake_head[0] > 0 and snake_head[1] == height - 3:
+        new_direction = 'LEFT'
+    elif snake_head[0] == 0 and snake_head[1] == height - 3:
+        new_direction = 'UP'
+
+    return new_direction
+
 # 游戏循环
 while True:
     # 处理事件
@@ -63,6 +94,8 @@ while True:
                 direction = 'RIGHT'
     # 自动算法AI
     direction = auto_play(snake_pos, food_pos , direction)
+    # 自动算法AI
+    #direction = auto_play_v2(snake_pos,direction, 800, 600)
 
     # 更新蛇的位置
     if direction == 'UP':
@@ -112,4 +145,4 @@ while True:
     # 更新游戏窗口
     pygame.display.update()
     # 控制游戏速度                                         
-    clock.tick(50)
+    clock.tick(100)
