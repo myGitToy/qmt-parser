@@ -200,7 +200,19 @@ class finance_indicator(finance):
             'basic_eps_yoy', 'dt_eps_yoy', 'cfps_yoy', 'op_yoy', 'ebt_yoy', 'netprofit_yoy', 'dt_netprofit_yoy', 'ocf_yoy', 'roe_yoy', 'bps_yoy', 'assets_yoy', 'eqt_yoy', 'tr_yoy', 'or_yoy', 'q_gr_yoy', 'q_gr_qoq', 'q_sales_yoy', 'q_sales_qoq', 'q_op_yoy', 'q_op_qoq', 'q_profit_yoy', 'q_profit_qoq', 'q_netprofit_yoy', 'q_netprofit_qoq', 'equity_yoy', 'rd_exp', 'update_flag'
         ]
 
-
+    def create_table(self):
+        """
+        创建mysql数据表
+        """
+        df_dict = self.get_data_dict()
+        table_name = 'tspro_finance_indicator'
+        fields_dict = df_dict.set_index('字段').to_dict()['类型']
+        fields = [f"{key} {value}" for key, value in fields_dict.items()]
+        print(fields)
+        
+        query = text(f"CREATE TABLE {table_name} ({', '.join(fields)})")
+        with self.engine.connect() as conn:
+            conn.execute(query)
 
 
 
