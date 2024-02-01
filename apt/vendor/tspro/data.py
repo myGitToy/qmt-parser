@@ -619,7 +619,10 @@ class data(base,stock):
             raise ValueError(f'不合规的K线类型: {self.ktype}')
         if self.code == None :
             raise ValueError(f'证券代码不能为空')
-        query = f"select * from tspro_{self.ktype} where code = '{self.code}' and date BETWEEN '{self.start_date}' and '{self.end_date}' order by date asc"         
+        if self.ktype == '1d':
+            query = f"select * from tspro_{self.ktype} where code = '{self.code}' and date BETWEEN '{self.start_date.date()}' and '{self.end_date.date()}' order by date asc"
+        else:
+            query = f"select * from tspro_{self.ktype} where code = '{self.code}' and date BETWEEN '{self.start_date}' and '{self.end_date}' order by date asc"         
         df_db = pd.read_sql_query(query , self.engine)
         #处理需要返回的个数
         if count == None:
@@ -640,8 +643,11 @@ class data(base,stock):
             tspro_factor['factor_date'] = tspro_factor['date']
             #复权因子与K线数据进行拼接（复权因子和K线数据只有要一处空值，最后拼接的数据就会有所缺失）
             df_db = pd.merge(df_db, tspro_factor[['factor_date','factor']] , on = ['factor_date'] , how = 'left')
-            #复权因子修正完毕，填充后进入复权处理（tspro每天均有复权因子，此处无需填充）
-            #df_db.ffill(axis=0, inplace=True, limit=None, downcast=None)
+            
+            #复权因子修正完毕，填充后进入复权处理
+            #tspro每天均有复权因子，理论无需填充，但有时复权数据会不完整，因此依旧需要填充
+            df_db.ffill(axis=0, inplace=True, limit=None, downcast=None)
+            #print(df_db)
             #进行60分钟线修正
             if self.ktype =='60m':
                 #判断使用何种方式进行60分钟线修正
@@ -802,10 +808,13 @@ class data(base,stock):
         if self.start_date  > self.end_date:
             raise ValueError(f'开始日期必须早于结束日期')
         if self.ktype not in ['1d','1m','5m','30m','60m']:
-            raise ValueError(f'不合规的K线类型: {ktype}')
+            raise ValueError(f'不合规的K线类型: {self.ktype}')
         if self.code == None :
             raise ValueError(f'证券代码不能为空')
-        query = f"select * from tspro_{self.ktype} where code = '{self.code}' and date BETWEEN '{self.start_date}' and '{self.end_date}' order by date asc"         
+        if self.ktype == '1d':
+            query = f"select * from tspro_{self.ktype} where code = '{self.code}' and date BETWEEN '{self.start_date.date()}' and '{self.end_date.date()}' order by date asc"
+        else:
+            query = f"select * from tspro_{self.ktype} where code = '{self.code}' and date BETWEEN '{self.start_date}' and '{self.end_date}' order by date asc"         
         df_db = pd.read_sql_query(query , self.engine)
         #处理需要返回的个数
         if count == None:
@@ -987,9 +996,11 @@ class data(base,stock):
     
 if __name__=="__main__":
     tspro = data()
-    tspro.code ='601318.sh'
-    tspro.start_date= datetime(2023,4,1,8)
-    tspro.end_date = datetime(2023,12,20,16)
+    tspro.code ='689009.sh'
+    tspro.start_date= datetime(2023,4,3,8)
+    tspro.end_date = datetime(2024,1,26,16)
+    df = tspro.get_k_data()
+    print(df)
     #ETF数据1998/10/19 含
     tspro.fq = tspro.复权.动态复权
     tspro.ktype = '1d'
