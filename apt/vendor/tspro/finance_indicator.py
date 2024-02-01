@@ -188,7 +188,7 @@ class finance_indicator(finance):
     def __init__(self):
         super().__init__()
         #继承来自tspro_data的属性和方法 
-        self.table_name = 'finance_indicate'
+        self.table_name = 'tspro_finance_indicator'
         self.fields = [
             'ts_code', 'ann_date', 'end_date', 'eps', 'dt_eps', 'total_revenue_ps', 'revenue_ps', 'capital_rese_ps', 'surplus_rese_ps', 'undist_profit_ps', 'extra_item', 'profit_dedt', 'gross_margin', 'current_ratio', 'quick_ratio', 'cash_ratio', 'invturn_days', 'arturn_days', 'inv_turn', 'ar_turn', 'ca_turn', 'fa_turn', 
             'assets_turn', 'op_income', 'valuechange_income', 'interst_income', 'daa', 'ebit', 'ebitda', 'fcff', 'fcfe', 'current_exint', 'noncurrent_exint', 'interestdebt', 'netdebt', 'tangible_asset', 'working_capital', 'networking_capital', 'invest_capital', 'retained_earnings', 'diluted2_eps', 'bps', 'ocfps', 'retainedps', 
@@ -207,18 +207,25 @@ class finance_indicator(finance):
         说明：财务指标表
         """
         df_dict = self.get_data_dict()
-        table_name = 'tspro_finance_indicator'
+        table_name = self.table_name    #这里调用初始化时的全局变量
         fields_dict = df_dict.set_index('字段').to_dict()['类型']
         fields = [f"{key} {value}" for key, value in fields_dict.items()]     
-        query = text(f"CREATE TABLE {table_name} ({', '.join(fields)})")
+        query = text(f"CREATE TABLE {self.table_name} ({', '.join(fields)})")
         with self.engine.connect() as conn:
             conn.execute(query)
 
-    def update_finance_indicate(self ):
+    def update_finance_indicator(self):
+        """
+        更新财务指标数据
+        输入：继承自tspro_data的属性
+        code：证券代码
+        end_date：报告期日期
+        """
         #日期校验，如果end_date有数据，必须在下面几个日期中：0331,0630,0930,1231
         if self.end_date.date().strftime('%m%d') not in ['0331','0630','0930','1231']:
             raise ValueError('end_date日期非法，请检查')
-        print(self.fields)
+        #print(self.fields)
+        #####从API接口取出财务数据#####
         df_api = self.pro.fina_indicator(**{
                 "ts_code": self.code,
                 "ann_date": "",
@@ -229,7 +236,39 @@ class finance_indicator(finance):
                 "limit": "",
                 "offset": ""
             }, fields=self.fields)
-        return df
+        #####数据适配#####
+        if df_api.empty:
+            df_api = pd.DataFrame(columns=self.fields)
+        else:
+            #有数据，进行适配
+            #更改列名
+            df_api.rename(columns={'ts_code':'code'}, inplace=True)
+            #更改数据类型
+            df_api['ann_date'] = pd.to_datetime(df_api['ann_date'], format='%Y%m%d')
+            df_api['end_date'] = pd.to_datetime(df_api['end_date'], format='%Y%m%d')
+            s_date = df_api['end_date'].iloc[0].date()
+            e_date = df_api['end_date'].iloc[-1].date()
+            #####从数据库中取出财务数据#####
+            sql_db = f"select * from {self.table_name} where code = '{self.code}' and end_date between '{s_date}' and '{e_date}'"
+            df_db = pd.read_sql(sql=sql_db, con=self.engine)
+            #数据取差集                        
+            #df_api = df_api.append(df_db).drop_duplicates(subset=['code','end_date','update_flag'], keep=False)
+            #Feature Warning Fix
+            df_api = df_api.dropna(how='all', axis=1)
+            df_db = df_db.dropna(how='all', axis=1)
+            df_api = pd.concat([df_api, df_db]).drop_duplicates(subset=['code','end_date','update_flag'], keep=False)
+        #####数据入库#####
+        if not df_api.empty:
+            #print(df_api)
+            df_api.to_sql(
+                name=self.table_name, 
+                con=self.engine, 
+                if_exists='append', 
+                index=False)
+            print(f"{self.code}财务指标数据已更新，数量：{len(df_api)}条")
+        else:
+            print(f"{self.code}财务指标数据在区间内无更新内容")
+        return df_api
         
     def get_data_dict(self):
         """
@@ -245,10 +284,10 @@ if __name__ == '__main__':
     a = finance_indicator()
     a.code = '000001.SZ'
     a.start_date = datetime(2021,1,1)
-    a.end_date = datetime(2021,3,31)
-    df = a.update_finance_indicate()
+    a.end_date = datetime(2024,3,31)
+    df = a.update_finance_indicator()
     print(df)
-    a.create_table()
+    #a.create_table()
     df = a.get_k_data()
     print(df) 
     a.get_data_dict()
