@@ -203,24 +203,34 @@ class finance_indicator(finance):
     def create_table(self):
         """
         创建mysql数据表
+        表名：tspro_finance_indicator
+        说明：财务指标表
         """
         df_dict = self.get_data_dict()
         table_name = 'tspro_finance_indicator'
         fields_dict = df_dict.set_index('字段').to_dict()['类型']
-        fields = [f"{key} {value}" for key, value in fields_dict.items()]
-        print(fields)
-        
+        fields = [f"{key} {value}" for key, value in fields_dict.items()]     
         query = text(f"CREATE TABLE {table_name} ({', '.join(fields)})")
         with self.engine.connect() as conn:
             conn.execute(query)
 
-
-
-
-
-    def update_finance_indicate(self):
-        self.update_finance_indicate_vip()
-
+    def update_finance_indicate(self ):
+        #日期校验，如果end_date有数据，必须在下面几个日期中：0331,0630,0930,1231
+        if self.end_date.date().strftime('%m%d') not in ['0331','0630','0930','1231']:
+            raise ValueError('end_date日期非法，请检查')
+        print(self.fields)
+        df_api = self.pro.fina_indicator(**{
+                "ts_code": self.code,
+                "ann_date": "",
+                "start_date": "",
+                "end_date": self.end_date.date().strftime('%Y%m%d'),
+                "period": "",
+                "update_flag": "",
+                "limit": "",
+                "offset": ""
+            }, fields=self.fields)
+        return df
+        
     def get_data_dict(self):
         """
         从excel文件中取出数据词典
@@ -236,6 +246,8 @@ if __name__ == '__main__':
     a.code = '000001.SZ'
     a.start_date = datetime(2021,1,1)
     a.end_date = datetime(2021,3,31)
+    df = a.update_finance_indicate()
+    print(df)
     a.create_table()
     df = a.get_k_data()
     print(df) 
