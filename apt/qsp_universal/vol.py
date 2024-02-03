@@ -58,7 +58,7 @@ class vol(base):
         """   
         #数据校验
         if count > N_day:
-            raise ValueError(f'无法计算{N}天内出现{count}次的情况，请检查逻辑')
+            raise ValueError(f'无法计算{N_day}天内出现{count}次的情况，请检查逻辑')
         #k线类型校验（推荐但不报错）
         if self.ktype != "1d":
             print("使用了不推荐的K线类型，返回结果不保证精确度")

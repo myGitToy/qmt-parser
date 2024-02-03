@@ -646,7 +646,7 @@ class data(base,stock):
             
             #复权因子修正完毕，填充后进入复权处理
             #tspro每天均有复权因子，理论无需填充，但有时复权数据会不完整，因此依旧需要填充
-            df_db.ffill(axis=0, inplace=True, limit=None, downcast=None)
+            df_db.ffill(axis=0, inplace=True, limit=None) #此处移除downcast=None的参数
             #print(df_db)
             #进行60分钟线修正
             if self.ktype =='60m':

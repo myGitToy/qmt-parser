@@ -278,9 +278,11 @@ class security(base , stock):
         #获取更新列表（按交易日）
         trade_day = pd.DataFrame(columns = ['date'])
         trade_day = self.get_calendar(is_open = 1)
+        #print(trade_day)
         #获取资金流向库中存在的日期列表
         query_daysql = f"select distinct date FROM tspro_basic FORCE INDEX (main) WHERE date BETWEEN '{self.start_date.date()}' and '{self.end_date.date()}'  ORDER BY date asc" 
         df_dbday = pd.read_sql_query(query_daysql , self.engine)
+        #print(df_dbday)
         if df_dbday.empty == True:
             #数据库不存在数据
             df_dbday = pd.DataFrame(columns = ['date'])
@@ -375,7 +377,8 @@ if __name__=="__main__":
     cal = security()
     cal.start_date = datetime(2023,1,1)
     cal.end_date = datetime(2023,8,9)
-    a = cal.get_cal_k()
+    df = cal.update_basic()
+    print(df)
     #a =cal.get_security('601318.sh')
     print(a)
     print(cal.dict[cal.ktype])

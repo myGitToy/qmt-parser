@@ -320,6 +320,7 @@ class cum_turnover(ts_data):
             tspro.start_date = pd.to_datetime(row['turnover_date']) + timedelta(hours=8)       
         tspro.ktype = k_type
         df = tspro.get_k_data()
+        #print(df)
         if df.empty:
             raise ValueError('没有数据')
         #取得区间内的加权平均价格分布

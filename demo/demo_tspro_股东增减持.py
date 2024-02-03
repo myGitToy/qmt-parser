@@ -4,7 +4,6 @@ import calendar
 import tushare as ts
 from datetime import datetime,timedelta
 from apt.vendor.tspro.pro_api import pro_api
-from apt.vendor.tspro.pro_api import pro_api
 from dateutil.relativedelta import relativedelta
 
 def get_change(row, extra_arg):

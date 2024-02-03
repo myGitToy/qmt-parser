@@ -13,17 +13,18 @@ from apt.vendor.tspro.data import data as ts_data
 from apt.vendor.akshare.data import data as ak_data    
 #------------默认参数设置----------------
 tspro = ts_data()
-tspro.code ='600639.sH'
-tspro.start_date= datetime(2023,4,1,8)
-tspro.end_date = datetime(2024,1,26,16)
+tspro.code ='603516.sh'
+tspro.start_date= datetime(2022,4,1,8)
+tspro.end_date = datetime(2024,1,30,16) #这里有一个bug，最后一个日期必须完成全换手区间的计算
 tspro.fq = tspro.复权.动态复权
 tspro.ktype = '1d'
 day_plus = 60  #全换手多计算的天数 默认20
 #设置默认输出的分位数列
-col_p = {"0.15": 'p15',"0.25": 'p25', "0.5": 'p50', "0.75": 'p75' , "0.85": 'p85',}
+col_p = {"0.15": 'p15',"0.25": 'p25', "0.5": 'p50', "0.75": 'p75' , "0.85": 'p85'}
 f_share = True #是否进行全换手计算
 #tspro.update_cumulative_turnover()
 df_db = tspro.get_p_data(f_share=f_share , col_p = col_p)
+print(df_db)
 #df中包含正常的OHLC数据，以及cumulative_turnover的数据
 #绘制K线图，主图上绘制0.25，0.5，0.75分位数对应的价格曲线
 #显示全换手的交易日，默认按照全换手+20天来显示K线图
