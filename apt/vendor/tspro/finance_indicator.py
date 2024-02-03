@@ -213,13 +213,27 @@ class finance_indicator(finance):
         query = text(f"CREATE TABLE {self.table_name} ({', '.join(fields)})")
         with self.engine.connect() as conn:
             conn.execute(query)
-
-    def update_finance_indicator(self):
+    def delete_duplicate(self , db = pd.DataFrame()):
+        """
+        目的：删除shuj重复数据
+        """
+        # 找出重复的行
+        duplicates = db.duplicated(subset=['code','end_date','update_flag'], keep='first')        
+        # 打印出重复的行
+        print(db[duplicates])
+        #在数据库中删除这些行，按照id删除
+        for index, row in db[duplicates].iterrows():
+            with self.engine.connect() as conn:
+                sql = text(f"delete from {self.table_name} where id = :id")
+                conn.execute(sql, id=row['id'])
+                print(f"删除重复数据：{row['id']} {row['code']} {row['end_date']} {row['update_flag']}")
+    def update_finance_indicator(self , flag_delete_duplicate = False):
         """
         更新财务指标数据
         输入：继承自tspro_data的属性
         code：证券代码
         end_date：报告期日期
+        flag_delete_duplicate：是否删除重复数据，默认为False
         """
         #日期校验，如果end_date有数据，必须在下面几个日期中：0331,0630,0930,1231
         if self.end_date.date().strftime('%m%d') not in ['0331','0630','0930','1231']:
@@ -239,24 +253,50 @@ class finance_indicator(finance):
         #####数据适配#####
         if df_api.empty:
             df_api = pd.DataFrame(columns=self.fields)
+            df_api.rename(columns={'ts_code':'code'}, inplace=True)
         else:
             #有数据，进行适配
             #更改列名
             df_api.rename(columns={'ts_code':'code'}, inplace=True)
             #更改数据类型
-            df_api['ann_date'] = pd.to_datetime(df_api['ann_date'], format='%Y%m%d')
-            df_api['end_date'] = pd.to_datetime(df_api['end_date'], format='%Y%m%d')
-            s_date = df_api['end_date'].iloc[0].date()
-            e_date = df_api['end_date'].iloc[-1].date()
+            df_api['ann_date'] = pd.to_datetime(df_api['ann_date'])
+            df_api['end_date'] = pd.to_datetime(df_api['end_date'])
+            #'update_flag'为tinyint
+            df_api['update_flag'] = df_api['update_flag'].astype('int')
+            #print(df_api)
+            e_date = df_api['end_date'].iloc[0].date()
+            s_date = df_api['end_date'].iloc[-1].date()
+            #ann_date进行修正，缺失的值进行填充（Fix Future Warnin）
+            #两种修正方式：
+            #1. 中间值缺失，对ann_date进行向前填充
+            #2. 首位值缺失，用end_date进行填充       
+            df_api['ann_date'] = df_api['ann_date'].ffill()
+            if pd.isnull(df_api.loc[0, 'ann_date']):
+                df_api.loc[0, 'ann_date'] = df_api.loc[0, 'end_date']    
             #####从数据库中取出财务数据#####
             sql_db = f"select * from {self.table_name} where code = '{self.code}' and end_date between '{s_date}' and '{e_date}'"
             df_db = pd.read_sql(sql=sql_db, con=self.engine)
+            #判断是否进行数据校验
+            if flag_delete_duplicate:
+                #删除重复数据
+                self.delete_duplicate(df_db)
+            #删除id列
+            df_db.drop(columns='id', inplace=True)
+            #print(df_db)
+            if df_db.empty:
+                pass
+                #df_db = pd.DataFrame(columns=self.fields)
+            else:
+                df_db['ann_date'] = pd.to_datetime(df_db['ann_date'])
+                df_db['end_date'] = pd.to_datetime(df_db['end_date'])  
+                df_db['update_flag'] = df_db['update_flag'].astype('int')                              
             #数据取差集                        
             #df_api = df_api.append(df_db).drop_duplicates(subset=['code','end_date','update_flag'], keep=False)
             #Feature Warning Fix
             df_api = df_api.dropna(how='all', axis=1)
             df_db = df_db.dropna(how='all', axis=1)
-            df_api = pd.concat([df_api, df_db]).drop_duplicates(subset=['code','end_date','update_flag'], keep=False)
+            df_api = pd.concat([df_api, df_db ]).drop_duplicates(subset=['code','end_date','update_flag'], keep=False)
+            #print(df_api)
         #####数据入库#####
         if not df_api.empty:
             #print(df_api)
@@ -282,10 +322,10 @@ class finance_indicator(finance):
         return df
 if __name__ == '__main__':
     a = finance_indicator()
-    a.code = '000001.SZ'
+    a.code = '873132.BJ'
     a.start_date = datetime(2021,1,1)
-    a.end_date = datetime(2024,3,31)
-    df = a.update_finance_indicator()
+    a.end_date = datetime(2023,12,31)
+    df = a.update_finance_indicator(flag_delete_duplicate=True)
     print(df)
     #a.create_table()
     df = a.get_k_data()
