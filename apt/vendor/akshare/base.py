@@ -61,7 +61,8 @@ class base():
                 self.pro = ts.pro_api('55297f16c0119146589e059db315ba28a9412e89ec9f91e538e655b2')
                 self.token = '55297f16c0119146589e059db315ba28a9412e89ec9f91e538e655b2'
         elif rds_host == self.数据源.centos9:
-            self.engine = sqlalchemy.create_engine('mysql+pymysql://stock:sal62688558@192.168.1.188:3306/stock')
+            #self.engine = sqlalchemy.create_engine('mysql+pymysql://stock:sal62688558@192.168.1.188:3306/stock')
+            self.engine = sqlalchemy.create_engine('mysql+pymysql://stock_user:2fn@DtbVw8Dd@192.168.1.191:3306/stock')
             #本地数据源支持脱机访问，其他数据源则不支持脱机
             if self.myauth == True:
                 #初始化ts接口
