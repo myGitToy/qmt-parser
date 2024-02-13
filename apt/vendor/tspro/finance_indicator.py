@@ -320,11 +320,24 @@ class finance_indicator(finance):
             #print(str(e))
             return pd.DataFrame()
         return df
+    
+    def query(self, **kwargs):
+        """
+        查询财务指标数据
+        接受多参数查询，格式如下
+        "code = 873132.BJ" ,"end_date between 20210101 and 20231231"
+        """
+        #多参数拼接，**kwargs
+        sql = f"select * from {self.table_name} where "
+        for key, value in kwargs.items():
+            sql += f" and {value}"
+        print(sql)
 if __name__ == '__main__':
     a = finance_indicator()
     a.code = '873132.BJ'
     a.start_date = datetime(2021,1,1)
     a.end_date = datetime(2023,12,31)
+    a.query(str = "code = '873132.BJ' end_date between '2021-01-01' and '2023-12-31'")
     df = a.update_finance_indicator(flag_delete_duplicate=True)
     print(df)
     #a.create_table()
