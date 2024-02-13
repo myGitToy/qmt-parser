@@ -67,9 +67,9 @@ def __lambda_K线校验(row, k_type = '1m'):
 
 #1. 初始化
 a = ak_data()
-a.code = '603099.sh'
-a.start_date = datetime(2023,12,20,8)
-a.end_date = datetime(2024,1,23,18)
+a.code = '600448.sh'
+a.start_date = datetime(2024,1,12,8)
+a.end_date = datetime(2024,1,30,18)
 a.ktype = '1d'
 df = a.get_k_data()
 print(df)

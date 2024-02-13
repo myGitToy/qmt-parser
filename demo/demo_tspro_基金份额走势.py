@@ -12,8 +12,8 @@ pd.set_option('display.unicode.east_asian_width', True)
 #pd.set_option('display.max_columns', None)
 a = data()
 a.code = '512760.sh'
-a.start_date = tspro.start_date = datetime(2022,1,1,4)
-a.end_date = tspro.end_date = datetime(2022,7,15,16)
+a.start_date = tspro.start_date = datetime(2023,1,1,4)
+a.end_date = tspro.end_date = datetime.now()
 a.fq = data.复权.动态复权
 a.ktype = '1d'
 a.vendor = a.vendor.tusharePro
