@@ -145,4 +145,4 @@ while True:
     # 更新游戏窗口
     pygame.display.update()
     # 控制游戏速度                                         
-    clock.tick(100)
+    clock.tick(200)
