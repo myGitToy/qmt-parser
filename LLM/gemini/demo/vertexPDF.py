@@ -37,7 +37,7 @@ def generate():
   #附加内容
   content_text = content_text + \
   """
-  根据上述文本，你作为一名专业的证券分析师，你会如何总结这份报告，请给出一份你的摘要？
+  机组资源管理又称为CRM，根据上述文本，你作为一名航空专家，请告诉我第五代CRM相对于第四代CRM最大的改变是什么？为什么会有这样的改变？
   """
   vertexai.init(project="just-lore-408313", location="us-central1")
   model = GenerativeModel("gemini-1.0-pro-vision-001")
