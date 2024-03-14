@@ -28,7 +28,7 @@ a = ATR()
 rank = prank()
 exp = EXP()
 a.ktype = rank.ktype = exp.ktype = '1d'
-a.start_date = rank.start_date = exp.start_date = datetime(2023,1,1)    #本地数据读取的开始日期，缩小间隔可减少excel文件的体积
+a.start_date = rank.start_date = exp.start_date = datetime(2023,6,1)    #本地数据读取的开始日期，缩小间隔可减少excel文件的体积
 #如果是每日0-4点更新，则end_date为前一日下午16点
 if datetime.now().hour >= 0 and datetime.now().hour <= 4:
     a.end_date  = rank.end_date = exp.end_date = datetime.now() - timedelta(hours = 4)

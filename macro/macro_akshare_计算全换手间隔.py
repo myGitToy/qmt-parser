@@ -4,11 +4,11 @@ from datetime import datetime
 import time
 def run_script():
     tspro = ct()
-    #全换手区间数据导入：2010-2023
-    #全换手区间数据计算：2012-2023，目前正在计算 无
-    #价格区间数据计算：2021-2024.28含，目前正在计算2020
-    tspro.start_date= datetime(2020,1,1,8)
-    tspro.end_date = datetime(2020,12,31,18)
+    #全换手区间数据导入：2005-2023
+    #全换手区间数据计算：2005-2023，目前正在计算
+    #价格区间数据计算：2008-2024.3.1含，目前正在计算
+    tspro.start_date= datetime(2024,3,10,8)
+    tspro.end_date = datetime.now()
     #tspro.update_day()
     #tspro.update_day_ETF()
     #添加数据
