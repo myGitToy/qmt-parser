@@ -1,7 +1,7 @@
 from datetime import datetime
 from apt.qsp_universal.base import base as data
 # 替换 import matplotlib.finance as mpf 画k线图
-import mpl_finance as mpf  # 替换 import matplotlib.finance as mpf
+import mplfinance as mpf  # 替换 import matplotlib.finance as mpf
 import matplotlib.pyplot as plt
 
 #获取K线数据

@@ -9,15 +9,19 @@ from apt.vendor.tspro.security import security  as security
 from apt.vendor.tspro.base import base as base
 from apt.vendor.tspro.base import stock as stock
 from apt.vendor.tspro.security import security
+
 #from apt.vendor.tspro.security import get_calendar
 
 class data(base,stock):
     """
     数据接口 基类
     所有需要从tusharePro获取数据的都需要从此处引用
-    引用规范：from apt.vendor.tspro.data import data as data
+    引用规范：from apt.vendor.tspro.data import data as ts_data
     例：量化选股 qsp_jqdata就是从这里作为基类引用的
-    
+    要更改数据源，只需要更改此处的引用即可，范例如下
+    a = ts_data(rds_host = ts_data.数据源.aliyun , myauth = False)
+    """
+    """
     def __init__(self, rds_host=base.数据源.localhost, myauth=True , code = None , start = datetime(2021,1,1), end = datetime.now() , ktype = "1d" , fq = base.复权.动态复权 ):
         self.__init__()
         super().__init__()
@@ -612,10 +616,13 @@ class data(base,stock):
         if self.start_date  > self.end_date:
             raise ValueError(f'开始日期必须早于结束日期')
         if self.ktype not in ['1d','1m','5m','30m','60m']:
-            raise ValueError(f'不合规的K线类型: {ktype}')
+            raise ValueError(f'不合规的K线类型: {self.ktype}')
         if self.code == None :
             raise ValueError(f'证券代码不能为空')
-        query = f"select * from tspro_{self.ktype} where code = '{self.code}' and date BETWEEN '{self.start_date}' and '{self.end_date}' order by date asc"         
+        if self.ktype == '1d':
+            query = f"select * from tspro_{self.ktype} where code = '{self.code}' and date BETWEEN '{self.start_date.date()}' and '{self.end_date.date()}' order by date asc"
+        else:
+            query = f"select * from tspro_{self.ktype} where code = '{self.code}' and date BETWEEN '{self.start_date}' and '{self.end_date}' order by date asc"         
         df_db = pd.read_sql_query(query , self.engine)
         #处理需要返回的个数
         if count == None:
@@ -636,8 +643,11 @@ class data(base,stock):
             tspro_factor['factor_date'] = tspro_factor['date']
             #复权因子与K线数据进行拼接（复权因子和K线数据只有要一处空值，最后拼接的数据就会有所缺失）
             df_db = pd.merge(df_db, tspro_factor[['factor_date','factor']] , on = ['factor_date'] , how = 'left')
-            #复权因子修正完毕，填充后进入复权处理（tspro每天均有复权因子，此处无需填充）
-            #df_db.ffill(axis=0, inplace=True, limit=None, downcast=None)
+            
+            #复权因子修正完毕，填充后进入复权处理
+            #tspro每天均有复权因子，理论无需填充，但有时复权数据会不完整，因此依旧需要填充
+            df_db.ffill(axis=0, inplace=True, limit=None) #此处移除downcast=None的参数
+            #print(df_db)
             #进行60分钟线修正
             if self.ktype =='60m':
                 #判断使用何种方式进行60分钟线修正
@@ -708,6 +718,59 @@ class data(base,stock):
                 raise ValueError(f'不支持的复权模式，请检查！')
                 return df_db
 
+    def get_p_data(self, f_share = True , col_p = {"0.25": 'p25', "0.5": 'p50', "0.75": 'p75'}):
+        """
+        获取包含全换手区间的K线数据
+        有四种不同的选择：1d/1m/全换手（全股）/全换手（自由流通盘）
+        【输入】
+            get_k_data 只能采用默认参数，无法进行自定义参数输入
+            f_share 是否输出自由流通盘 True自由流通盘 False 总股本（如果是全流通的股票，则不影响）
+            col：需要的分位数和列名
+        """
+        #导入模块（为了避免循环引用）
+        from apt.vendor.tspro.cumulative_turnover import cum_turnover as ctr
+        #初始化
+        #第一步 根据选择的K线类型不同，进行不同级别的校验
+        a = ctr()
+        a.code = self.code
+        a.start_date = self.start_date
+        a.end_date = self.end_date
+        a.ktype = self.ktype
+        a.复权 = self.复权
+        if self.ktype == '1d':
+            #校验1d数据
+            a.update_price_range_1d_by_code()
+        elif self.ktype == '1m':
+            #校验1m数据
+            raise ValueError(f'1m数据暂不支持全换手区间')
+        else:
+            raise ValueError(f'不支持的K线类型，请检查！')
+        df_k = self.get_k_data()
+        #设定全流通列名
+        if f_share == True:
+            f_share_name = 'price_range_1d_f'
+            f_share_days = 'turnover_days_f'    #增加输出全换手天数
+            f_turnover_date = 'turnover_date_f' #增加输出全换手对应的日期
+        else:
+            f_share_name = 'price_range_1d'
+            f_share_days = 'turnover_days'
+            f_turnover_date = 'turnover_date'
+        #取出col_p的全部键值
+        col_p_list = list(col_p.keys())
+        #取出col_p的全部名称
+        col_p_name = list(col_p.values())
+        #sql 语句范例SELECT code, date, price_range_1d_f->'$."0.25"' AS p25 FROM stock.tspro_cumulative_turnover
+        #将键值转换成sql语句
+        col_p_sql = ','.join([f"{f_share_name}->'$.\"{i}\"' AS {col_p[i]}" for i in col_p_list])
+        #print(col_p_sql)
+        #sql语句
+        sql = f"SELECT code, date, {f_share_days} , {f_turnover_date} , {col_p_sql} FROM stock.tspro_cumulative_turnover where code = '{self.code}' and date(date) between '{self.start_date.date()}' and '{self.end_date.date()}'"
+        #print(sql)
+        df_p = pd.read_sql_query(sql , self.engine)
+        #将df_p 拼接到df_k并最终输出
+        df_k = pd.merge(df_k , df_p , on = ['code','date'] , how = 'left')
+        return df_k
+
     def __get_last_factor(self , day = datetime(2020,12,1)):
         """
         获取指定股票的最后复权因子（内部函数）
@@ -745,10 +808,13 @@ class data(base,stock):
         if self.start_date  > self.end_date:
             raise ValueError(f'开始日期必须早于结束日期')
         if self.ktype not in ['1d','1m','5m','30m','60m']:
-            raise ValueError(f'不合规的K线类型: {ktype}')
+            raise ValueError(f'不合规的K线类型: {self.ktype}')
         if self.code == None :
             raise ValueError(f'证券代码不能为空')
-        query = f"select * from tspro_{self.ktype} where code = '{self.code}' and date BETWEEN '{self.start_date}' and '{self.end_date}' order by date asc"         
+        if self.ktype == '1d':
+            query = f"select * from tspro_{self.ktype} where code = '{self.code}' and date BETWEEN '{self.start_date.date()}' and '{self.end_date.date()}' order by date asc"
+        else:
+            query = f"select * from tspro_{self.ktype} where code = '{self.code}' and date BETWEEN '{self.start_date}' and '{self.end_date}' order by date asc"         
         df_db = pd.read_sql_query(query , self.engine)
         #处理需要返回的个数
         if count == None:
@@ -831,10 +897,11 @@ class data(base,stock):
                 raise ValueError(f'不支持的复权模式，请检查！')
                 return df_db
 
-    def update_cumulative_turnover(self):
+    def update_cumulative_turnover2(self):
         """
         更新累计换手率入库
         """
+        raise ValueError('已移除该功能')
         df_basic = pd.read_sql_query(f"select code,date from tspro_basic force index (date) where date between '{self.start_date.date()}' and '{self.end_date.date()}'" , self.engine)
         df_cumulative_turnover = pd.read_sql_query(f"select code,date from tspro_cumulative_turnover force index (date) where date between '{self.start_date.date()}' and '{self.end_date.date()}'" , self.engine)
         df_db = pd.concat([df_basic, df_cumulative_turnover]).drop_duplicates(subset=['code','date'], keep=False)
@@ -850,16 +917,32 @@ class data(base,stock):
                     index = False,
                     if_exists = 'append')
             print(f"数据上传完成(tspro_cumulative_turnover)|新增数据{df_db.shape[0]}")
-        
-    def analyse_cumulative_turnover(self):
+    def __sql_execute_time2(self , sql):
+        """
+        执行SQL语句
+        """
+        # 记录开始时间
+        start_time = datetime.now()
+
+        # 执行SQL语句
+        df = pd.read_sql_query(sql , self.engine)
+        # 记录结束时间
+        end_time = datetime.now()
+        # 计算并打印执行时间
+        execution_time = end_time - start_time
+        print(f"SQL execution time: {execution_time}")
+        return df
+
+    def analyse_cumulative_turnover2(self):
         """
         更新和分析累计换手率
         目前需要更新turnover_date,turnover_date_f这两个字段
         """
-        sql_basic = f"select code,date,turnover_rate,turnover_rate_f from tspro_basic force index(date) where date between '{self.start_date.date()}' and '{self.end_date.date()}'"
+        sql_basic = f"select code,date,turnover_rate,turnover_rate_f from tspro_basic FORCE INDEX(main) where date between '{self.start_date.date()}' and '{self.end_date.date()}'"
         print(sql_basic)
-        df_basic = pd.read_sql_query(sql_basic , self.engine)
-        df_cumulative_turnover = pd.read_sql_query(f"select code,date,turnover_valid from tspro_cumulative_turnover force index(date) where date between '{self.start_date.date()}' and '{self.end_date.date()}'" , self.engine)
+        df_basic = self.__sql_execute_time(sql_basic)
+        df_cumulative_turnover = self.__sql_execute_time(f"select code,date,turnover_valid from tspro_cumulative_turnover FORCE INDEX(main) where date between '{self.start_date.date()}' and '{self.end_date.date()}'" )
+        #df_cumulative_turnover = pd.read_sql_query(f"select code,date,turnover_valid from tspro_cumulative_turnover force index(date) where date between '{self.start_date.date()}' and '{self.end_date.date()}'" , self.engine)
         df_cum_na = df_cumulative_turnover[df_cumulative_turnover['turnover_valid'].isnull()]
         #历遍df_cum_na
         for index , row in df_cum_na.iterrows():
@@ -913,13 +996,16 @@ class data(base,stock):
     
 if __name__=="__main__":
     tspro = data()
-    tspro.code ='601318.sh'
-    tspro.start_date= datetime(2023,1,1,8)
-    tspro.end_date = datetime(2023,12,20,16)
+    tspro.code ='689009.sh'
+    tspro.start_date= datetime(2023,4,3,8)
+    tspro.end_date = datetime(2024,1,26,16)
+    df = tspro.get_k_data()
+    print(df)
     #ETF数据1998/10/19 含
     tspro.fq = tspro.复权.动态复权
     tspro.ktype = '1d'
     #tspro.update_cumulative_turnover()
+    print(tspro.get_p_data())
     tspro.analyse_cumulative_turnover()
     
     tspro.update_day_ETF()

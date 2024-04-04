@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>挖土游戏</title>   
+    <!-- 引入 Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+</head>
+
+<body>
+<nav class="navbar navbar-expand-lg bg-body-tertiary">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">Navbar w/ text</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarText">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link active" aria-current="page" href="#">游戏首页</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="index.html">返回首页</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">人物属性栏</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="shop.html">商店</a>
+        </li>
+      </ul>
+      <span class="navbar-text">
+        挖土游戏
+      </span>
+    </div>
+  </div>
+</nav>     
+      <div class="container mt-5">
+        <div class="panel-heading">
+          <h3 class="panel-title">人物状态栏</h3>
+        </div>
+        <div class="panel-body">
+            <p>等级：{{ game.level }}</p>
+            <p>经验值：{{ game.exp }}</p>
+            <p>距离下一经验值的百分比：{{ game.exp / (game.level * 100) * 100 }}%</p>
+            <p>血量：{{ game.hp }}</p>
+            <p>体力：{{ game.stamina }}</p>
+            <p>金钱：{{ game.gold }}</p>
+            <div class="form-group">
+                <label for="map-select">选择地图：</label>
+                <select id="map-select" class="form-control">
+                    {% for map in maps %}
+                    <option value="{{ map.map_id }}">{{ map.map_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button id="go-button">GO</button>   
+            <ul>
+            <p>当前地图：{{ game.current_map }} 怪物有：</p>
+            {% for monster in monsters %}
+                <li>怪物名称：{{ monster.monster }}|概率：</li>
+            {% endfor %}
+            </ul>         
+        </div>
+      </div>    
+    <div class="container mt-5">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">挖土游戏</h5>
+                <p class="card-text">金币: {{ game.gold }}</p>
+                <p class="card-text">体力: {{ game.stamina }}</p>
+                <p class="card-text">库存: {{ game.inventory }}</p>
+                {% for item in game.inventory %}
+                <img src="{{ item_images[item] }}" alt="{{ item }}" width="50" height="50">
+                {% endfor %}
+            </div>
+        </div>
+        <div class="card mt-3">
+            <div class="card-body">
+                <h5 class="card-title">操作</h5>
+                <form action="{{ url_for('dig') }}" method="post" class="mb-3">
+                    <button type="submit" class="btn btn-primary">挖土</button>
+                </form>
+                <form action="{{ url_for('rest') }}" method="post" class="mb-3">
+                    <button type="submit" class="btn btn-primary">休息</button>
+                </form>
+                <form action="{{ url_for('eat') }}" method="post" class="mb-3">
+                    <button type="submit" class="btn btn-primary">吃食物</button>
+                </form>
+                <form action="{{ url_for('shop') }}" method="post" class="mb-3">
+                    <button type="submit" class="btn btn-primary">购物</button>
+                </form>
+                <form method="POST" action="{{ url_for('shop') }}" class="mb-3">
+                    <label for="item">你想买什么？</label>
+                    <select id="item" name="item" class="form-control">
+                        <option value="pickaxe">镐子</option>
+                        <option value="food">食物</option>
+                        <option value="lotus">彩票</option>
+                    </select>
+                    <button type="submit" class="btn btn-primary mt-2">购买</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- 引入 Bootstrap JS 和依赖的 Popper.js -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <ul class=flashes>
+    {% for message in messages %}
+        <li>{{ message }}</li>
+    {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}  
+    <!-- 引入 Bootstrap JavaScript 文件 -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    
+    <!-- 引入 jQuery，这是一个流行的 JavaScript 库，可以帮助你更容易地处理 AJAX 请求和 DOM 操作。-->
+    
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <!-- 添加你的 JavaScript 代码 -->
+    <script>
+        $(document).ready(function() {
+            $('#go-button').click(function() {
+                var selectedMapId = $('#map-select').val();
+                $.ajax({
+                    url: '/change_map',
+                    method: 'POST',
+                    data: {
+                        map_id: selectedMapId
+                    },
+                    success: function(response) {
+                        // 更新页面以显示新的地图
+                        location.reload();
+                    }
+                });
+            });
+        });
+        </script>
+</body>
+</html>
+
+
+

@@ -1,7 +1,7 @@
 import pandas as pd
 from apt.qsp_universal.base import base
 from datetime import datetime
-from mpl_finance import candlestick_ochl
+from mplfinance import candlestick_ochl
 import matplotlib.pyplot as plt
 # 显示所有列
 #pd.set_option('display.max_columns', None)

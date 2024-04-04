@@ -40,13 +40,23 @@ class TestStrategy(bt.Strategy):
             ('atr_cut',2),            #从最止损的ATR
             ('unit_size',0.5),        #头寸大小 默认每次下单进行1个头寸
             ('open_separation',5),#清仓以后的再次开仓间隔（用来控制反复止损的参数）
-            ('printlog',False),)     #是否输出日志 默认True
+            ('printlog',False),     #是否输出日志 默认True
+        #布林线控制指标
+            ('boll_period',20),     #布林线周期
+            ('boll_devfactor',2),         #布林线标准差
+            ('boll_atr',1),         #布林线ATR间隔
+            ('volume_factor', 1.5),  # 布林线上轨放量因子
+            ('volume_period', 20),  # 成交量计算周期
+            ('boll_size',0.5),)      #布林线头寸大小
+
     def log(self, txt, dt=None):
         ''' Logging function fot this strategy'''
         dt = dt or self.datas[0].datetime.date(0) 
         print('%s, %s' % (dt.isoformat(), txt))
 
     def __init__(self):
+        #增加指标indicators
+        BollingerBandsVolume(self.data)
         # Keep a reference to the "close" line in the data[0] dataseries
         self.dataclose = self.datas[0].close
         self.datahigh = self.datas[0].high
@@ -77,6 +87,15 @@ class TestStrategy(bt.Strategy):
         self.high_cut = bt.indicators.Highest(self.datas[0].close - self.atr * self.params.atr_cut , period = self.params.high_period , plot = True , subplot= False) 
         #副图叠加ATR指标并作图（增强型图表无法进行叠加）
         #bt.indicators.ATR(self.datas[0] , plot= False , period = 25) #这条这条有作用，但是不如self.atr = bt.indicators.AverageTrueRange ，且无法设置EMA类型
+        # 添加布林线指标
+        self.boll = bt.indicators.BollingerBands(self.data.close, period = self.params.boll_period, devfactor=self.params.boll_devfactor)
+        # 计算成交量的均线
+        self.volume_sma = bt.indicators.SimpleMovingAverage(self.data.volume, period=self.params.volume_period)
+        # 添加布林线上轨放量指标
+        self.bb_volume = self.data.volume * (self.data.close > self.boll.lines.top) * (self.data.volume > self.volume_sma * self.params.volume_factor)
+        # 在副图中绘制布林线上轨放量指标
+        #self.bb_volume.plotinfo.subplot = True
+
     def notify_order(self, order):
         if order.status in [order.Submitted]:
             # Buy/Sell order submitted/accepted to/by broker - Nothing to do , 
@@ -136,6 +155,7 @@ class TestStrategy(bt.Strategy):
         self.log("最大回撤:-%.2f%%" % self.stats.drawdown.maxdrawdown[-1])
 
     def next(self):
+
         #设置头寸
         
         #self.half_unit = int(self.unit[0] / 2 / 100) *100
@@ -263,7 +283,37 @@ class TestStrategy(bt.Strategy):
         self.orefs.append(o2)
         self.orefs.append(o3)
         '''
+class BollingerBandsVolume(bt.Indicator):
+    lines = ('bb_volume', 'top', 'mid', 'bot', 'width','is_narrowing')
+    params = (('period', 20), ('devfactor', 2.0), ('volume_factor', 1.5),)
+    plotinfo = dict(subplot=True)  # 在副图中显示指标
+    plotlines = dict(
+        is_narrowing=dict(_plotskip=False),  # 在副图中显示 is_narrowing
+    )    
+    def __init__(self):
+        # 添加布林线指标
+        self.boll = bt.indicators.BollingerBands(self.data.close, period=self.params.period, devfactor=self.params.devfactor)
+        # 获取布林线的上轨线、中轨线和下轨线
+        self.lines.top = self.boll.lines.top
+        self.lines.mid = self.boll.lines.mid
+        self.lines.bot = self.boll.lines.bot
+        # 计算布林线通道宽度
+        self.lines.width = self.boll.lines.top - self.boll.lines.bot
+        # 判断布林线是否收口并添加is_narrowing 指标
+        self.lines.is_narrowing = bt.If(self.lines.width < self.lines.width(-1), 1.0, 0.0)
+        #self.lines.is_narrowing.plotinfo.plot = True
+        #self.lines.is_narrowing.plotinfo.plotmaster = self.data
+        self.lines.is_narrowing.plotlines = dict(
+            is_narrowing=dict(marker='*', markersize=8.0, color='lime', fillstyle='full')
+        )
+        # 计算成交量的均线
+        self.volume_sma = bt.indicators.SimpleMovingAverage(self.data.volume, period=self.params.period)
 
+        # 计算布林线上轨放量
+        self.lines.bb_volume = self.data.volume * (self.data.close > self.boll.lines.top) * (self.data.volume > self.volume_sma * self.params.volume_factor)
+
+        # 在副图中绘制布林线上轨放量指标
+        #self.plotinfo.subplot = True
 class EMA_CrossOver(bt.Indicator):
     lines = ('ema_crossover',)
     params = (('fast', 10), ('slow', 20), ('very_slow', 30))

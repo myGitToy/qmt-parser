@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 import tushare as ts
-import sqlalchemy
 import time
+from sqlalchemy import create_engine,exc,delete,text   #用来捕捉sqlalchemy的异常
 from datetime import datetime
 from apt.vendor.tspro.base import base as base
 from apt.vendor.tspro.base import stock as stock
@@ -137,15 +137,14 @@ class security(base , stock):
                     if_exists = 'replace',
                     index_label='code' , #设置主键(设置未成功)
                     dtype=dtypedict) #映射列的数据类型
-
-            with self.engine.connect() as con:
-                #设置主键
-                try:
-                    con.execute('ALTER TABLE `tspro_fund_basic` ADD PRIMARY KEY (`code`);')
+            try:
+                with self.engine.begin() as connection:
+                    #设置主键
+                    connection.execute(text('ALTER TABLE `tspro_fund_basic` ADD PRIMARY KEY (`code`);'))
                     #设置索引（其实主键和索引一致的话，是可以不需要设置索引的）
-                    #con.execute('CREATE INDEX index `tspro_security` (`code`);')
-                except :
-                    pass
+                    connection.execute(text('CREATE INDEX code_index ON `tspro_fund_basic` (`code`);'))                    
+            except exc.ResourceClosedError:
+                print(f"更新主键或者索引失败（tspro_security）！")
             print(f"ETF数据已上传完成(security),新增数据{df_security.shape[0]}条")
 
     def update_security(self ,type = ['stock','index','fund','etf','lof','fja','fjb']):
@@ -198,16 +197,14 @@ class security(base , stock):
                     if_exists = 'replace',
                     index_label='code' , #设置主键(设置未成功)
                     dtype=dtypedict) #映射列的数据类型
-
-            with self.engine.connect() as con:
-                #设置主键
-                try:
-                    con.execute('ALTER TABLE `tspro_security` ADD PRIMARY KEY (`code`);')
+            try:
+                with self.engine.begin() as connection:
+                    #设置主键
+                    connection.execute(text('ALTER TABLE `tspro_security` ADD PRIMARY KEY (`code`);'))
                     #设置索引（其实主键和索引一致的话，是可以不需要设置索引的）
-                    #con.execute('CREATE INDEX index `tspro_security` (`code`);')
-                except:
-                    pass
-
+                    connection.execute(text('CREATE INDEX code_index ON `tspro_security` (`code`);'))                    
+            except exc.ResourceClosedError:
+                print(f"更新主键或者索引失败（tspro_security）！")
             print(f"数据已上传完成(security),新增数据{df_security.shape[0]}条")
 
     def get_all_code(self , market = ['主板','创业板','中小板','科创板','CDR','北交所'] , day = datetime.now() , type = ['stock','etf']):
@@ -281,9 +278,11 @@ class security(base , stock):
         #获取更新列表（按交易日）
         trade_day = pd.DataFrame(columns = ['date'])
         trade_day = self.get_calendar(is_open = 1)
+        #print(trade_day)
         #获取资金流向库中存在的日期列表
         query_daysql = f"select distinct date FROM tspro_basic FORCE INDEX (main) WHERE date BETWEEN '{self.start_date.date()}' and '{self.end_date.date()}'  ORDER BY date asc" 
         df_dbday = pd.read_sql_query(query_daysql , self.engine)
+        #print(df_dbday)
         if df_dbday.empty == True:
             #数据库不存在数据
             df_dbday = pd.DataFrame(columns = ['date'])
@@ -378,7 +377,8 @@ if __name__=="__main__":
     cal = security()
     cal.start_date = datetime(2023,1,1)
     cal.end_date = datetime(2023,8,9)
-    a = cal.get_cal_k()
+    df = cal.update_basic()
+    print(df)
     #a =cal.get_security('601318.sh')
     print(a)
     print(cal.dict[cal.ktype])

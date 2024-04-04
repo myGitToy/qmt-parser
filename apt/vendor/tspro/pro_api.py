@@ -16,6 +16,7 @@ class pro_api(data):
     def __init__(self):
         #初始化 接入token
         self.pro = ts.pro_api("55297f16c0119146589e059db315ba28a9412e89ec9f91e538e655b2")
+        super().__init__()  # 调用父类的初始化方法
     def stock_basic(self , end_date = datetime(2022,1,1)):
         """
         获取本地数据库中的证券代码（按日期）
@@ -89,6 +90,7 @@ class pro_api(data):
                 after_share	float	变动后持股
                 after_ratio	float	变动后占流通比例（%）
                 avg_price	float	平均价格
+                money float    变动金额(计算值 非API提供)
                 total_share	float	持股总数
                 begin_date	str	增减持开始日期
                 close_date	str	增减持结束日期
@@ -122,28 +124,55 @@ class pro_api(data):
         df_tspro["date"] = pd.to_datetime(df_tspro["date"])
         df_tspro["begin_date"] = pd.to_datetime(df_tspro["begin_date"])
         df_tspro["close_date"] = pd.to_datetime(df_tspro["close_date"])
-
-        #取出avg_price为空的数据
+        #avg_price为空的数据，查询begin_date到close_date的收盘价，计算平均收盘价，然后填充
         df_tspro_tmp = df_tspro[df_tspro['avg_price'].isnull()]
-        print(df_tspro_tmp[['code','date','holder_name','avg_price','total_share']])
         #对avg_price为空的数据进行平均收盘价填充
         for index, row in df_tspro_tmp.iterrows():
-            a = data()
+            #打印每一行的数据
             self.code = row['code']
-            self.start_date = row['date']
-            self.end_date = row['date']
-        self.fq = data.复权.不复权
-        df_close = self.get_k_data()
-        self.fq = data.复权.动态复权
-        df_tspro_tmp = df_tspro_tmp.groupby(['code','date','holder_name'])['total_share'].sum().reset_index()        
+            self.start_date = row['begin_date']
+            self.end_date = row['close_date']
+            self.fq = data.复权.动态复权
+            self.ktype = '1d'
+            #调用父级的方法
+            df_close = self.get_k_data()
+            #进行收盘价格填充
+            if df_close.empty == True:
+                #填充0
+                df_tspro_tmp.loc[index,'avg_price'] = 0
+            else:
+                #填充收盘价格的平均值
+                df_tspro_tmp.loc[index,'avg_price'] = df_close['close'].mean()
+            """
+            这里注释掉，改成用empty为空来判断
+            if df_tspro_tmp.loc[index,'avg_price'] == 0 or df_tspro_tmp.loc[index,'avg_price'] == None:              
+                #如果收盘价格为0或null，则将平均价格填充为0
+                df_tspro_tmp.loc[index,'avg_price'] = 0
+            else:
+                #如果收盘价格正常，则将平均价格填充为收盘价格的平均值
+                df_tspro_tmp.loc[index,'avg_price'] = df_close['close'].mean()
+            """
+        #print(df_tspro_tmp[['code','date','holder_name','avg_price','total_share']])
+        #将df_tspro_tmp填充回df_tspro
+        df_tspro.update(df_tspro_tmp)
+        df_tspro['money'] = df_tspro['avg_price'] * df_tspro['change_vol']
+        return df_tspro
+        print(df_tspro[['code','date','holder_name','avg_price','total_share','money']])
+        #数据汇总，按照date,in_de,holder_type进行汇总
+        df_tspro_group = df_tspro.groupby(['code','date','in_de','holder_type'])[['change_vol','money','change_ratio']].sum().reset_index()
+        print(df_tspro_group[['code','date','holder_type','in_de','change_vol','money','change_ratio']])
+        
         return df_tspro
 if __name__ == '__main__':
     a = pro_api()
     a.start_date = datetime(2020,3,1,8)
-    a.end_date = datetime(2023,3,20,16)
+    a.end_date = datetime(2024,3,20,16)
     a.code = '300224.SZ'
-    a.ktype = '1min'
+    a.ktype = '1d'
     print(a.stk_holdertrade())
+
+
+
     #df = a.stock_basic()
     df = a.suspend_k()
     pd.set_option('display.max_rows', None)  # Set display option to show all rows

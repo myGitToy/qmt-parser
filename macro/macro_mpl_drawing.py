@@ -3,7 +3,7 @@ import numpy as np
 import tushare as ts
 import pandas as pd
 import matplotlib.pyplot as plt
-import mpl_finance as mpf  # 替换 import matplotlib.finance as mpf
+import mplfinance as mpf  # 替换 import matplotlib.finance as mpf
 import matplotlib.dates as mdates
 from apt.qsp_universal.base import base as data
 # 列名与数据对其显示

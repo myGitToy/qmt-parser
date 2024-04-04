@@ -2,11 +2,12 @@ import numpy as np
 import pandas as pd
 import tushare as ts
 import akshare as ak
-import sqlalchemy
+from sqlalchemy import create_engine,exc,delete,text   #用来捕捉sqlalchemy的异常
 from datetime import datetime
 from apt.vendor.tspro.base import base as base
 from apt.vendor.tspro.base import stock as stock
 from sqlalchemy.types import NVARCHAR , Float, Integer , Date
+from apt.vendor.tspro.security import security as tspro_sec
 
 class security(base , stock):
     """
@@ -85,123 +86,18 @@ class security(base , stock):
 
     def update_security_ETF(self ):
         """
-        security日常更新(ETF和LOF资产)（仅从tspro迁移 未修改代码）
+        security日常更新(ETF和LOF资产)（继承tspro同名方法）
         """
-        #打印标题
-        print("############正在准备更新security证券代码信息（ETF）###########")
-        #读取ETF类资产
-        df_security = self.pro.fund_basic(market = 'E')
-        #print(df_security)
-        #重命名为code
-        df_security.rename(columns = {'ts_code':'code'} , inplace = True)
-        df_security['list_date'] = pd.to_datetime(df_security['list_date'])
-        df_security['delist_date'] = pd.to_datetime(df_security['delist_date'])       
-        #退市日期同时设置为2099年12月31日
-        df_security = df_security.fillna({'delist_date':datetime(2099,12,31)})
-        #dataframe列名的数据类型进行映射
-        dtypedict = {
-            'code': NVARCHAR(length = 24),
-            'name': NVARCHAR(length = 128),
-            'management': NVARCHAR(length = 128),
-            'custodian': NVARCHAR(length = 128),
-            'fund_type': NVARCHAR(length = 24),
-            'found_date': Date(),
-            'due_date': Date(),
-            'list_date': Date(),
-            'issue_date': Date(),
-            'delist_date': Date(),
-            'issue_amount': Float(precision = 3, asdecimal = True),
-            'm_fee': Float(precision = 3, asdecimal = True),
-            'c_fee': Float(precision = 3, asdecimal = True),
-            'duration_year': Float(precision = 3, asdecimal = True),
-            'p_value': Float(precision = 3, asdecimal = True),
-            'min_amount': Float(precision = 3, asdecimal = True),
-            'exp_return': Float(precision = 3, asdecimal = True),
-            'benchmark': NVARCHAR(length = 128),
-            'status': NVARCHAR(length = 12),
-            'invest_type': NVARCHAR(length = 64),
-            'type': NVARCHAR(length = 64),
-            'trustee': NVARCHAR(length = 128),
-            'purc_startdate': Date(),
-            'redm_startdate': Date(),
-            'market': NVARCHAR(length = 8)
-                    }
-        #数据保存至数据库
-        if df_security.empty == True:
-            print("原始数据为空，无法导入数据库")
-        else:
-            df_security.to_sql(
-                    name = 'tspro_fund_basic',
-                    con = self.engine,
-                    index = False,
-                    if_exists = 'replace',
-                    index_label='code' , #设置主键(设置未成功)
-                    dtype=dtypedict) #映射列的数据类型
-
-            with self.engine.connect() as con:
-                #设置主键
-                con.execute('ALTER TABLE `tspro_fund_basic` ADD PRIMARY KEY (`code`);')
-                #设置索引（其实主键和索引一致的话，是可以不需要设置索引的）
-                #con.execute('CREATE INDEX index `tspro_security` (`code`);')
-            print(f"ETF数据已上传完成(security),新增数据{df_security.shape[0]}条")
+        #继承tspro同名方法
+        return tspro_sec.update_security_ETF(self)
 
     def update_security(self ,type = ['stock','index','fund','etf','lof','fja','fjb']):
         """
-        security日常更新（仅从tspro迁移 未修改代码）
+        security日常更新（继承自tspro）
         type jqdata证券类型，此处予以保留，实际无效果
         """
-        pro = ts.pro_api()
-        #打印标题
-        print("############正在准备更新security证券代码信息###########")
-        df_security = pd.DataFrame()
-        #设置需要更新的证券列表状态，默认只读取上市的，在回溯过往会带来一些未来函数的问题
-        list_status = ['D','L','P']
-        for list in list_status:
-            df = pro.query('stock_basic', list_status = list , fields='ts_code,symbol,name,area,industry,fullname,enname,cnspell,market,exchange,curr_type,list_status,list_date,delist_date,is_hs')
-            #数据拼接
-            df_security = pd.concat([df_security , df] , sort = False )
-        #重命名为code
-        df_security.rename(columns = {'ts_code':'code'} , inplace = True)
-        df_security['list_date'] = pd.to_datetime(df_security['list_date'])
-        df_security['delist_date'] = pd.to_datetime(df_security['delist_date'])       
-        #退市日期同时设置为2099年12月31日
-        df_security = df_security.fillna({'delist_date':datetime(2099,12,31)})
-        #dataframe列名的数据类型进行映射
-        dtypedict = {
-            'code': NVARCHAR(length = 24),
-            'symbol': NVARCHAR(length = 128),
-            'name': NVARCHAR(length = 128),
-            'area': NVARCHAR(length = 128),
-            'industry': NVARCHAR(length = 128),
-            'fullname': NVARCHAR(length = 128),
-            'enname': NVARCHAR(length = 128),
-            'cnspell': NVARCHAR(length = 24),
-            'market': NVARCHAR(length = 12),
-            'exchange': NVARCHAR(length = 12),
-            'curr_type': NVARCHAR(length = 12),
-            'list_status': NVARCHAR(length = 8),
-            'list_date': Date(),
-            'delist_date': Date(),
-            'is_hs': NVARCHAR(length = 8)
-                    }
-        #数据保存至数据库
-        if df_security.empty == True:
-            print("原始数据为空，无法导入数据库")
-        else:
-            df_security.to_sql(
-                    name = 'tspro_security',
-                    con = self.engine,
-                    index = False,
-                    if_exists = 'replace',
-                    index_label='code' , #设置主键(设置未成功)
-                    dtype=dtypedict) #映射列的数据类型
-
-            with self.engine.connect() as con:
-                #设置主键
-                con.execute('ALTER TABLE `tspro_security` ADD PRIMARY KEY (`code`);')
-                #设置索引（其实主键和索引一致的话，是可以不需要设置索引的）
-                #con.execute('CREATE INDEX index `tspro_security` (`code`);')
-            print(f"数据已上传完成(security),新增数据{df_security.shape[0]}条")
+        #继承tspro同名方法
+        return tspro_sec.update_security(self,type)
 
     def get_all_code(self , market = ['主板','创业板','中小板','科创板','CDR','北交所'] , day = datetime.now() , type = ['stock','etf']):
         """
@@ -267,6 +163,7 @@ class security(base , stock):
 if __name__=="__main__":
     #测试交易日历功能
     cal = security()
+    cal.update_security_ETF()
     cal.start_date = datetime(1991,1,1)
     cal.end_date = datetime(2022,7,1)
     a =cal.get_security('601318.sh')

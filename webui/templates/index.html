@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>自选股</title>
+</head>
+<body>
+    <form method="POST">
+        <input type="text" name="stock" placeholder="股票代码">
+        <button type="submit" name="add">添加</button>
+    </form>
+    <ul>
+        {% for stock in stocks %}
+            <li>
+                {{ stock }}
+                <a href="/delete/{{ stock }}">删除</a>
+                <a href="/view/{{ stock }}">查看</a>
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

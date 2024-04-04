@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>挖土游戏</title>   
+    <!-- 引入 Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+</head>
+<iframe style="border: 1px solid rgba(0, 0, 0, 0.1);" width="800" height="450" src="https://www.figma.com/embed?embed_host=share&url=https%3A%2F%2Fwww.figma.com%2Ffile%2FsDaLTB5rzpFaSlRjW2enBG%2FUntitled%3Ftype%3Dwhiteboard%26node-id%3D0%253A1%26t%3DHxQgajBqAyWcp212-1" allowfullscreen></iframe>
+<body>
+<nav class="navbar navbar-expand-lg bg-body-tertiary">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="#">Navbar w/ text</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText" aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarText">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link active" aria-current="page" href="#">游戏首页</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="index.html">返回首页</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">人物属性栏</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">商店</a>
+        </li>
+      </ul>
+      <span class="navbar-text">
+        挖土游戏
+      </span>
+    </div>
+  </div>
+</nav>     
+      <div class="container mt-5">
+
+        <div class="panel-body">
+ 
+            <ul>
+            <p>当前地图：{{ game.current_map }} 怪物有：</p>
+            {% for monster in monsters %}
+                <li>怪物名称：{{ monster.monster }}|概率：</li>
+            {% endfor %}
+            </ul>         
+        </div>
+      </div>    
+    <div class="container mt-5">
+        <div class="card mt-3">
+            <div class="card-body">
+                <h5 class="card-title">操作</h5>
+
+                <form method="POST" action="{{ url_for('shop') }}" class="mb-3">
+                    <label for="item">你想买什么？</label>
+                    <select id="item" name="item" class="form-control">
+                        <option value="pickaxe">镐子</option>
+                        <option value="food">食物</option>
+                        <option value="lotus">彩票</option>
+                    </select>
+                    <button type="submit" class="btn btn-primary mt-2">购买</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- 引入 Bootstrap JS 和依赖的 Popper.js -->
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <ul class=flashes>
+    {% for message in messages %}
+        <li>{{ message }}</li>
+    {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}  
+    <!-- 引入 Bootstrap JavaScript 文件 -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+    
+    <!-- 引入 jQuery，这是一个流行的 JavaScript 库，可以帮助你更容易地处理 AJAX 请求和 DOM 操作。-->
+    
+
+</body>
+</html>
+
+
+

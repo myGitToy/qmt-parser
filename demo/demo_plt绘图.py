@@ -3,11 +3,11 @@ import pandas as pd; import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import dates as mdates
 from matplotlib import ticker as mticker
-from mpl_finance import candlestick_ohlc
+from mplfinance import candlestick_ohlc
 from matplotlib.dates import DateFormatter, WeekdayLocator, DayLocator, MONDAY,YEARLY
 from matplotlib.dates import MonthLocator,MONTHLY
 import datetime as dt
-import mpl_finance as mpl
+import mplfinance as mpl
 import pylab
 from apt.os.data_load import Data_Load as dl
 import datetime as dt

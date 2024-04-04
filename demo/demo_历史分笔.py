@@ -1,5 +1,5 @@
 
-import mpl_finance
+import mplfinance
 import tushare as ts
 import pandas as pd
 #import seaborn as sns

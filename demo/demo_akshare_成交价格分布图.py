@@ -7,10 +7,10 @@ from apt.vendor.akshare.data import data
 
 # 假设你的 DataFrame 是 df，'price' 列是成交价格
 stock = data()
-stock.code = '600038.sh'
-stock.ktype = '1m'
-stock.start_date = datetime(2023,12,1)
-stock.end_date = datetime(2023,12,20)
+stock.code = '600448.sh'
+stock.ktype = '1d'
+stock.start_date = datetime(2024,1,1)
+stock.end_date = datetime(2024,1,29)
 df = stock.get_k_data()
 print(df)
 # 将 df 的索引转换为 DatetimeIndex

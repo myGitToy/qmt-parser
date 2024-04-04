@@ -1,12 +1,33 @@
 from apt.vendor.tspro.data import data as data
+from apt.vendor.tspro.cumulative_turnover import cum_turnover as ct
 from datetime import datetime
-tspro = data()
-tspro.start_date= datetime(2020,1,1,8)
-tspro.end_date = datetime(2021,12,31,16)
-#tspro.update_day()
-#tspro.update_day_ETF()
-#添加数据
-#tspro.update_cumulative_turnover()
-#更新数据 2022-2023数据全
-#2020-2021正在分析，已导入
-tspro.analyse_cumulative_turnover()
+import time
+def run_script():
+    tspro = ct()
+    #全换手区间数据导入：2005-2023
+    #全换手区间数据计算：2005-2023，目前正在计算
+    #价格区间数据计算：2008-2024.3.1含，目前正在计算
+    tspro.start_date= datetime(2024,3,23,8)
+    tspro.end_date = datetime.now()
+    #tspro.update_day()
+    #tspro.update_day_ETF()
+    #添加数据
+    #插入数据
+    tspro.insert_cumulative_turnover()
+    #更新数据
+    tspro.update_cumulative_turnover()    
+    #更新价格区间（时间范围段的间隔不能太远）
+    tspro.update_price_range_1d()
+
+
+#测试模式
+#run_script()
+
+#正式模式
+while True:
+    try: 
+        run_script()
+        break  # 如果脚本成功执行，跳出循环
+    except Exception as e:
+        print(f"Error occurred: {e}. Retrying in 5 seconds.")
+        time.sleep(5)  # 等待5秒后重试
