@@ -215,7 +215,7 @@ class finance_indicator(finance):
             conn.execute(query)
     def delete_duplicate(self , db = pd.DataFrame()):
         """
-        目的：删除shuj重复数据
+        目的：删除重复数据
         """
         # 找出重复的行
         duplicates = db.duplicated(subset=['code','end_date','update_flag'], keep='first')        
@@ -324,20 +324,26 @@ class finance_indicator(finance):
     def query(self, **kwargs):
         """
         查询财务指标数据
-        接受多参数查询，格式如下
-        "code = 873132.BJ" ,"end_date between 20210101 and 20231231"
+        接受多参数查询，格式如下是输入where后的条件串
+        a.query(str = "code = '873132.BJ' and end_date between '2021-01-01' and '2023-12-31'")
+        备注：目前本模块只包括基础的字符串，没有将常用的查询字段放入参数中
         """
         #多参数拼接，**kwargs
-        sql = f"select * from {self.table_name} where "
+        sql = f"select * from {self.table_name} where 1=1"
         for key, value in kwargs.items():
             sql += f" and {value}"
-        print(sql)
+        #进行数据库查询
+        df = pd.read_sql(sql=sql, con=self.engine)
+        return df
+    
 if __name__ == '__main__':
     a = finance_indicator()
     a.code = '873132.BJ'
     a.start_date = datetime(2021,1,1)
     a.end_date = datetime(2023,12,31)
-    a.query(str = "code = '873132.BJ' end_date between '2021-01-01' and '2023-12-31'")
+    #查询某个股票在一段时间内的财务指标数据
+    #a.query(str = "code = '873132.BJ' and end_date between '2021-01-01' and '2023-12-31'")
+    #更新财务指标数据
     df = a.update_finance_indicator(flag_delete_duplicate=True)
     print(df)
     #a.create_table()
