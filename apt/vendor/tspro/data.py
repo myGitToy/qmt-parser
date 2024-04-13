@@ -730,13 +730,14 @@ class data(base,stock):
         #导入模块（为了避免循环引用）
         from apt.vendor.tspro.cumulative_turnover import cum_turnover as ctr
         #初始化
-        #第一步 根据选择的K线类型不同，进行不同级别的校验
+        ###1. 根据选择的K线类型不同，进行不同级别的校验
         a = ctr()
         a.code = self.code
         a.start_date = self.start_date
         a.end_date = self.end_date
         a.ktype = self.ktype
         a.复权 = self.复权
+        ##1.1 数据校验环节（如果数据缺失，则进入更新环节，未缺失才能进去后续的获取数据环节）
         if self.ktype == '1d':
             #校验1d数据
             a.update_price_range_1d_by_code()
@@ -745,7 +746,9 @@ class data(base,stock):
             raise ValueError(f'1m数据暂不支持全换手区间')
         else:
             raise ValueError(f'不支持的K线类型，请检查！')
+        ###2. K线数据获取环节（不包含分位数信息）
         df_k = self.get_k_data()
+        ###3. 数据处理和拼接环节
         #设定全流通列名
         if f_share == True:
             f_share_name = 'price_range_1d_f'
