@@ -975,11 +975,15 @@ class data(base,stock):
             suspend_type = row['suspend_type']
             if suspend_type == 'S':
                 #全天停牌，删除对应的一分钟线数据
+                count_query = text(f"SELECT COUNT(*) FROM akshare_1m WHERE code = '{code}' AND date(date) = '{date.date()}'")
                 sql_query = text(f"delete from akshare_1m where code = '{code}' and date(date) = '{date.date()}'")
                 try:
                     with self.engine.begin() as connection:
+                        # 首先执行计数查询
+                        count_result = connection.execute(count_query).scalar()
+                        # 再执行删除操作
                         connection.execute(sql_query)
-                        print(f"删除{code}|{date.date()} 成功！")
+                        print(f"删除{code}|{date.date()} 成功，共删除{count_result}行数据！")
                 except exc.ResourceClosedError:
                     print(f"删除{code}|{date.date()} 失败！")
             elif suspend_type == 'R':    
