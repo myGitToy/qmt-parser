@@ -641,11 +641,14 @@ class data(base,stock):
             #获取复权因子
             tspro_factor = self.get_tspro_factor()
             tspro_factor['factor_date'] = tspro_factor['date']
-            #复权因子与K线数据进行拼接（复权因子和K线数据只有要一处空值，最后拼接的数据就会有所缺失）
-            df_db = pd.merge(df_db, tspro_factor[['factor_date','factor']] , on = ['factor_date'] , how = 'left')
-            
+            #print(df_db)
+            #复权因子与K线数据进行拼接（复权因子和K线数据只有要一处空值，最后拼接的数据就会有所缺失 BUG 554修复此错误）
+            df_db = pd.merge(df_db, tspro_factor[['factor_date','factor']] , on = ['factor_date'] , how = 'left')            
             #复权因子修正完毕，填充后进入复权处理
             #tspro每天均有复权因子，理论无需填充，但有时复权数据会不完整，因此依旧需要填充
+            # 首先检查并填充最上方的缺失值为1.0
+            df_db.iloc[0] = df_db.iloc[0].fillna(1.0)
+            # 再次进行填充缺失值
             df_db.ffill(axis=0, inplace=True, limit=None) #此处移除downcast=None的参数
             #print(df_db)
             #进行60分钟线修正
