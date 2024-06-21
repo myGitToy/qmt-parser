@@ -649,7 +649,19 @@ class data(base,stock):
             # 首先检查并填充最上方的缺失值为1.0
             df_db.iloc[0] = df_db.iloc[0].fillna(1.0)
             # 再次进行填充缺失值
-            df_db.ffill(axis=0, inplace=True, limit=None) #此处移除downcast=None的参数
+            # 
+            """
+            FIX FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, 
+            .bfill is deprecated and will change in a future version. 
+            Call result.infer_objects(copy=False) instead. 
+            To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+            
+            为了解决这个 FutureWarning 并遵循最佳实践，你应该避免在 .fillna、.ffill、.bfill 中依赖隐式的数据类型转换。
+            相反，显式地处理数据类型转换，确保在填充操作之后调用 .infer_objects() 来推断正确的数据类型。
+            这样可以确保代码的兼容性和未来的稳定性。
+            根据警告建议，还可以通过设置 pd.set_option('future.no_silent_downcasting', True) 来启用未来行为，但首选的方法是显式处理数据类型。
+            """
+            df_db.ffill(axis=0, inplace=True, limit=None).infer_objects() #此处移除downcast=None的参数
             #print(df_db)
             #进行60分钟线修正
             if self.ktype =='60m':
