@@ -200,7 +200,7 @@ class cum_turnover(ts_data):
         
         """
         #第一步 全换手区间校验和更新 检查turnover_valid为null的数量
-        sql_null = f"SELECT code,date,turnover_valid FROM stock.tspro_cumulative_turnover WHERE date(date) between '{self.start_date.date()}' and '{self.end_date.date()}' and turnover_valid is null"
+        sql_null = f"SELECT code,date,turnover_valid FROM stock.tspro_cumulative_turnover WHERE date between '{self.start_date.date()}' and '{self.end_date.date()}' and turnover_valid is null"
         db_null = pd.read_sql(sql_null , self.engine)   
         if db_null.empty == False:
             print(f"存在{db_null.shape[0]}条turnover_valid为null的数据，需要更新")
@@ -209,7 +209,7 @@ class cum_turnover(ts_data):
         #再次进行数据校验（新股上市数据错误的校验）
         self.correct_turnover_price_valid_error()
         #第二步取出price_valid_1d为null的数据
-        sql_null = f"SELECT code,date,turnover_valid,turnover_date,turnover_date_f,turnover_days,turnover_days_f FROM stock.tspro_cumulative_turnover WHERE date(date) between '{self.start_date.date()}' and '{self.end_date.date()}' and price_valid_1d is null"
+        sql_null = f"SELECT code,date,turnover_valid,turnover_date,turnover_date_f,turnover_days,turnover_days_f FROM stock.tspro_cumulative_turnover WHERE date between '{self.start_date.date()}' and '{self.end_date.date()}' and price_valid_1d is null"
         price_null = pd.read_sql(sql_null , self.engine)
         if price_null.empty == False:
             print(f"存在{price_null.shape[0]}条price_valid_1d为null的数据，需要更新")
@@ -250,7 +250,7 @@ class cum_turnover(ts_data):
         
         """
         #第一步检查turnover_valid为null的数量（代表没有更新过全换手区间日期的数据）
-        sql_null = f"SELECT * FROM stock.tspro_cumulative_turnover WHERE date(date) between '{self.start_date.date()}' and '{self.end_date.date()}' and code = '{self.code}' and turnover_valid is null"
+        sql_null = f"SELECT * FROM stock.tspro_cumulative_turnover WHERE date between '{self.start_date.date()}' and '{self.end_date.date()}' and code = '{self.code}' and turnover_valid is null"
         db_null = pd.read_sql(sql_null , self.engine)   
         if db_null.empty == False:
             print(f"存在{db_null.shape[0]}条turnover_valid为null的数据，需要更新")
@@ -260,7 +260,7 @@ class cum_turnover(ts_data):
             #第二步更新turnover_valid为null的数据
             self.update_cumulative_turnover_by_code()
         #第二步取出price_valid_1d为null的数据
-        sql_null = f"SELECT code,date,turnover_valid,turnover_date,turnover_date_f,turnover_days,turnover_days_f FROM stock.tspro_cumulative_turnover WHERE date(date) between '{self.start_date.date()}' and '{self.end_date.date()}' and code = '{self.code}' and price_valid_1d is null"
+        sql_null = f"SELECT code,date,turnover_valid,turnover_date,turnover_date_f,turnover_days,turnover_days_f FROM stock.tspro_cumulative_turnover WHERE date between '{self.start_date.date()}' and '{self.end_date.date()}' and code = '{self.code}' and price_valid_1d is null"
         price_null = pd.read_sql(sql_null , self.engine)
         if price_null.empty == False:
             print(f"存在{price_null.shape[0]}条price_valid_1d为null的数据，需要更新")
@@ -290,6 +290,67 @@ class cum_turnover(ts_data):
         else:
             print(f"不存在price_valid_1d为null的数据，跳过更新")
 
+    def update_price_range_by_code(self , k_type = '1d'):
+        """
+        通用版更新模块（模块名称后续可能会更改）
+        临时性备注：本模块的目的是打造通用版的更新
+        此模块目前用于单代码的数据校验
+        data->get_p_data函数中会引用此模块，如果通过校验，则继续输出p_data，未通过则单独更新此代码在区间内的数据
+        更新基于tspro日线数据的全换手区间信息(指定代码) JSON格式
+        目前需要更新price_range_1d,price_range_1d_f这两个字段
+        【输入】继承自父类的属性
+                code：证券代码
+                start_date：开始日期
+                end_date：结束日期
+                k_type：K线类型 单独进行输入和控制（暂时不确定是否需要保留），默认为1d  另外目前也可接受1m类型
+        """
+        #第一步检查turnover_valid为null的数量（代表没有更新过全换手区间日期的数据）
+        sql_null = f"SELECT * FROM stock.tspro_cumulative_turnover WHERE date between '{self.start_date.date()}' and '{self.end_date.date()}' and code = '{self.code}' and turnover_valid is null"
+        db_null = pd.read_sql(sql_null , self.engine)   
+        if db_null.empty == False:
+            print(f"存在{db_null.shape[0]}条turnover_valid为null的数据，需要更新")
+            #这里需要一个异常处理的判断（我们称之为新股上市error），turnover_valid为0，但是price_valid_1d和price_valid_1m对应为Null
+                          #我们称之为新股上市error
+            #--->TO DO 2. analyse_cumulative_turnover()需要导入by_code，目前的函数是更新全部
+            #第二步更新turnover_valid为null的数据
+            self.update_cumulative_turnover_by_code()
+        #第二步取出price_valid_1X为null的数据
+        sql_null = f"SELECT code,date,turnover_valid,turnover_date,turnover_date_f,turnover_days,turnover_days_f FROM stock.tspro_cumulative_turnover WHERE date between '{self.start_date.date()}' and '{self.end_date.date()}' and code = '{self.code}' and price_valid_{self.ktype} is null"
+        price_null = pd.read_sql(sql_null , self.engine)
+        if price_null.empty == False:
+            print(f"存在{price_null.shape[0]}条price_valid_{self.ktype}为null的数据，需要更新")
+            #第三步更新price_valid_1X为null的数据
+            for index , row in price_null.iterrows():
+                day = row['date']
+                code = row['code']
+                if self.ktype == '1d':
+                    price_range_1d = self.__lambda_price_range_1d(row , k_type = '1d')
+                    price_range_1d_f = self.__lambda_price_range_1d_f(row , k_type = '1d')
+                    # 将 Python 对象转换为 JSON 格式的字符串
+                    price_range_1d_json = json.dumps(price_range_1d, ensure_ascii=False)
+                    price_range_1d_f_json = json.dumps(price_range_1d_f, ensure_ascii=False)
+                elif self.ktype == '1m':
+                    pass
+                else:
+                    pass
+                #启用事务更新，写回数据库                   
+                sql_update = text(f"""
+                update tspro_cumulative_turnover 
+                set price_range_{self.ktype} = :price_range_{self.ktype}, 
+                    price_range_{self.ktype}_f = :price_range_{self.ktype}_f,
+                    price_valid_{self.ktype} = 1 
+                where code = :code and date = :day""")    
+                #sql_update = sql_update.format(json1=escape_string(d_params), json2=escape_string(d_params)) 
+                try:
+                    with self.engine.begin() as connection:
+                        connection.execute(sql_update, {"price_range_1d": price_range_1d_json, "price_range_1d_f": price_range_1d_f_json, "code": row['code'], "day": row['date']})
+                        print(f"更新{row['code']}|{row['date']}序列成功！")
+                except exc.ResourceClosedError:
+                    print(f"更新{row['code']}|{row['date']}序列失败！")
+
+
+        else:
+            print(f"不存在price_valid_1d为null的数据，跳过更新")
 
     def __lambda_is_json(self , myjson):
         """
@@ -476,10 +537,10 @@ class cum_turnover(ts_data):
         """
         if code == None:
             #修正区间内的全部数据
-            sql_str = f"SELECT code,date,turnover_valid,price_valid_1d,price_valid_1m FROM stock.tspro_cumulative_turnover WHERE date(date) between '{self.start_date.date()}' and '{self.end_date.date()}' and turnover_valid = 0 AND (price_valid_1d IS NULL OR price_valid_1m IS NULL)"
+            sql_str = f"SELECT code,date,turnover_valid,price_valid_1d,price_valid_1m FROM stock.tspro_cumulative_turnover WHERE date between '{self.start_date.date()}' and '{self.end_date.date()}' and turnover_valid = 0 AND (price_valid_1d IS NULL OR price_valid_1m IS NULL)"
         else:
             #修正指定证券代码的数据
-            sql_str = f"SELECT code,date,turnover_valid,price_valid_1d,price_valid_1m FROM stock.tspro_cumulative_turnover WHERE date(date) between '{self.start_date.date()}' and '{self.end_date.date()}' and code = '{code}' and turnover_valid = 0 AND (price_valid_1d IS NULL OR price_valid_1m IS NULL)"
+            sql_str = f"SELECT code,date,turnover_valid,price_valid_1d,price_valid_1m FROM stock.tspro_cumulative_turnover WHERE date between '{self.start_date.date()}' and '{self.end_date.date()}' and code = '{code}' and turnover_valid = 0 AND (price_valid_1d IS NULL OR price_valid_1m IS NULL)"
         df_db = pd.read_sql(sql_str , self.engine)
         #print(df_db)
         if df_db.empty == True:
@@ -499,13 +560,13 @@ if __name__=="__main__":
     #1. 初始化
     a = cum_turnover()
     a.code = '603098.sh'
-    a.start_date = datetime(2024,3,1,8)
+    a.start_date = datetime(2024,4,1,8)
     a.end_date = datetime(2024,4,12,18)
-    a.ktype = '1d'
+    a.ktype = '1m'
     #a.insert_cumulative_turnover()  #【每日更新模块】向数据库写入需要更新的数据
     a.update_price_range_1d_by_code()
     #2. 读取全换手数据
-    sql_str = f"SELECT * FROM stock.tspro_cumulative_turnover WHERE CODE='{a.code}' AND date(date) between '{a.start_date.date()}' and '{a.end_date.date()}'"
+    sql_str = f"SELECT * FROM stock.tspro_cumulative_turnover WHERE CODE='{a.code}' AND date between '{a.start_date.date()}' and '{a.end_date.date()}'"
     df_db = pd.read_sql(sql_str , a.engine)
     print(df_db)
 
