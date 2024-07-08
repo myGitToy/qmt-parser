@@ -56,8 +56,12 @@ class cum_turnover(ts_data):
 
     def update_cumulative_turnover(self):
         """
-        更新和分析累计换手率（刚移植，未测试）
+        更新和分析累计换手率
         目前需要更新turnover_date,turnover_date_f,turnover_days,turnover_days_f这四个字段
+        turnover_valid由程序中的bit值来确定
+            bit = null: 未进行校验
+            bit = 1:累计值超100，有全换手
+            bit = 0: 累加值未超过100，数据无效(也可能是新股上市前几天，没有对应的全换手区间)
         """
         #数据校验（修复新股上市首日错误）        
         self.correct_turnover_price_valid_error()
@@ -194,6 +198,9 @@ class cum_turnover(ts_data):
         【每日更新模块】更新基于tspro日线数据的全换手区间信息(全代码) JSON格式
         一次性更新全部1d数据，通常由日线更新 例如macro_akshare_计算全换手间隔.py文件所引用
         目前需要更新price_range_1d,price_range_1d_f这两个字段
+        price_valid_1d
+            price_valid_1d = null : 未进行校验，初始化状态
+            price_valid_1d = 1 ：完成校验，数据有效，有全换手区间对应的数据
         【输入】继承自父类的属性
             start_date：开始日期
             end_date：结束日期
