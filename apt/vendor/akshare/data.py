@@ -350,10 +350,18 @@ class data(base,stock):
                 myclass = row['class']
                 type = row['type']
                 #tspro pro_bar数据获取模块（这里对最后日期做了day+1的处理）
+                net_connection = True
                 if myclass == 'stock':
                     #df_tspro = ts.pro_bar(api = self.api , ts_code = code, freq = self.dict[type] , adj = None , start_date = start_date.strftime('%Y%m%d') , end_date = (end_date + timedelta(days = 1)).strftime('%Y%m%d') , adjfactor = True , factors = ['tor', 'vr'] , asset = 'E')
                     #print(self.dict[type])
-                    df_ak =  ak.stock_zh_a_hist_min_em(symbol = symbol , start_date = start_date.strftime('%Y%m%d %H:%M:%S'), end_date = end_date.strftime('%Y%m%d %H:%M:%S'), period = self.dict[type], adjust = '')
+                    try:
+                        df_ak =  ak.stock_zh_a_hist_min_em(symbol = symbol , start_date = start_date.strftime('%Y%m%d %H:%M:%S'), end_date = end_date.strftime('%Y%m%d %H:%M:%S'), period = self.dict[type], adjust = '')
+                    except:
+                        print("网络连接失败！")
+                        #跳出当前的for循环
+                        
+
+                        net_connection = False
                     #print(df_ak)
                 elif myclass == 'etf':
                     #df_ak = ts.pro_bar(api = self.api , ts_code = code, freq = self.dict[type] , adj = None , start_date = start_date.strftime('%Y%m%d') , end_date = (end_date + timedelta(days = 1)).strftime('%Y%m%d') , adjfactor = True , asset = 'FD')
@@ -377,7 +385,7 @@ class data(base,stock):
                 1分钟线需要去除 ：振幅  最新价
                 60分钟线需要去除：涨跌幅  涨跌额 振幅  换手率
                 """
-                if type =='1m':
+                if type =='1m' and net_connection == True:
                     #print(df_ak)
                     if df_ak.shape[0] != 0:
                         if myclass == 'stock':
@@ -389,7 +397,7 @@ class data(base,stock):
                     else:
                         pass
                     #df_ak.rename(columns={"日期": "时间"} , errors="raise" , inplace = True)
-                elif type in ['60m','30m','5m'] :
+                elif type in ['60m','30m','5m'] and net_connection == True:
                     if df_ak.shape[0] != 0:
                         df_ak.drop(columns = ['涨跌幅','涨跌额','振幅','换手率'] , inplace = True)
                 else:
@@ -397,7 +405,7 @@ class data(base,stock):
                 #数据适配2：增加证券代码列
                 df_ak['code'] = code
                 #df_ak['symbol'] = symbol   #暂不将symbol列写入数据库
-                if df_ak.shape[0] != 0:
+                if df_ak.shape[0] != 0 and net_connection == True:
                     #数据适配3：列的名字做变更
                     df_ak.rename(columns={"时间": "date", "开盘": "open" ,"收盘" : "close" , "最高" : "high" , "最低" : "low" , "成交量" : "volume" , "成交额" : "money"} , errors="raise" , inplace = True)
                     #数据适配4：成交量的单位为手 ，需要乘以100
@@ -446,13 +454,18 @@ class data(base,stock):
                 except exc.ResourceClosedError:
                     pass
                 """
-                sql_delete = text(f"delete from akshare_update_sequence where id = {id}")
-                try:
-                    with self.engine.begin() as connection:
-                        connection.execute(sql_delete)
-                except exc.ResourceClosedError:
-                    print(f"删除{code}更新序列失败！")
-                    pass                
+                if net_connection == True:
+                    #只有网络链接成功时，才进行删除操作
+                    sql_delete = text(f"delete from akshare_update_sequence where id = {id}")
+                    try:
+                        with self.engine.begin() as connection:
+                            connection.execute(sql_delete)
+                    except exc.ResourceClosedError:
+                        print(f"删除{code}更新序列失败！")
+                        pass  
+                else:
+                    #保留更新序列
+                    print(f"{code}网络连接失败，保留更新序列")
         else:
             #无数据，跳过
             print("更新序列无数据，跳过更新")
@@ -866,6 +879,7 @@ class data(base,stock):
         成交量、成交额目前未进行复权处理
         返回的数据按照升序排列（backtrader要求的数据格式）
         """
+        raise ValueError('已移除该项功能')
         if self.start_date  > self.end_date:
             raise ValueError(f'开始日期必须早于结束日期')
         if self.ktype not in ['1d','1m','5m','30m','60m']:
@@ -954,8 +968,10 @@ class data(base,stock):
             else:
                 raise ValueError(f'不支持的复权模式，请检查！')
                 return df_db
+    
     def fix_1min_error_v2(self, day = datetime(2023,12,1)):
         """
+        目前采用第二版的更新逻辑
         本模块使用5分钟线数据对1分钟线进行数据修正，目前存在以下几个问题：
         1. 当日停盘个股在1分钟线上是有数据的（成交量为0），如果隔日截取，则停盘日取不到1分钟数据；
         2. 如果对历史的1分钟数据进行截取，则开盘价open均为0（1分钟线数据仅保留5天）
@@ -1060,6 +1076,7 @@ class data(base,stock):
     
     def fix_1min_error(self, day = datetime(2023,12,1)):
         """
+        目前采用第二版的更新逻辑
         本模块需要修复的内容：
         1. 修复1分钟线历史数据开盘价格为0的问题
         2. 修复停牌当日1分钟线仍然有数据的情况
@@ -1159,12 +1176,7 @@ if __name__=="__main__":
     #测试项目1：使用ak数据源，获取日线数据
     akdata = data() #这里的data默认本地data源，是akdata
     akdata.code ='601318.sh'
-    akdata.start_date= datetime(2023,4,1,8)
+    akdata.start_date= datetime(2024,4,1,8)
     akdata.end_date = datetime.now()
-    #ETF数据1998/10/19 含
     akdata.fq = akdata.复权.动态复权
     akdata.ktype = '1d'
-    df = akdata.get_k_data()
-    print(df)
-    #tspro.update_cumulative_turnover()
-    akdata.fix_1min_error_v2()
