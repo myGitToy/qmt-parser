@@ -5,6 +5,20 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Python: Django",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/Django/website1/manage.py",
+            "console": "integratedTerminal",
+            "args": [
+                "runserver",
+                "8080", //配置Django端口
+                "--noreload",
+                "--nothreading"
+            ],
+            "django": true
+        },        
+        {
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
