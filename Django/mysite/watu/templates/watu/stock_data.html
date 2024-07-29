@@ -1,0 +1,44 @@
+<!-- stock_data.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>证券数据</title>
+</head>
+<body>
+    <h1>证券数据查询</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">查询</button>
+    </form>
+
+    {% if rows %}
+        <h2>查询结果</h2>
+        <table border="1">
+            <tr>
+                <th>日期</th>
+                <th>开盘价</th>
+                <th>最高价</th>
+                <th>最低价</th>
+                <th>收盘价</th>
+                <th>成交量</th>
+                <th>成交额</th>
+            </tr>
+            {% for row in rows %}
+                <tr>
+                    <td>{{ row.1 }}</td>
+                    <td>{{ row.2 }}</td>
+                    <td>{{ row.3 }}</td>
+                    <td>{{ row.4 }}</td>
+                    <td>{{ row.5 }}</td>
+                    <td>{{ row.6 }}</td>
+                    <td>{{ row.7 }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+
+        <h2>K线图</h2>
+        <img src="data:image/png;base64,{{ image_base64 }}" alt="K线图">
+    {% endif %}
+</body>
+</html>
