@@ -9,7 +9,7 @@ from apt.vendor.akshare.data import data as data
 def run_script():
     #1. 更新序列
     a = data()
-    a.start_date= datetime(2021,6,1)
+    a.start_date= datetime(2024,6,1)
     a.end_date = datetime.now()
     #a.update_etf_day()
     #优先更新高权限序列 

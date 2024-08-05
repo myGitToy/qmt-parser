@@ -28,7 +28,7 @@ a = ATR()
 rank = prank()
 exp = EXP()
 a.ktype = rank.ktype = exp.ktype = '1d'
-a.start_date = rank.start_date = exp.start_date = datetime(2023,6,1)    #本地数据读取的开始日期，缩小间隔可减少excel文件的体积
+a.start_date = rank.start_date = exp.start_date = datetime(2024,1,1)    #本地数据读取的开始日期，缩小间隔可减少excel文件的体积
 #如果是每日0-4点更新，则end_date为前一日下午16点
 if datetime.now().hour >= 0 and datetime.now().hour <= 4:
     a.end_date  = rank.end_date = exp.end_date = datetime.now() - timedelta(hours = 4)
@@ -54,8 +54,8 @@ df_code3 = data.read_excel(file_name = '.\\data\\海龟模型\\自选股列表.x
 #合并表格
 df_code_main = pd.concat([df_code_main, df_code1 , df_code2 , df_code3] , sort = False)
 #print(df_code_main)
-df = df_code_main.query('证券代码 == "688349.SH"')
-#print(df)
+df = df_code_main.query('证券代码 == "560350.SH"')
+print(df)
 #更改列名
 df_code_main.rename(columns={"证券代码": "code", "证券名称": "name"} , errors="raise" , inplace = True)
 #去重
@@ -66,7 +66,7 @@ code_list = df_code_main['code'].tolist()
 
 #更新日线和60分钟线数据
 dt = akdata(myauth = True)
-dt.start_date = datetime(2024,2,1,8) #数据更新的开始日期
+dt.start_date = datetime(2024,6,10,8) #数据更新的开始日期
 dt.end_date = datetime.now()
 dt.ktype = '60m'
 dt.update_sequence_add(code_list = code_list , type = '60m')

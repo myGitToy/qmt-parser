@@ -32,12 +32,12 @@ from apt.vendor.akshare.data import data as ak_data
 class TestStrategy(bt.Strategy):
     params=(('high_period',25),     #最高价的计算周期（日线默认25 小时线默认100）
             ('atr_period',25),      #ATR的计算周期（日线默认14）
-            ('prank_period',45),    #短周期分位数的计算周期（日线默认25 小时线默认100）
+            ('prank_period',25),    #短周期分位数的计算周期（日线默认25 小时线默认100）
         #长周期仓位控制
             ('prank_long_period',60),    #长周期分位数的计算周期（默认半年线120）
             ('R',0.25),             #风险值R设定
             ('atr_size',0.5),         #ATR间隔 默认1个ATR间隔下订单
-            ('atr_cut',2),            #从最止损的ATR
+            ('atr_cut',1.5),            #从最止损的ATR
             ('unit_size',0.5),        #头寸大小 默认每次下单进行1个头寸
             ('open_separation',5),#清仓以后的再次开仓间隔（用来控制反复止损的参数）
             ('printlog',False),     #是否输出日志 默认True
@@ -332,9 +332,9 @@ class EMA_CrossOver(bt.Indicator):
 
 if __name__ == '__main__':    #自定义参数
     data = ak_data()
-    data.code = '600072.SH'
-    data.start_date = datetime(2022,1,1)
-    data.end_date = datetime(2023,12,31)
+    data.code = '512480.SH'
+    data.start_date = datetime(2023,1,1)
+    data.end_date = datetime(2024,3,31)
     data.ktype = '1d'
     df_db = data.get_k_data()
     df_db['openinterest'] = 0
