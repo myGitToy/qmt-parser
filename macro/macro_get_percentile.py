@@ -1,5 +1,6 @@
 '''
 此模块用于获取指定代码的百分数位置
+备注：这是很早以前的代码了，后续可以与tspro_cumulative_turnover中的功能进行合并
 '''
 from datetime import datetime
 from apt.qsp_universal.prank import prank as prank

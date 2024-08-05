@@ -11,7 +11,8 @@ import vertexai.preview.generative_models as generative_models
 
 def generate():
   vertexai.init(project="just-lore-408313", location="us-central1")
-  model = GenerativeModel("gemini-1.0-pro-vision-001")
+  #model = GenerativeModel("gemini-1.0-pro-vision-001")
+  model = GenerativeModel("gemini-pro")
   responses = model.generate_content(
     """
     作为一名国际问题专家，你怎么看待最近发生的金门渔船事件

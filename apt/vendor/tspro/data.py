@@ -641,12 +641,28 @@ class data(base,stock):
             #获取复权因子
             tspro_factor = self.get_tspro_factor()
             tspro_factor['factor_date'] = tspro_factor['date']
-            #复权因子与K线数据进行拼接（复权因子和K线数据只有要一处空值，最后拼接的数据就会有所缺失）
-            df_db = pd.merge(df_db, tspro_factor[['factor_date','factor']] , on = ['factor_date'] , how = 'left')
-            
+            #print(df_db)
+            #复权因子与K线数据进行拼接（复权因子和K线数据只有要一处空值，最后拼接的数据就会有所缺失 BUG 554修复此错误）
+            df_db = pd.merge(df_db, tspro_factor[['factor_date','factor']] , on = ['factor_date'] , how = 'left')            
             #复权因子修正完毕，填充后进入复权处理
             #tspro每天均有复权因子，理论无需填充，但有时复权数据会不完整，因此依旧需要填充
+            # 首先检查并填充最上方的缺失值为1.0
+            df_db.iloc[0] = df_db.iloc[0].fillna(1.0)
+            # 再次进行填充缺失值
+            # 
+            """
+            FIX FutureWarning: Downcasting object dtype arrays on .fillna, .ffill, 
+            .bfill is deprecated and will change in a future version. 
+            Call result.infer_objects(copy=False) instead. 
+            To opt-in to the future behavior, set `pd.set_option('future.no_silent_downcasting', True)`
+            
+            为了解决这个 FutureWarning 并遵循最佳实践，你应该避免在 .fillna、.ffill、.bfill 中依赖隐式的数据类型转换。
+            相反，显式地处理数据类型转换，确保在填充操作之后调用 .infer_objects() 来推断正确的数据类型。
+            这样可以确保代码的兼容性和未来的稳定性。
+            根据警告建议，还可以通过设置 pd.set_option('future.no_silent_downcasting', True) 来启用未来行为，但首选的方法是显式处理数据类型。
+            """
             df_db.ffill(axis=0, inplace=True, limit=None) #此处移除downcast=None的参数
+            df_db = df_db.infer_objects()
             #print(df_db)
             #进行60分钟线修正
             if self.ktype =='60m':
@@ -730,13 +746,14 @@ class data(base,stock):
         #导入模块（为了避免循环引用）
         from apt.vendor.tspro.cumulative_turnover import cum_turnover as ctr
         #初始化
-        #第一步 根据选择的K线类型不同，进行不同级别的校验
+        ###1. 根据选择的K线类型不同，进行不同级别的校验
         a = ctr()
         a.code = self.code
         a.start_date = self.start_date
         a.end_date = self.end_date
         a.ktype = self.ktype
         a.复权 = self.复权
+        ##1.1 数据校验环节（如果数据缺失，则进入更新环节，未缺失才能进去后续的获取数据环节）
         if self.ktype == '1d':
             #校验1d数据
             a.update_price_range_1d_by_code()
@@ -745,7 +762,9 @@ class data(base,stock):
             raise ValueError(f'1m数据暂不支持全换手区间')
         else:
             raise ValueError(f'不支持的K线类型，请检查！')
+        ###2. K线数据获取环节（不包含分位数信息）
         df_k = self.get_k_data()
+        ###3. 数据处理和拼接环节
         #设定全流通列名
         if f_share == True:
             f_share_name = 'price_range_1d_f'
@@ -770,6 +789,53 @@ class data(base,stock):
         #将df_p 拼接到df_k并最终输出
         df_k = pd.merge(df_k , df_p , on = ['code','date'] , how = 'left')
         return df_k
+
+    def get_bt_data(self):
+        """
+        获取backtrader专有数据
+        task 557
+        https://huiqiao.visualstudio.com/MyFunds/_sprints/taskboard/MyFunds%20Team/MyFunds/2024Q3?workitem=557
+
+        """
+        # 获取交易日历
+        sec = security()
+        sec.start_date = self.start_date
+        sec.end_date = self.end_date
+        trade_days = sec.get_calendar()
+        # 获取K线数据
+        df_tspro = self.get_k_data()
+        # 如果数据为空，直接返回空值
+        if df_tspro.empty == True:
+            return pd.DataFrame()
+        # 数据拼接，以交易日历的日期为基准
+        trade_days['date'] = pd.to_datetime(trade_days['date'])
+        df_tspro['date'] = pd.to_datetime(df_tspro['date'])
+        df_tspro = pd.merge(trade_days , df_tspro , on = 'date' , how = 'left')
+        #缺失值处理
+        # 1. 经过测试，首先需要对当天停牌的成交数据做填充
+            # 1.1 停牌的数据，成交量和成交额为0
+        df_tspro['volume'] = df_tspro['volume'].fillna(0)
+        df_tspro['money'] = df_tspro['money'].fillna(0)
+        # 2. 如果第一行就是缺失值，则先后填充缺失值
+        if df_tspro.iloc[0].isnull().any():
+            # 如果第一行有缺失值，则先向后填充
+            df_tspro = df_tspro.bfill()
+            # 然后向前填充，确保所有缺失值都被处理
+            df_tspro = df_tspro.ffill()
+        else:
+            # 如果第一行没有缺失值，直接向前填充即可
+            df_tspro = df_tspro.ffill()
+        # 3. 返回固定列的数据（升序排列）        
+        return(df_tspro[['code','date','open','close','high','low','volume','money','factor']])
+        """
+        以下代码被注释，按照最初的设想，应该是获取全部的K线数据
+        但bt的特性是每个代码数据分别导入cerebro，因此这里的代码被弃用
+        df_tspro = pd.DataFrame()
+        for code in code_list:
+            self.code = code
+            df_tspro = pd.concat([df_tspro , self.get_k_data()])
+        return df_tspro        
+        """
 
     def __get_last_factor(self , day = datetime(2020,12,1)):
         """
