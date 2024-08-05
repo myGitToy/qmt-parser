@@ -56,7 +56,7 @@ class cum_turnover(ts_data):
 
     def update_cumulative_turnover(self):
         """
-        更新和分析累计换手率
+        更新和分析累计换手率（为后续的全换手区间的计算提供数据支持）
         目前需要更新turnover_date,turnover_date_f,turnover_days,turnover_days_f这四个字段
         turnover_valid由程序中的bit值来确定
             bit = null: 未进行校验

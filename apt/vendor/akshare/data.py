@@ -15,6 +15,8 @@ from sqlalchemy import text
 from apt.vendor.tspro.pro_api import pro_api as pro_api
 from apt.vendor.tspro.security import security as security
 from apt.vendor.tspro.data import data as tspro_data
+#加入tqdm支持
+from tqdm import tqdm
 #from apt.vendor.tspro.security import get_calendar
 
 class data(base,stock):
@@ -335,7 +337,7 @@ class data(base,stock):
             #有数据，进行更新
             #设定最大更新行数
             max_row = 8000
-            for index , row in df_sequence.iterrows():
+            for index, row in tqdm(df_sequence.iterrows(), total=len(df_sequence), desc="正在更新证券数据"):
                 id = row['id']
                 code = row['code']
                 if len(code) == 6:

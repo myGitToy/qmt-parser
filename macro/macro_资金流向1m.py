@@ -11,9 +11,9 @@ pd.set_option('display.unicode.east_asian_width', True)
 # 显示所有列
 #pd.set_option('display.max_columns', None)
 a = data()
-a.code = '300033.sz'
-a.start_date = datetime(2023,7,1,4)
-a.end_date = datetime(2023,7,25,16)
+a.code = '000651.sz'
+a.start_date = datetime(2024,1,1,4)
+a.end_date = datetime(2024,6,19,16)
 a.fq = data.复权.动态复权
 a.ktype = '1m'
 a.vendor = a.vendor.akshare

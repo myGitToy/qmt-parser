@@ -216,6 +216,8 @@ class finance_indicator(finance):
     def delete_duplicate(self , db = pd.DataFrame()):
         """
         目的：删除重复数据
+        输入：在查询时检索到的数据+数据库中的数据
+        输出：去重后的数据（按照'code','end_date','update_flag'这三列为基准）
         """
         # 找出重复的行
         duplicates = db.duplicated(subset=['code','end_date','update_flag'], keep='first')        
@@ -338,13 +340,15 @@ class finance_indicator(finance):
     
 if __name__ == '__main__':
     a = finance_indicator()
-    a.code = '873132.BJ'
-    a.start_date = datetime(2021,1,1)
-    a.end_date = datetime(2023,12,31)
-    #查询某个股票在一段时间内的财务指标数据
+    a.code = '000001.sz'
+    a.start_date = datetime(2020,1,1)
+    a.end_date = datetime(2024,3,31)
+    #功能演示1：查询某个股票在一段时间内的财务指标数据
     #a.query(str = "code = '873132.BJ' and end_date between '2021-01-01' and '2023-12-31'")
-    #更新财务指标数据
+    #功能演示2：更新财务指标数据
     df = a.update_finance_indicator(flag_delete_duplicate=True)
+    #功能演示3：删除重复行
+    a.delete_duplicate()
     print(df)
     #a.create_table()
     df = a.get_k_data()

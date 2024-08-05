@@ -13,9 +13,9 @@ from apt.vendor.tspro.data import data as ts_data
 from apt.vendor.akshare.data import data as ak_data    
 #------------默认参数设置----------------
 tspro = ts_data()
-tspro.code ='603516.sh'
-tspro.start_date= datetime(2022,4,1,8)
-tspro.end_date = datetime(2024,2,20,16) #这里有一个bug，最后一个日期必须完成全换手区间的计算
+tspro.code ='603688.sh'
+tspro.start_date= datetime(2018,4,1,8)
+tspro.end_date = datetime(2024,7,8,16) #这里有一个bug，最后一个日期必须完成全换手区间的计算
 tspro.fq = tspro.复权.动态复权
 tspro.ktype = '1d'
 day_plus = 60  #全换手多计算的天数 默认20

@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Profile</title>
+</head>
+<body>
+    <h1>{{ profile.user.username }}'s Profile</h1>
+    <p>Stamina: {{ profile.stamina }}</p>
+    <p>Gold: {{ profile.gold }}</p>
+
+    <h2>Inventory</h2>
+    <ul>
+        {% for item in inventory_items %}
+            <li>{{ item.name }} - Price: {{ item.price }}</li>
+        {% empty %}
+            <li>No items in inventory.</li>
+        {% endfor %}
+    </ul>
+
+    <h2>Available Items</h2>
+    <ul>
+        {% for item in items %}
+            <li>{{ item.name }} - Price: {{ item.price }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
