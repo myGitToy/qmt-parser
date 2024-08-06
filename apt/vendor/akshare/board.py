@@ -1,5 +1,6 @@
 import akshare as ak
 import pandas as pd
+import gradio as gr
 from apt.vendor.akshare.data import data as akdata
 
 class board(akdata):
@@ -14,17 +15,45 @@ class ths(board):
     def __init__(self):
         #使用super继承上级
         super(board , self).__init__()
-
-    def update_concept(self , file_path = None):
+    def gradio_interface(self):
+        """
+        gradio接口，用于处理数据更新
+        """
+        # 使用 gradio 的新 API
+        with gr.Blocks() as demo:
+            with gr.Row():
+                with gr.Column(scale=1):
+                    #同花顺指数概念 左侧1/2
+                    #文件上传框
+                    concept_file_input = gr.File(label="上传同花顺指数文件（133kb）")
+                    #提交框
+                    concept_submit_button = gr.Button("提交", size="small")
+                    # 输出框
+                    concept_output = gr.Textbox(label="输出结果")
+                with gr.Column(scale=1):
+                    #同花顺代码概念  右侧1/2
+                    code_file_input = gr.File(label="上传同花顺代码文件 (2MB)")
+                    #提交框
+                    code_submit_button = gr.Button("提交", size="small")
+                    # 输出框
+                    code_output = gr.Textbox(label="输出结果")
+            #点击事件
+            concept_submit_button.click(fn=self.update_concept , inputs=concept_file_input , outputs=concept_output)
+            #运行
+            demo.launch()
+    def update_concept(self , file_obj):
         """
         读取同花顺概念指数的csv文件并导入数据库
-        配合gradio使用
+        file_obj: gradio传入的文件对象
+        必须配合gradio使用
         """
+        # 从 Gradio 文件组件中提取文件路径
+        file_path = file_obj.name
         #读取csv文件
         df_csv = pd.read_csv(file_path)
         #数据校验，必须包含concept_name	concept_symbol两列
         if 'concept_name' not in df_csv.columns or 'concept_symbol' not in df_csv.columns:
-            raise ValueError('非法的数据结构，请检查数据')
+            return ValueError('非法的数据结构，请检查文件')
         #数据有效，与数据库中的数据进行去重后导入
         df_db = pd.read_sql('select * from stock_board_ths_concept_index',con = self.engine)
         # 确保 concept_symbol 列的数据类型一致
@@ -32,14 +61,14 @@ class ths(board):
         df_db['concept_symbol'] = df_db['concept_symbol'].astype(str)
         df_diff = pd.concat([df_csv,df_db]).drop_duplicates(subset = ['concept_symbol'] , keep=False)
         if df_diff.empty == True:
-            print("数据无更新")
+            return("数据无更新")
         else:
             df_diff.to_sql(
                     name = f'stock_board_ths_concept_index',
                     con = self.engine,
                     index = False,
                     if_exists = 'append')
-            print(f"{df_diff.shape[0]}条差异数据已上传")
+            return(f"{df_diff.shape[0]}条差异数据已上传")
 
 
 class ths_old(board):
@@ -65,6 +94,7 @@ class ths_old(board):
         return ak.stock_board_industry_summary_ths()
 if __name__ == "__main__":
     t = ths()
+    t.gradio_interface()
     t.update_concept(file_path = 'C:\\Users\\george\\Downloads\\ths_concept.csv')
     print(df)
     #csv数据存盘
