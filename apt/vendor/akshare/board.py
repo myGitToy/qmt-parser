@@ -20,6 +20,28 @@ class ths(board):
         读取同花顺概念指数的csv文件并导入数据库
         配合gradio使用
         """
+        #读取csv文件
+        df_csv = pd.read_csv(file_path)
+        #数据校验，必须包含concept_name	concept_symbol两列
+        if 'concept_name' not in df_csv.columns or 'concept_symbol' not in df_csv.columns:
+            raise ValueError('非法的数据结构，请检查数据')
+        #数据有效，与数据库中的数据进行去重后导入
+        df_db = pd.read_sql('select * from stock_board_ths_concept_index',con = self.engine)
+        # 确保 concept_symbol 列的数据类型一致
+        df_csv['concept_symbol'] = df_csv['concept_symbol'].astype(str)
+        df_db['concept_symbol'] = df_db['concept_symbol'].astype(str)
+        df_diff = pd.concat([df_csv,df_db]).drop_duplicates(subset = ['concept_symbol'] , keep=False)
+        if df_diff.empty == True:
+            print("数据无更新")
+        else:
+            df_diff.to_sql(
+                    name = f'stock_board_ths_concept_index',
+                    con = self.engine,
+                    index = False,
+                    if_exists = 'append')
+            print(f"{df_diff.shape[0]}条差异数据已上传")
+
+
 class ths_old(board):
     """
     专门处理同花顺概念股的类，为板块的子类
@@ -42,8 +64,8 @@ class ths_old(board):
         """
         return ak.stock_board_industry_summary_ths()
 if __name__ == "__main__":
-    t = ths_old()
-    t = ak.get_layer1_同花顺概念时间表()
+    t = ths()
+    t.update_concept(file_path = 'C:\\Users\\george\\Downloads\\ths_concept.csv')
     print(df)
     #csv数据存盘
     df.to_csv('/data/stock_board_concept_detail_hist_ths.csv', encoding='utf-8-sig')
