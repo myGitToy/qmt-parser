@@ -26,17 +26,19 @@ class pro_api(data):
 class ths(pro_api):
     """
     同花顺概念接口层，调用方法请参看task 
+    该接口已移除
     """
-
-
     def __init__(self):
         #使用super继承上级
         super(pro_api , self).__init__()
-
+        raise ValueError("该接口已移除")
+    
     def update(self):
         """
         将同花顺概念股的信息更新至数据库
+        该接口已移除
         """
+        return ValueError("该接口已移除")
         #第一层 更新概念时间表 接口: stock_board_concept_name_ths
         self.update_stock_board_concept_name_ths()
         print(ak.stock_board_concept_name_ths())
@@ -50,6 +52,7 @@ class ths(pro_api):
     def update_stock_board_concept_name_ths(self):
         """
         更新同花顺概念时间表
+        该接口已移除
         目标地址: http://q.10jqka.com.cn/gn/detail/code/301558/
         描述: 同花顺-板块-概念板块-概念
         限量: 单次返回当前所有概念时间表；日期为空的为补充概念
@@ -60,7 +63,11 @@ class ths(pro_api):
         url             网址	object	-
         ths_code        代码	object	同花顺内部代码
         """
+        return ValueError("该接口已移除")
         df = ak.stock_board_concept_name_ths()
+        print(df)
+        #if df is None:
+            #raise ValueError("ak.stock_board_concept_name_ths() returned None")        
         df_db = pd.read_sql('select * from stock_board_concept_name_ths',con = self.engine)
         #更改列名
         df_db.rename(columns={"日期":"date" , "概念名称":"concept_name" , "成分股数量":"count" , "网址":"url" , "代码":"ths_code" } , errors="raise" , inplace = True)
