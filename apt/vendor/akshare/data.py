@@ -379,21 +379,29 @@ class data(base,stock):
                 #数据适配1：对于akshare的分钟线，额外丢弃一部分内容
                 """
                 场内数据（证券）分时（1分钟线）
-                    日期   开盘   收盘   最高   最低   成交量  成交额  最新价
+                    akshare1.12版本： 日期   开盘   收盘   最高   最低   成交量  成交额  最新价
+                    akshare1.14版本： 时间   开盘   收盘   最高   最低   成交量  成交额  均价
                 场内数据（ETF）分时（1分钟线）
-                    日期   开盘   收盘   最高   最低   成交量  成交额  振幅  最新价
-                场内数据（证券）分时（60分钟线）
-                    时间   开盘   收盘   最高   最低  涨跌幅  涨跌额   成交量  成交额  振幅  换手率
-                1分钟线需要去除 ：振幅  最新价
-                60分钟线需要去除：涨跌幅  涨跌额 振幅  换手率
+                    akshare1.12版本： 日期   开盘   收盘   最高   最低   成交量  成交额  振幅  最新价
+                    akshare1.14版本： 时间   开盘   收盘   最高   最低   成交量  成交额  均价
+                场内数据（证券）分时（60/30/5分钟线）
+                    akshare1.12版本： 时间   开盘   收盘   最高   最低  涨跌幅  涨跌额   成交量  成交额  振幅  换手率
+                    akshare1.14版本： 时间   开盘   收盘   最高   最低  涨跌幅  涨跌额   成交量  成交额  振幅  换手率
+                    升级后无差异
+                akshare1.12版本：
+                    1分钟线需要去除 ：振幅  最新价
+                    60分钟线需要去除：涨跌幅  涨跌额 振幅  换手率
+                akshare1.14版本：
+                    1分钟线需要去除 ：均价
+                    60分钟线需要去除： 同1.12版本                  
                 """
                 if type =='1m' and net_connection == True:
                     #print(df_ak)
                     if df_ak.shape[0] != 0:
-                        if myclass == 'stock':
-                            df_ak.drop(columns = ['最新价']  , inplace = True)
+                        if myclass == 'stock':                
+                            df_ak.drop(columns = ['均价']  , inplace = True)    #针对1.14版本进行修复
                         elif myclass == 'etf':
-                            df_ak.drop(columns = ['最新价']  , inplace = True)
+                            df_ak.drop(columns = ['均价']  , inplace = True)    #针对1.14版本进行修复
                         else:
                             pass
                     else:
@@ -1174,7 +1182,11 @@ class data(base,stock):
        
 if __name__=="__main__":
     #pd.set_option('display.max_rows', None)
-
+    #测试项目akshare更新1.14后的差异
+    #fund_etf_hist_min_em
+    #df = ak.stock_zh_a_hist_min_em(symbol = '000001' , start_date = '2024-08-06 09:30:00', end_date = '2024-08-07 18:30:00', period = '60', adjust = '')
+    df = ak.fund_etf_hist_min_em(symbol = '159949' , start_date = '2024-08-06 09:30:00', end_date = '2024-08-07 18:30:00', period = '5', adjust = '')
+    print(df)
     #测试项目1：使用ak数据源，获取日线数据
     akdata = data() #这里的data默认本地data源，是akdata
     akdata.code ='601318.sh'
