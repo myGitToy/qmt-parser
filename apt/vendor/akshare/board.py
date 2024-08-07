@@ -16,6 +16,21 @@ class ths(board):
         #使用super继承上级
         super(board , self).__init__()
 
+    def get_concept(self, code: str = None) -> pd.DataFrame:
+        """
+        获取同花顺概念
+        输入：
+            code 证券代码（如果不输入，从self.code中获取）
+        返回格式：
+            code	concept_thscode	concept_name
+            300001.SZ	886079.TI	2024中报预增
+            300001.SZ	885690.TI	PPP概念
+            300001.SZ	885921.TI	储能
+        """
+        if code is None:
+            code = self.code
+        return pd.read_sql(f"SELECT dtl.code,dtl.concept_thscode,idx.concept_name from stock_board_ths_concept_index as idx,stock_board_ths_concept_detail as dtl where idx.concept_thscode = dtl.concept_thscode and dtl.`code`='{code}'", con = self.engine)
+    
     def launch_gradio_interface(self):
         """
         gradio接口，用于处理数据更新
@@ -44,7 +59,7 @@ class ths(board):
             #运行
             demo.launch()
 
-    def update_concept_index(self , file_obj):
+    def update_concept_index(self , file_obj: gr.File) -> str:
         """
         读取同花顺概念指数的csv文件并导入数据库[stock_board_ths_concept_index]
         file_obj: gradio传入的文件对象
@@ -73,7 +88,7 @@ class ths(board):
                     if_exists = 'append')
             return(f"{df_diff.shape[0]}条差异数据已上传")
 
-    def update_concept_detail(self , file_obj):
+    def update_concept_detail(self , file_obj: gr.File) -> str:
         """
         读取同花顺概念代码的csv文件并导入数据库[stock_board_ths_concept_detail]
         file_obj: gradio传入的文件对象
@@ -129,5 +144,8 @@ class ths_old(board):
     
 if __name__ == "__main__":
     t = ths()
+    t.code = '300002.SZ'
+    df = t.get_concept()
+    print(df)
     t.launch_gradio_interface()
 
