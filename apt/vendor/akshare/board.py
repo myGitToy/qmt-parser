@@ -86,7 +86,31 @@ class ths(board):
         industry_thscode = industry_thscode_df.iloc[0]['industry_thscode'] if not industry_thscode_df.empty else None
         return industry_thscode
 
-
+    def update_industry_name(self):
+        """
+        更新同花顺行业板块入库
+        返回格式：
+            name    code
+            半导体  881121
+            白酒  881273
+            白色家电  881131
+        """
+        #获取同花顺行业板块的全貌
+        df_ths = ak.stock_board_industry_name_ths()
+        #code列重命名
+        df_ths.rename(columns = {'code':'industry_thscode'},inplace = True)
+        #获取数据库中的数据
+        df_db = pd.read_sql('select name,industry_thscode from stock_board_industry_name_ths',con = self.engine)
+        #数据校验
+        df_ths['industry_thscode'] = df_ths['industry_thscode'].astype(str)
+        df_db['industry_thscode'] = df_db['industry_thscode'].astype(str)
+        #差集校验
+        df_diff = pd.concat([df_ths,df_db]).drop_duplicates(subset = ['industry_thscode'] , keep=False)
+        df_diff.to_sql(
+                name = 'stock_board_industry_name_ths',
+                con = self.engine,
+                index = False,
+                if_exists = 'append')
 
     def launch_gradio_interface(self):
         """
