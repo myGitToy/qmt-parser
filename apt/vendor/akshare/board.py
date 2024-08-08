@@ -1,6 +1,7 @@
 import akshare as ak
 import pandas as pd
 import gradio as gr
+from datetime import datetime
 from apt.vendor.akshare.data import data as akdata
 
 class board(akdata):
@@ -31,6 +32,62 @@ class ths(board):
             code = self.code
         return pd.read_sql(f"SELECT dtl.code,dtl.concept_thscode,idx.concept_name from stock_board_ths_concept_index as idx,stock_board_ths_concept_detail as dtl where idx.concept_thscode = dtl.concept_thscode and dtl.`code`='{code}'", con = self.engine)
     
+    def get_industry_data_api(self, symbol: str = '汽车整车', start_date: str = None, end_date: str = None) -> pd.DataFrame:
+        """
+        获取同花顺行业板块的每日行情数据（akshare api接口）
+        盘中可以获取当天的实时数据
+        输入：
+            symbol 板块名称(如：汽车整车)
+            start_date 开始日期 YYYYMMDD（如果不输入，从start_date中获取）
+            end_date 结束日期 YYYYMMDD（如果不输入，从self.end_date中获取）
+        返回格式：
+            date	open	close	high	low	volume	amount	change_pct
+            2024-01-02	0.0	0.0	0.0	0.0	0.0	0.0	0.0
+            2024-01-03	0.0	0.0	0.0	0.0	0.0	0.0	0.0
+            2024-01-04	0.0	0.0	0.0	0.0	0.0	0.0	0.0
+        """
+        #输入参数的校验，时间类的数据格式为YYYYMMDD
+        if start_date is None and self.start_date is not None:
+            start_date = self.start_date.strftime('%Y%m%d')
+        if end_date is None and self.end_date is not None:
+            end_date = self.end_date.strftime('%Y%m%d')
+        if start_date is None and self.start_date is None:
+            raise ValueError('请输入正确的时间参数') 
+        if end_date is None and  self.end_date is None:
+            raise ValueError('请输入正确的时间参数')   
+        #如果start_date格式为datetime，转换成字符串
+        if start_date is not None and isinstance(start_date,datetime):
+            start_date = start_date.strftime('%Y%m%d')
+        if end_date is not None and isinstance(end_date,datetime):
+            end_date = end_date.strftime('%Y%m%d')
+        #校验symbol所对应的行业板块代码 
+        industry_thscode = self.get_industry_code(symbol) 
+        if industry_thscode is None:
+            raise ValueError('请输入正确的行业板块名称')
+        #------数据校验结束 进入业务环节------
+        #获取数据
+        df = ak.stock_board_industry_index_ths(symbol = symbol , start_date = start_date , end_date = end_date)
+        #数据列名称变更
+        df.rename(columns = {'日期':'date','开盘价':'open','收盘价':'close','最高价':'high','最低价':'low','成交量':'volume','成交额':'money'},inplace = True)
+        #df增加industry_thscode列
+        df['industry_thscode'] = industry_thscode
+        return df[['industry_thscode','date','open','close','high','low','volume','money',]]
+
+    def get_industry_code(self, symbol: str = '汽车整车') -> str:
+        """
+        获取同花顺行业板块的代码(mysql数据库)
+        输入：
+            symbol 板块名称(如：汽车整车)
+        返回格式：
+            industry_thscode
+        """
+        #返回行业板块代码（dataframe中industry_thscode列第一行数据，如无返回None）
+        industry_thscode_df = pd.read_sql(f"SELECT industry_thscode from stock_board_industry_name_ths where name = '{symbol}'", con = self.engine)
+        industry_thscode = industry_thscode_df.iloc[0]['industry_thscode'] if not industry_thscode_df.empty else None
+        return industry_thscode
+
+
+
     def launch_gradio_interface(self):
         """
         gradio接口，用于处理数据更新
@@ -145,6 +202,20 @@ class ths_old(board):
 if __name__ == "__main__":
     t = ths()
     t.code = '300002.SZ'
+    t.start_date = datetime(2024,8,1)
+    t.end_date  = datetime.now()
+    print(t.get_industry_code('汽车整车2'))
+
+    print(t.get_industry_data_api(symbol = '汽车整车'))
+    #更新同花顺行业板块全貌
+    t.update_industry_name()
+    #同花顺板块的每日行情数据（非同花顺概念）
+    #df_ths = ak.stock_board_industry_index_ths(symbol="汽车整车",start_date="20200101",end_date="20240807")
+    #df_ths_name = ak.stock_board_industry_name_ths()
+    df_ths_info_ths = ak.stock_board_industry_info_ths(symbol="汽车整车")
+    print(df_ths_info_ths)
+    print(df_ths_name)
+    print(df_ths)
     df = t.get_concept()
     print(df)
     t.launch_gradio_interface()
