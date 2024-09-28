@@ -4,7 +4,8 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>fe9172f0-51b0-485c-8b74-a2d125475bfa</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>macro\macro_akshare_更新序列（仅更新序列）.py</StartupFile>
+    <StartupFile>
+    </StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>

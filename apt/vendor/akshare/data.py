@@ -398,7 +398,8 @@ class data(base,stock):
                 if type =='1m' and net_connection == True:
                     #print(df_ak)
                     if df_ak.shape[0] != 0:
-                        if myclass == 'stock':                
+                        if myclass == 'stock':  
+                            #print(df_ak)
                             df_ak.drop(columns = ['均价']  , inplace = True)    #针对1.14版本进行修复
                         elif myclass == 'etf':
                             df_ak.drop(columns = ['均价']  , inplace = True)    #针对1.14版本进行修复
