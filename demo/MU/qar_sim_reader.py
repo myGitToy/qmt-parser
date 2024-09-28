@@ -7,6 +7,8 @@ import re
 import datetime
 import pytz
 import pandas as pd
+# 显示所有的列
+pd.set_option('display.max_columns', None)
 class csv_reader():
     def __init__(self, file_path=None) -> None:
         """
@@ -71,16 +73,18 @@ class csv_reader():
         #ORIGINAL_TIMESTAMP用于定位，放在第一列
         self.file_df = self.file_df[['ORIGINAL_TIMESTAMP'] + [col for col in self.file_df.columns if col != 'ORIGINAL_TIMESTAMP']]
         # 时间戳转换(单位为ms，转换为s，显示为hh:mm:ss.000）
-        self.file_df['RECORDINGTIMESTAMP'] = self.file_df['RECORDINGTIMESTAMP'] / 6000
-        #self.file_df['RECORDINGTIMESTAMP'] = pd.to_datetime(self.file_df['RECORDINGTIMESTAMP'], unit='s').dt.strftime('%H:%M:%S.%f')[:-3]
-        self.file_df['RECORDINGTIMESTAMP'] = pd.to_datetime(self.file_df['RECORDINGTIMESTAMP'], unit='s')
-        
+        self.file_df['RECORDINGTIMESTAMP'] = self.file_df['RECORDINGTIMESTAMP'] / 10000
+        self.file_df['RECORDINGTIMESTAMP'] = pd.to_datetime(self.file_df['RECORDINGTIMESTAMP'], unit='s').dt.strftime('%hh:%mm:%SS.%f')[:-3]
+        #self.file_df['RECORDINGTIMESTAMP'] = pd.to_datetime(self.file_df['RECORDINGTIMESTAMP'], unit='s')
+        print(self.file_df)
+        # 丢弃最后三行数据
+        self.file_df = self.file_df.drop(self.file_df.tail(3).index)
         # 数据按照RECORDINGTIMESTAMP重采样到秒，取平均值
-        self.file_df = self.file_df.set_index('RECORDINGTIMESTAMP').resample('S').mean().reset_index()
+        self.file_df =        self.file_df.set_index('RECORDINGTIMESTAMP').resample('S').mean().reset_index()
         #重采样后以时 分 秒显示
-        self.file_df['RECORDINGTIMESTAMP'] = self.file_df['RECORDINGTIMESTAMP'].dt.strftime('%H:%M:%S')
+        #self.file_df['RECORDINGTIMESTAMP'] = self.file_df['RECORDINGTIMESTAMP'].dt.strftime('%H:%M:%S')
         
-        print(self.file_df['RECORDINGTIMESTAMP'])
+        #print(self.file_df['RECORDINGTIMESTAMP'])
         
         ######列格式转换#######
         # 高度数据 G04_EOM_ALT_MSL_F8 转换成整数英尺单位
@@ -93,7 +97,7 @@ class csv_reader():
         #打印数据 
         print(self.file_df)      
         #显示RECORDINGTIMESTAMP为NaN的行
-        print(self.file_df[self.file_df['RECORDINGTIMESTAMP'].isnull()])
+        #print(self.file_df[self.file_df['RECORDINGTIMESTAMP'].isnull()])
         # 显示CG99_POS_UPRTSYN_PITCHTRIMACT_L1 为True的情况
         #print(self.file_df[self.file_df['CG99_POS_UPRTSYN_PITCHTRIMACT_L1'] == True])
         # 显示G04_TRIM_STATE_I4一共出现几个数值
@@ -119,7 +123,7 @@ class csv_reader():
 file_path = 'C:\\Log\\07Sep24-22h54m05s-.csv'
 reader = csv_reader(file_path)
 reader.data_process()
-#数据存盘，文件名为当前日期+时间
-reader.file_df.to_csv('C:\\Log\\log' + datetime.datetime.now().strftime('%Y%m%d%H%M%S') + '.csv', index=False)
+#数据存盘，文件名为当前日期+时间，包含索引
+reader.file_df.to_csv('C:\\Log\\log' + datetime.datetime.now().strftime('%Y%m%d%H%M%S') + '.csv', index=True)
 
 
