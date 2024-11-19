@@ -1,6 +1,7 @@
 import akshare as ak
 import pandas as pd
 import gradio as gr
+import time
 from datetime import datetime
 from apt.vendor.akshare.data import data as akdata
 
@@ -31,7 +32,46 @@ class ths(board):
         if code is None:
             code = self.code
         return pd.read_sql(f"SELECT dtl.code,dtl.concept_thscode,idx.concept_name from stock_board_ths_concept_index as idx,stock_board_ths_concept_detail as dtl where idx.concept_thscode = dtl.concept_thscode and dtl.`code`='{code}'", con = self.engine)
-    
+
+    def update_industry(self) -> str:
+        """
+        更新同花顺行业板块的数据
+        """
+        output_stream = ''
+        #----第一步：更新同花顺行业板块入库
+        output_stream = self.update_industry_name()
+        print(output_stream)
+        #读取同花顺行业板块的数据
+        df_ths_name = pd.read_sql('select name,industry_thscode from stock_board_industry_name_ths',con = self.engine)
+        df_ths_name['industry_thscode'] = df_ths_name['industry_thscode'].astype(str)
+        #----第二步：更新同花顺行业板块的每日行情数据
+        for symbol in df_ths_name['name']:
+            df_api = self.get_industry_data_api(symbol = symbol , start_date = self.start_date , end_date = self.end_date)
+            #如果当天日期在9：00-15：00之间，丢弃当天的数据
+            if datetime.now().hour >= 9 and datetime.now().hour <= 15:
+                df_api = df_api[df_api['date'] != datetime.now().date()]
+            #从mysql数据库中取出对应的数据
+            ths_code = self.get_industry_code(symbol)
+            if ths_code is not None:
+                df_db = pd.read_sql(f"select industry_thscode,date from stock_board_industry_index_ths where industry_thscode = '{ths_code}' and date between '{self.start_date.date()}' and '{self.end_date.date()}'",con = self.engine)
+                #数据格式转换
+                df_db['date'] = pd.to_datetime(df_db['date'])
+                df_api['date'] = pd.to_datetime(df_api['date'])
+                df_db['industry_thscode'] = df_db['industry_thscode'].astype(str)
+                df_api['industry_thscode'] = df_api['industry_thscode'].astype(str)
+                #差集校验
+                df_diff = pd.concat([df_api,df_db]).drop_duplicates(subset = ['date','industry_thscode'] , keep=False)
+                #print(df_diff)
+                #更新数据库
+                df_diff.to_sql(
+                        name = 'stock_board_industry_index_ths',
+                        con = self.engine,
+                        index = False,
+                        if_exists = 'append')
+                print(f"[{symbol}]板块数据已更新，新增{df_diff.shape[0]}条数据")
+                #暂停1秒
+                time.sleep(1)
+            
     def get_industry_data_api(self, symbol: str = '汽车整车', start_date: str = None, end_date: str = None) -> pd.DataFrame:
         """
         获取同花顺行业板块的每日行情数据（akshare api接口）
@@ -41,10 +81,10 @@ class ths(board):
             start_date 开始日期 YYYYMMDD（如果不输入，从start_date中获取）
             end_date 结束日期 YYYYMMDD（如果不输入，从self.end_date中获取）
         返回格式：
-            date	open	close	high	low	volume	amount	change_pct
-            2024-01-02	0.0	0.0	0.0	0.0	0.0	0.0	0.0
-            2024-01-03	0.0	0.0	0.0	0.0	0.0	0.0	0.0
-            2024-01-04	0.0	0.0	0.0	0.0	0.0	0.0	0.0
+            industry_thscode date	open	close	high	low	volume	money  
+            881125  2024-08-01  2577.294  ...  2635.230  2653239000  2.793450e+10       
+            881125  2024-08-02  2607.759  ...  2582.877  2387514500  2.700097e+10       
+            881125  2024-08-05  2547.317  ...  2476.603  2170944400  2.496529e+10 
         """
         #输入参数的校验，时间类的数据格式为YYYYMMDD
         if start_date is None and self.start_date is not None:
@@ -67,11 +107,13 @@ class ths(board):
         #------数据校验结束 进入业务环节------
         #获取数据
         df = ak.stock_board_industry_index_ths(symbol = symbol , start_date = start_date , end_date = end_date)
+        if df.empty == True:
+            return pd.DataFrame()
         #数据列名称变更
         df.rename(columns = {'日期':'date','开盘价':'open','收盘价':'close','最高价':'high','最低价':'low','成交量':'volume','成交额':'money'},inplace = True)
         #df增加industry_thscode列
         df['industry_thscode'] = industry_thscode
-        return df[['industry_thscode','date','open','close','high','low','volume','money',]]
+        return df[['industry_thscode','date','open','close','high','low','volume','money']]
 
     def get_industry_code(self, symbol: str = '汽车整车') -> str:
         """
@@ -111,7 +153,8 @@ class ths(board):
                 con = self.engine,
                 index = False,
                 if_exists = 'append')
-
+        return f"同花顺行业板块列表更新，{df_diff.shape[0]}条数据已更新"
+    
     def launch_gradio_interface(self):
         """
         gradio接口，用于处理数据更新
@@ -226,9 +269,13 @@ class ths_old(board):
 if __name__ == "__main__":
     t = ths()
     t.code = '300002.SZ'
-    t.start_date = datetime(2024,8,1)
-    t.end_date  = datetime.now()
-    print(t.get_industry_code('汽车整车2'))
+    t.start_date = datetime(2010,1,1)
+    t.end_date  = datetime(2019,12,31)
+    df = t.get_industry_data_api(symbol = '综合')
+    print(df)
+    t.update_industry()
+    #print(ak.stock_board_industry_info_ths(symbol = '汽车整车'))
+    print(ak.stock_board_industry_summary_ths())
 
     print(t.get_industry_data_api(symbol = '汽车整车'))
     #更新同花顺行业板块全貌

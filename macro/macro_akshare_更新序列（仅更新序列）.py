@@ -13,7 +13,7 @@ def run_script():
     a.end_date = datetime.now()
     #a.update_etf_day()
     #优先更新高权限序列 
-    a.update_sequence_launch(priority = 1 , sleep = 0.00)
+    a.update_sequence_launch(priority = 1 , sleep = 0.00) 
     a.update_sequence_launch(priority = 0 , sleep = 0.01) 
 
 while True:
