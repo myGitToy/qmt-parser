@@ -48,6 +48,7 @@ class hdf5(data):
         """
         查询hdf5文件中指定日期间的数据
         输出为pandas DataFrame格式
+        Index(['open', 'close', 'high', 'low', 'volume', 'money'], dtype='object')
         """
         df_db = pd.read_hdf(f'{self.file_path}\\{self.code}.h5', key = self.key , where = f"date >='{self.start_date}' and date <='{self.end_date}'")
         return df_db
@@ -309,11 +310,21 @@ if __name__ == '__main__':
     #2016年数据已更新完毕
     a = hdf5()
     a.start_date = datetime(2018,1,1,8)
-    a.end_date = datetime(2018,12,31,16)    #正在更新2018年数据
+    a.end_date = datetime(2024,12,31,16)    #正在更新2018年数据
     a.code = '000001.SZ'
     a.ktype = '1min'
     #df = a.data_query()
+
     #print(df)
+
+    #读取数据模块
+    a.file_path = "C:\\hdf5\\1min"
+    df = a.data_query()
+    #输出包含的列
+    print(df.columns)    
+    print(df)
+
+    #更新数据模块
     #a.update_sequence_add()
-    a.update_sequence_launch()
+    #a.update_sequence_launch()
     
