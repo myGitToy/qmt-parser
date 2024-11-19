@@ -22,7 +22,9 @@ class cum_turnover(ts_data):
             start_date：开始日期
             end_date：结束日期
         """
+        #查询9个月的数据大约耗时5秒，1个月的数据0.6秒
         df_basic = pd.read_sql_query(f"select code,date from tspro_basic force index (main) where date between '{self.start_date.date()}' and '{self.end_date.date()}'" , self.engine)
+        #查询9个月的数据大约耗时5.8秒，1个月的数据2.85秒
         df_cumulative_turnover = pd.read_sql_query(f"select code,date from tspro_cumulative_turnover force index (main) where date between '{self.start_date.date()}' and '{self.end_date.date()}'" , self.engine)
         df_db = pd.concat([df_basic, df_cumulative_turnover]).drop_duplicates(subset=['code','date'], keep=False)
         # Get rows from df_basic that are not in df_cumulative_turnover
@@ -65,7 +67,9 @@ class cum_turnover(ts_data):
         """
         #数据校验（修复新股上市首日错误）        
         self.correct_turnover_price_valid_error()
-        sql_basic = f"select code,date,turnover_rate,turnover_rate_f from tspro_basic FORCE INDEX(main) where date between '{self.start_date.date()}' and '{self.end_date.date()}'"
+        #查询9个月的数据大约耗时60秒，1个月的数据54秒 说明走的是全表扫描，原先的代码强制走索引的，去除即可
+        #修改后 查询9个月的数据大约耗时60秒（全表），1个月的数据1.23秒（走索引）
+        sql_basic = f"select code,date,turnover_rate,turnover_rate_f from tspro_basic where date between '{self.start_date.date()}' and '{self.end_date.date()}'"
         print(sql_basic)
         #df_basic = self.__sql_execute_time(sql_basic)
         df_cumulative_turnover = self.__sql_execute_time(f"select code,date,turnover_valid from tspro_cumulative_turnover FORCE INDEX(main) where date between '{self.start_date.date()}' and '{self.end_date.date()}' and turnover_valid is null" )
