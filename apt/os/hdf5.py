@@ -5,6 +5,7 @@ from apt.vendor.tspro.base import base as base
 from apt.vendor.tspro.base import stock as stock
 from apt.vendor.tspro.data import data as data
 from apt.vendor.tspro.pro_api import pro_api
+from apt.vendor.akshare.data import data as ak_data
 import tushare as ts
 import pandas as pd
 import numpy as np
@@ -23,10 +24,11 @@ class hdf5(data):
         self.file_path = "C:\\Data\\hdf5\\1min"  #数据存盘的根目录
         self.update_path = "C:\\Data\\hdf5" #更新列表的存盘目录（用于记录需要更新的数据）
         self.max_row = 8000  #单次更新的最大数据行（tspro的限制）
-        self.key = key
+        self.key = key  #key值
         super(data , self).__init__()  #支持多态继承，强制声明父类的init方法，注册api，用来对self.pro提供支持
     def data_delete(self):
         """
+        【数据删除模块】
         删除hdf5文件中指定日期间的数据(代码无法运行)
 
         """
@@ -44,21 +46,43 @@ class hdf5(data):
             # 删除数据
             dset = np.delete(dset, dt, axis=0)
         """
+
     def data_query(self):
         """
+        【数据查询模块】
         查询hdf5文件中指定日期间的数据
+        说明：
+            1. 目前本模块仅从H5文件中读取数据，不对mysql库的数据进行合并整合操作
+            2. 未复权数据，且不含复权因子
+            3. 按照时间升序排列
+            4. 与get_k_data列格式有细微的差别，不含code列（未来可能会有变化）
         输出为pandas DataFrame格式
-        Index(['open', 'close', 'high', 'low', 'volume', 'money'], dtype='object')
+            #   Column  Non-Null Count  Dtype
+            ---  ------  --------------  -----
+            0   code    6 non-null      object
+            1   date    6 non-null      datetime64[ns]
+            2   open    6 non-null      float64
+            3   close   6 non-null      float64
+            4   high    6 non-null      float64
+            5   low     6 non-null      float64
+            6   volume  6 non-null      float64
+            7   money   6 non-null      float64
         """
-        df_db = pd.read_hdf(f'{self.file_path}\\{self.code}.h5', key = self.key , where = f"date >='{self.start_date}' and date <='{self.end_date}'")
+        df_db = pd.read_hdf(f'{self.file_path}\\{self.code}.h5', key=self.key, where=f"date >='{self.start_date}' and date <='{self.end_date}'")
+        # 对数据格式进行调整，date为时间+日期格式，其余为数值格式
+        df_db = df_db.reset_index()
+        df_db['date'] = pd.to_datetime(df_db['date'])
+        #对时间进行排序
+        df_db.sort_values(by=['date'], inplace=True, ascending=False)
+        #排序后再次重置索引，生成新的 0-n 索引
+        #df_db = df_db.reset_index(drop=True)          
         return df_db
-        print(df_db)
 
     def data_query_by_count(self):
         """
         查询hdf5文件中指定日期间，每天的数据量
         一般用于数据校验，1分钟线数据，每天数据量超过241条，则表明存在重复数据，整个库就必须进行调整
-        """
+        """                              
         df_db = pd.read_hdf(f'{self.file_path}\\{self.code}.h5', key = self.key , where = f"date >='{self.start_date}' and date <='{self.end_date}'")
         print(df_db.groupby(pd.Grouper(level = 'date', freq = 'D')).size())
 
@@ -123,6 +147,7 @@ class hdf5(data):
             print(f'{self.code} 1分钟线更新完毕，添加{df_add.shape[0]}条数据；')
         else:
             print(f'{self.code} 区间内无新增数据；')
+
     def update_sequence_add(self , code_list = None , myclass = 'stock' , type = '60m'  , priority = 0 ):
         '''
         task346更改了分时线数据更新的逻辑，拆分成add和launch两部分
@@ -305,25 +330,74 @@ class hdf5(data):
                 df_store.to_hdf(path_or_buf = full_path , mode = 'w' , append  = True , complevel  = 5 , complib  = 'blosc' , format = "table" , key = self.key)
                 #进读+1
                 n = n + 1
+
+    def print_hdf5_structure(self , file_path):
+        """
+        读取并打印 HDF5 文件的结构,显示所有表和键值
+        """
+        def print_attrs(name, obj):
+            # 显示组/数据集的名称和类型
+            if isinstance(obj, h5py.Dataset):
+                print(f"数据集: {name}")
+                print(f"  形状: {obj.shape}")
+                print(f"  类型: {obj.dtype}")
+            elif isinstance(obj, h5py.Group): 
+                print(f"组: {name}")
+                
+            # 显示属性
+            if len(obj.attrs) > 0:
+                print("  属性:")
+                for key, val in obj.attrs.items():
+                    print(f"    {key}: {val}")
+            print()
+        try:
+            with h5py.File(file_path, 'r') as f:
+                # 打印文件结构
+                print(f"文件: {file_path}")
+                print("=" * 50)
+                f.visititems(print_attrs)
+        except Exception as e:
+            print(f"读取文件时出错: {str(e)}")
+
 if __name__ == '__main__':
     #2014年数据 2600条 全部更新完毕约7小时
     #2016年数据已更新完毕
     a = hdf5()
-    a.start_date = datetime(2018,1,1,8)
-    a.end_date = datetime(2024,12,31,16)    #正在更新2018年数据
-    a.code = '000001.SZ'
-    a.ktype = '1min'
+    a.start_date = datetime(2020,1,7,9,0)
+    a.end_date = datetime(2020,1,7,10,30)    
+    a.code = '000002.SZ'
+    a.ktype = '1m'
+    c = ak_data()   #初始化ak_data类，从a模块获取类的属性数据
+
+    ####读取并打印 HDF5 文件的结构
+    #a.file_path = "C:\\Data\\hdf5\\1min"
+    #file_name = "000002.SZ.h5"
+    #stream = a.print_hdf5_structure(f"{a.file_path}\\{file_name}")
+    #print(stream)
+
+    ####展示ak_data的分时线数据获取
+    #df_ak = ak_data.get_k_data(a)
+    #print(df_ak)
+
+    ####展示tspro_data的分时线数据获取
+    df_tspro = data.get_k_data(a)
+    print(df_tspro)
+    #打印df结构
+    print(df_tspro.info())
+    #     
     #df = a.data_query()
 
     #print(df)
 
-    #读取数据模块
-    a.file_path = "C:\\hdf5\\1min"
-    df = a.data_query()
-    #输出包含的列
-    print(df.columns)    
-    print(df)
+    ####展示从本地HDF5文件中读取数据
+    #a.file_path = "C:\\hdf5\\1min"  #DELL XPS15 文件目录
+    a.file_path = "C:\\Data\\hdf5\\1min"  #185远程windows 文件目录
 
+
+    df = a.data_query()
+    print(df.columns)    
+    print(df.sort_values(by='date'))
+    print(df.info())
     #更新数据模块
     #a.update_sequence_add()
     #a.update_sequence_launch()
