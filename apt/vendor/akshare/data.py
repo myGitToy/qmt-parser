@@ -252,11 +252,17 @@ class data(base,stock):
                 if auto_select == True:
                     result = '1'
                 else: #数据库存在数据，且不自动选择
-                    result = input('''数据库存在数据，请选择更新方式 \n
-                    1. 保留原有更新序列，添加新的序列 \n
-                    2. 删除原有更新序列，添加新的序列 \n
-                    3. 删除原有更新序列 \n
-                    4. 退出（不做任何处理）\n''')
+                    try:
+                        result = input('''数据库存在数据，请选择更新方式 \n
+                        1. 保留原有更新序列，添加新的序列 \n
+                        2. 删除原有更新序列，添加新的序列 \n
+                        3. 删除原有更新序列 \n
+                        4. 退出（不做任何处理）\n''')
+                    except EOFError:
+                        #在VS2022环境中出现以下错误：
+                            #分析“EOFError       (note: full exception trace is shown but execution is paused at: <module>)”错误
+                        #备注：VS Code无此问题
+                            result = '1'
             if result == '1':               #添加新数据
                 #1. 获取区间最后一天所对应的全部证券列表
                 sec = security()
@@ -742,7 +748,9 @@ class data(base,stock):
             False：不进行重采样，舍弃9:30单根数据（akshare的数据格式无9:30数据）
         接受前复权 后复权 不复权 动态复权四种复权模式
         成交量、成交额目前未进行复权处理
-        返回的数据按照升序排列（backtrader要求的数据格式）
+        返回的数据格式：
+            code,date,open,high,low,close,volume,money,factor
+            升序排列（backtrader要求的数据格式）
         """
         #akshare数据无需重采样
         self.resample = False
