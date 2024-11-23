@@ -13,6 +13,13 @@ class security(base , stock):
     专门处理security的类
     包含交易日历 交易列表
     """
+
+    """
+    #目前这部分初始化内容可以不需要
+    def __init__(self):
+        #初始化父类
+        super().__init__()
+    """
     def update_calendar(self , exchange = 'SSE'):
         """
         更新交易日历
@@ -55,7 +62,7 @@ class security(base , stock):
 
     def get_calendar(self , exchange = 'SSE' , is_open = 1 , all = False):
         """
-        获取交易日历
+        获取交易日历（这里指大盘交易日，个股请使用get_trade_calendar）
         输入：
             exchange：交易所代码 默认全部使用上交所信息 SSE上交所 SZSE深交所
             is_open：获取交易日的类型 默认剔除非交易日
@@ -81,8 +88,27 @@ class security(base , stock):
             return pd.DataFrame()
         else:
             #数据库存在数据
-            return df_db
+           return df_db
+        
+    def get_trade_days(self):
+        """
+        获取某一支股票在指定日期间的
+        """
+        #1. 读取api中的指定日期间的交易日历
+        df_cal = self.pro.trade_cal(exchange = 'SSE', start_date = self.start_date.strftime("%Y%m%d"), end_date = self.end_date.strftime("%Y%m%d") , is_open = '1')
+        #df_cal = self.pro.trade_cal(exchange='SSE', start_date = self.start_date, end_date = self.end_date, is_open = '1')
+        #数据类型转换(否则差值计算会出错)       
+        df_cal.rename(columns={"cal_date": "date"} , errors="raise" , inplace = True)
+        df_cal['date'] = pd.to_datetime(df_cal['date'])
+        df_cal['pretrade_date'] = pd.to_datetime(df_cal['pretrade_date'])        
+        print(df_cal)
+        # 获取指定股票在指定日期间的每日停牌信息
+        df_suspend = self.pro.suspend_d(ts_code = self.code, suspend_type = 'S', start_date = self.start_date.strftime("%Y%m%d"), end_date = self.end_date.strftime("%Y%m%d"))
+        print(df_suspend)
+        #df_suspend = suspend_info['suspend_date']
 
+        # 扣除停牌的日期
+        return None
     def update_security_ETF(self ):
         """
         security日常更新(ETF和LOF资产)
@@ -377,6 +403,10 @@ if __name__=="__main__":
     cal = security()
     cal.start_date = datetime(2023,1,1)
     cal.end_date = datetime(2023,8,9)
+    cal.code = '000029.sz'
+    ####测试获取指定股票的交易日信息###
+    cal.get_trade_days()
+    
     df = cal.update_basic()
     print(df)
     #a =cal.get_security('601318.sh')
