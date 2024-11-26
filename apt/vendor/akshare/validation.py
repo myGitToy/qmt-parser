@@ -60,20 +60,22 @@ class Validation(ak_data):
             else:
                 return False , df_1d.query('valid == False')[['date','valid']]
             
-    def check_k_data_all_code(self , market = ['主板','创业板','中小板','科创板','CDR','北交所'] ):
+    def check_k_data_all_code(self , market = ['主板','创业板','中小板','科创板','CDR','北交所'] , type = ['stock','etf']):
         """
+        检查K线数据的有效性（全代码全市场）
         在指定日期间，校验全部的1m 5m 60m的数据有效性
-        结果存储到文件中
+        结果存储到文件中(log\)
+        输入的参数：
+            market = ['主板','创业板','中小板','科创板','CDR','北交所'] 
+            type = ['stock','etf','lof']
         """
         ak_sec = ak_security()
         ak_sec.start_date = self.start_date
         ak_sec.end_date = self.end_date
-        df_code = ak_sec.get_all_code(market = market)
-        print('开始校验全部证券的分时线数据')
-        
+        df_code = ak_sec.get_all_code(market = market , type = type)
+        print('开始校验全部证券的分时线数据')        
         # 创建结果列表
-        results = []
-        
+        results = []        
         #校验全部1分钟线数据
         for code in df_code['code']:
             self.code = code
@@ -84,17 +86,15 @@ class Validation(ak_data):
                     print(f'{code} |{self.ktype}校验通过')
                     results.append({'code': code, 'ktype': ktype, 'valid': True, 'invalid_dates': None})
                 else:
-                    print(f'{code}校验未通过，下列日期无数据')
+                    print(f'{code}|{self.ktype}校验未通过，下列日期无数据')
                     print(valid[1])
                     print('------------')
                     results.append({'code': code, 'ktype': ktype, 'valid': False, 'invalid_dates': valid[1].to_dict('records')})
         
         # 转换为DataFrame并保存
         df_results = pd.DataFrame(results)
-        df_results.to_csv(f'data_validation_{datetime.now().strftime("%Y%m%d")}.csv', index=False)
-        return df_results
-        
-
+        df_results.to_csv(f'.\\log\\data_validation_{datetime.now().strftime("%Y%m%d")}.csv', index=False)
+        return df_results    
 
 if __name__ == '__main__':
     a = Validation()
@@ -102,7 +102,7 @@ if __name__ == '__main__':
     a.start_date = datetime(2024,1,1,8)
     a.end_date = datetime(2024,11,25,16)
     a.ktype = '60m'
-    a.check_k_data_all_code()
+    a.check_k_data_all_code(market = ['北交所'] , type=['stock','etf'])
 
 
     a.check_k_data()
