@@ -268,6 +268,17 @@ class security(base , stock):
         【输出】
             dataframe:code|symbol|name|market|list_date
         """
+        #检查market是否有输入
+        if len(market) != 0:
+            #market = ['北交所'] , type=['stock','etf'] 输出北交所+ETF
+            #market = ['北交所'] , type=['etf'] 输出ETF 会忽略北交所
+            #补充1：如果market没有输入，则两次引用后，market会变成默认值，但如果填写type=etf，逻辑上可能存在冲突
+            #补充2：目前以type为主，market为辅
+            pass
+            #type = ['stock']
+            #另外如果输入的是字符串，转换为列表
+            if isinstance(market , str):
+                market = [market]        
         #脱机查询
         market_type = ','.join(["'%s'" % item for item in market ])
         type_string = ','.join(["'%s'" % item for item in type ])
@@ -434,7 +445,7 @@ if __name__=="__main__":
     
     df = cal.update_basic()
     print(df)
-    #a =cal.get_security('601318.sh')
+    a =cal.get_security('601318.sh')
     print(a)
     print(cal.dict[cal.ktype])
 
