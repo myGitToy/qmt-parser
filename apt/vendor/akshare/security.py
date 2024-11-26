@@ -91,6 +91,12 @@ class security(base , stock):
         #继承tspro同名方法
         return tspro_sec.update_security_ETF(self)
 
+    def get_trade_date(self):
+        """
+        （未来函数预警）获取某一支股票在指定日期间的交易日列表（继承自tspro同名方法）
+        """
+        return tspro_sec.get_trade_date(self)
+
     def update_security(self ,type = ['stock','index','fund','etf','lof','fja','fjb']):
         """
         security日常更新（继承自tspro）
