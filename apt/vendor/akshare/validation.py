@@ -52,7 +52,7 @@ class Validation(ak_data):
             df_1d['valid'] = df_1d['date'].apply(lambda x: True if x in df_min['date'].values else False)
             #如果valid全部为True ，返回True；否则返回False 并且再返回一个值 所有False的日期
             if df_1d['valid'].values.all():
-                return True
+                return True , pd.DataFrame()
             else:
                 return False , df_1d.query('valid == False')[['date','valid']]
 
@@ -60,16 +60,14 @@ class Validation(ak_data):
 if __name__ == '__main__':
     a = Validation()
     a.code = '600519.SH'
-    a.start_date = datetime(2023,1,1,8)
-    a.end_date = datetime(2024,4,30,16)
+    a.start_date = datetime(2024,1,1,8)
+    a.end_date = datetime(2024,11,25,16)
     a.ktype = '60m'
     valid = a.check_k_data()
     #打印valid的第一个值
-
-    if isinstance(valid, bool):
-        print(valid)
+    if valid[0] == True:
+        print('校验通过')
     else:
-        print(valid[0])
-    if valid[0] == False:
+        print('校验未通过，下列日期无数据')
         print(valid[1])
-    #print(a.ktype)
+
