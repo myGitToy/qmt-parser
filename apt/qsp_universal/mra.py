@@ -47,38 +47,78 @@ class MRA(base):
                 df (DataFrame): 合并后的数据集。
                 results (dict): 综合指标结果。
     """
-    # 基础指标属性 Basic indicator attributes
-    BI_total_return = 0.0  # 总收益率
-    BI_volatility = 0.0    # 年化波动率
-    BI_correlation = 0.0   # 与市场相关系数
-    BI_beta = 0.0         # Beta系数
-
-    # 进阶指标 Advanced indicator attributes
-    AI_sharpe_ratio = 0.0  # 夏普比率
-    AI_max_drawdown = 0.0  # 最大回撤
-    AI_info_ratio = 0.0    # 信息比率
-    AI_up_capture = 0.0    # 上行捕获率
-    AI_down_capture = 0.0  # 下行捕获率
-
-
-
-    def compare_with_market(self, benchmark='000001.sh'):
+    def __init__(self, benchmark='000001.sh', rf_rate=0.03, anaual_trade_day=252, mode='annual'):
         """
-        比较个股与大盘的表现（这里主要进行数据处理和基础值的计算）
-        code: 股票代码
-        benchmark: 基准指数代码(默认上证指数)
-            其他几个常用的指标有：
-                上证指数
-                深圳成指
-                中小板指数
-                创业板指数
-        """        
+        初始化市场回归分析(Market Regression Analysis)类
+        
+        参数:
+            benchmark (str): 基准指数代码
+                - 默认为'000001.sh'(上证指数)
+                - 可选值: 
+                    '000001.sh': 上证指数
+                    '399001.sz': 深证成指
+                    '399006.sz': 创业板指
+            
+            rf_rate (float): 无风险利率
+                - 默认为0.03(即3%)
+                - 用于计算夏普比率等风险调整收益指标
+                - 应该输入小数形式，如0.03表示3%
+            
+            mode (str): 计算模式
+                - 默认为'annual'(年化)
+                - 可选值:
+                    'annual': 将所有收益指标年化处理
+                    'total': 计算区间总收益，不进行年化
+        
+        属性:
+            df: 包含股票和市场数据的DataFrame
+            BI_*: 基础指标(Basic Indicators)
+            AI_*: 进阶指标(Advanced Indicators)
+        
+        示例:
+            >>> mra = MRA(benchmark='000001.sh', rf_rate=0.03, mode='annual')
+        """
+        super().__init__()
+        # 设置基准指数代码
+        self.benchmark = benchmark
+        # 设置无风险利率
+        self.rf_rate = rf_rate
+        # 设置年交易日
+        self.anaual_trade_day = anaual_trade_day
+        # 验证mode参数
+        valid_modes = ['annual', 'total']
+        if mode not in valid_modes:
+            raise ValueError(f"mode参数只能是 {valid_modes} 中的一个，当前输入: {mode}")
+        self.mode = mode
+        # 初设置回归数据
+        self.mra_data = pd.DataFrame()
+        # TODO 继续设置其他属性指标
+        
+        # 基础指标属性 Basic indicator attributes
+        BI_total_return = 0.0  # 总收益率
+        BI_volatility = 0.0    # 年化波动率
+        BI_correlation = 0.0   # 与市场相关系数
+        self.BI_Beta = 0.0         # Beta系数
+        self.BI_Alpha = 0.0        # Alpha系数
+        # 进阶指标 Advanced indicator attributes
+        AI_sharpe_ratio = 0.0  # 夏普比率
+        AI_max_drawdown = 0.0  # 最大回撤
+        AI_info_ratio = 0.0    # 信息比率
+        AI_up_capture = 0.0    # 上行捕获率
+        AI_down_capture = 0.0  # 下行捕获率
+
+    def _get_mra_data(self) -> pd.DataFrame:
+        """
+        获取回归数据，比较个股与大盘的表现（这里主要进行数据处理）
+        输出的是带收益率的数据，用于后续计算
+        同时将数据保存到mra_data属性中
+        """
         # 获取证券代码的数据并按规则进行数据清洗
         stock_data = self.get_k_data()
         stock_data['date'] = pd.to_datetime(stock_data['date'])
         stock_data.sort_values('date', inplace=True)
         # 获取指数的数据并按规则进行数据清洗（使用tspro API接口）
-        market_data = self.pro.index_daily(ts_code = benchmark , start_date = self.start_date.strftime('%Y%m%d') , end_date = self.end_date.strftime('%Y%m%d'))
+        market_data = self.pro.index_daily(ts_code = self.benchmark , start_date = self.start_date.strftime('%Y%m%d') , end_date = self.end_date.strftime('%Y%m%d'))
         market_data.rename(columns={'ts_code':'code','trade_date':'date'},inplace=True)
         market_data['date'] = pd.to_datetime(market_data['date'])
         market_data.sort_values('date', inplace=True)  
@@ -95,6 +135,15 @@ class MRA(base):
         df['return_market'] = df['close_market'].pct_change()
         # TODO 后续所有的计算都是基于收益率指标的，非量价指标
         # 后续如果需要使用量价指标，需要添加计算
+
+        # 输出环节，如果dataframe有数据，则设置mra_data属性
+        if df.empty:
+            self.mra_data = None
+        else:
+            self.mra_data = df
+            return df
+    
+    def compare_with_market(self):
         """
         是的,大多数风险收益指标都是基于收益率(returns)计算的,而不是直接使用价格。原因如下:
 
@@ -124,6 +173,25 @@ class MRA(base):
         - 价量配合分析
         - 能量潮指标(OBV)
         """
+        # 数据准备
+        if self.mra_data.empty:
+            # 如果数据为空，则先获取数据并进行校验，只有校验通过后才能进入到后续计算
+            self.mra_data = self._get_mra_data()
+            if self.mra_data.empty:
+                raise ValueError("数据为空，请检查数据获取是否正常")
+        # 确保数据中包含必要的列
+        required_columns = ['return_stock', 'return_market']
+        if not all(col in self.mra_data.columns for col in required_columns):
+            raise ValueError("数据中缺少必要的收益率列")
+        
+        # 数据已获取，开始指标计算
+        df = self.mra_data
+
+        ####### 基础指标计算
+        # Alpha系数和Beta系数(Beta通过调用Alpha自动获取)
+        self.BI_Alpha = self._calculate_basic_alpha()
+        
+
         def calculate_volume_indicators(df):
             """计算成交量相关指标，基于整合好的数据集，目的见上面的注释"""
             # 成交量加权价格
@@ -349,6 +417,42 @@ class MRA(base):
         plt.tight_layout()
         plt.show()
 
+    def _calculate_basic_alpha(self) -> float:
+        """
+        基础指标系列：计算Alpha系数 （无需年化处理）
+        表示的是相对于市场基准的超额收益能力   
+        Args:
+            stock_returns: 股票收益率序列
+            market_returns: 市场收益率序列
+            rf_rate: 无风险利率
+            mode: 'annual'(年化) / 'total'(区间总计)  
+        Returns:          
+            Alpha > 0：表示投资组合的表现优于市场预期
+            Alpha < 0：表示投资组合的表现低于市场预期
+            Alpha = 0：表示投资组合的表现符合市场预期
+        """ 
+        stock_returns = self.mra_data['return_stock']
+        market_returns = self.mra_data['return_market']
+        rf_rate = self.rf_rate
+        beta = self._calculate_basic_beta() #beta系数无需年化处理
+        self.BI_Beta = beta
+        stock_mean = stock_returns.mean() * self.anaual_trade_day
+        market_mean = market_returns.mean() * self.anaual_trade_day
+        # 根据 CAPM 模型预期的超额收益 = beta * (market_mean - rf_rate):
+        return stock_mean - (rf_rate + beta * (market_mean - rf_rate))       
+
+    def _calculate_basic_beta(self) -> float:
+        """
+        基础指标系列：计算Beta系数（无需年化处理）
+        Beta系数衡量个股相对于市场的敏感度
+        β > 1: 股票波动大于市场
+        β < 1: 股票波动小于市场
+        β = 1: 与市场同步波动
+        """
+        stock_returns = self.mra_data['return_stock']
+        market_returns = self.mra_data['return_market']
+        return stock_returns.cov(market_returns) / market_returns.var()
+    
 # 使用示例
 if __name__ == "__main__":
     mra = MRA()
@@ -357,8 +461,12 @@ if __name__ == "__main__":
     mra.start_date = datetime(2024, 1, 1)
     mra.end_date = datetime(2024, 11, 25)
     mra.ktype = '1d'
-    mra.code = '510300.sh'
-    #mra.compare_with_market()
+    mra.code = '159949.sz'
+    #计算各项指标
+    mra.compare_with_market()
+    # 输出alpha和beta
+    print(mra.BI_Alpha)
+    print(mra.BI_Beta)
     # 计算股票与大盘的各项技术指标对比
     mra.calculate_metrics()
     df, results = mra.calculate_metrics()
