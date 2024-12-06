@@ -313,35 +313,7 @@ class MRA(base):
             down_capture = (stock_returns[down_market].mean() / market_returns[down_market].mean()) if len(market_returns[down_market]) > 0 else 0
             
             return up_capture, down_capture
-        
-        def calculate_alpha(stock_returns, market_returns, rf_rate):
-            """
-            计算Alpha系数    
-            Args:
-                stock_returns: 股票收益率序列
-                market_returns: 市场收益率序列
-                rf_rate: 无风险利率
-                mode: 'annual'(年化) / 'total'(区间总计)  
-            Returns:          
-                Alpha > 0：表示投资组合的表现优于市场预期
-                Alpha < 0：表示投资组合的表现低于市场预期
-                Alpha = 0：表示投资组合的表现符合市场预期
-            """ 
-            beta = calculate_beta(stock_returns, market_returns) #beta系数无需年化处理
-            stock_mean = stock_returns.mean() * anaual_trade_day
-            market_mean = market_returns.mean() * anaual_trade_day
-            # 根据 CAPM 模型预期的超额收益 = beta * (market_mean - rf_rate):
-            return stock_mean - (rf_rate + beta * (market_mean - rf_rate))       
-        
-        def calculate_beta(stock_returns, market_returns):
-            """计算Beta系数
-            Beta系数衡量个股相对于市场的敏感度
-            β > 1: 股票波动大于市场
-            β < 1: 股票波动小于市场
-            β = 1: 与市场同步波动
-            """
-            return stock_returns.cov(market_returns) / market_returns.var()
-        
+               
         # 计算各项指标
         stock_returns = df['return_stock']
         market_returns = df['return_market']
