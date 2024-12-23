@@ -82,6 +82,8 @@ class MRA(base):
         # 设置基准指数代码
         self.benchmark = benchmark
         # 设置无风险利率
+        #TODO: 无风险利率可以采用这种方法pro = ts.pro_api()
+        #df = pro.shibor(start_date='20180101', end_date='20181101')
         self.rf_rate = rf_rate
         # 设置年交易日
         self.anaual_trade_day = anaual_trade_day
@@ -95,9 +97,15 @@ class MRA(base):
         # TODO 继续设置其他属性指标
         
         # 基础指标属性 Basic indicator attributes
-        BI_total_return = 0.0  # 总收益率
-        BI_volatility = 0.0    # 年化波动率
-        BI_correlation = 0.0   # 与市场相关系数
+        self.BI_return_stock = 0.0  # 累积收益率（cumprod方法）(区间/年化)
+        self.BI_return_market = 0.0 
+        self.BI_volatility_stock = 0.0    # 普通波动率(区间/年化)
+        self.BI_volatility_market = 0.0
+        self.BI_volatility_log_stock = 0.0    # 对数波动率(区间/年化) 对数收益率可以消除价格尺度的影响，更符合正态分布假设，更适合跨资产比较、在金融领域被广泛采用
+        self.BI_volatility_log_market = 0.0  
+        self.BI_cv_stock = 0.0    # 系数变异 波动率与平均收益的比值，用于衡量风险与收益的关系      
+        self.BI_cv_market = 0.0 
+        self.NA_BI_correlation = 0.0   # 与市场相关系数
         self.BI_Beta = 0.0         # Beta系数
         self.BI_Alpha = 0.0        # Alpha系数
         # 进阶指标 Advanced indicator attributes
@@ -112,6 +120,7 @@ class MRA(base):
         获取回归数据，比较个股与大盘的表现（这里主要进行数据处理）
         输出的是带收益率的数据，用于后续计算
         同时将数据保存到mra_data属性中
+        TODO 数据获取有些问题待排查，动态复权后的价格不对
         """
         # 获取证券代码的数据并按规则进行数据清洗
         stock_data = self.get_k_data()
@@ -190,6 +199,13 @@ class MRA(base):
         ####### 基础指标计算
         # Alpha系数和Beta系数(Beta通过调用Alpha自动获取)
         self.BI_Alpha = self._calculate_basic_alpha()
+        # 计算收益率
+        self._calculate_return()
+        # 计算波动率
+        self._calculate_volatility()
+        self._calculate_log_volatility()
+        # 计算变异系数
+        self._calculate_cv()
         
 
         def calculate_volume_indicators(df):
@@ -252,8 +268,6 @@ class MRA(base):
             rf_rate: 无风险利率(年化)
         返回DateFrame和结果字典
         """
-        #TODO: 无风险利率可以采用这种方法pro = ts.pro_api()
-        #df = pro.shibor(start_date='20180101', end_date='20181101')
         # 获取数据并合并
         df, basic_results = self.compare_with_market(benchmark)
         
@@ -281,13 +295,13 @@ class MRA(base):
         
         def calculate_treynor(stock_returns, market_returns, rf_rate):
             """计算特雷诺比率"""
-            beta = calculate_beta(stock_returns, market_returns)
+            beta = self.BI_Beta
             excess_return = stock_returns.mean() * anaual_trade_day - rf_rate
             return excess_return / beta
         
         def calculate_jensen_alpha(stock_returns, market_returns, rf_rate):
             """计算詹森指数"""
-            beta = calculate_beta(stock_returns, market_returns)
+            beta = self.BI_Beta
             expected_return = rf_rate + beta * (market_returns.mean() * anaual_trade_day - rf_rate)
             actual_return = stock_returns.mean() * anaual_trade_day
             return actual_return - expected_return
@@ -416,7 +430,7 @@ class MRA(base):
     def _calculate_basic_beta(self) -> float:
         """
         基础指标系列：计算Beta系数（无需年化处理）
-        Beta系数衡量个股相对于市场的敏感度
+        Beta系数衡量个股相对于市场的敏感度       
         β > 1: 股票波动大于市场
         β < 1: 股票波动小于市场
         β = 1: 与市场同步波动
@@ -425,20 +439,114 @@ class MRA(base):
         market_returns = self.mra_data['return_market']
         return stock_returns.cov(market_returns) / market_returns.var()
     
-# 使用示例
+    def _calculate_return(self) :
+        """
+        计算收益率(累积收益率)
+        Args:
+            mode: 'annual'(年化) / 'total'(区间总计)
+        """
+        mode = self.mode
+        stock_returns = self.mra_data['return_stock']
+        market_returns = self.mra_data['return_market']
+        # 计算累积收益率
+        df = pd.DataFrame()
+        df['cum_return_stock'] = (1 + stock_returns).cumprod() - 1
+        df['cum_return_market'] = (1 + market_returns).cumprod() - 1
+        # 计算收益率
+        if mode == 'annual':
+            days_in_period = len(df)
+            self.BI_return_stock = (1 + df['cum_return_stock'].iloc[-1]) ** (self.anaual_trade_day / days_in_period) - 1
+            self.BI_return_market = (1 + df['cum_return_market'].iloc[-1]) ** (self.anaual_trade_day / days_in_period) - 1
+        elif mode == 'total':
+            self.BI_return_stock = df['cum_return_stock'].iloc[-1]
+            self.BI_return_market = df['cum_return_market'].iloc[-1]
+        else:
+            raise ValueError(f"mode参数只能是 'annual' 或 'total'，当前输入: {mode}")    
+
+    def _calculate_volatility(self):
+        """
+        计算波动率
+        Args:
+            mode: 'annual'(年化) / 'total'(区间总计)
+        """
+        mode = self.mode
+        stock_returns = self.mra_data['return_stock'] 
+        market_returns = self.mra_data['return_market']
+
+        if mode == 'annual':
+            self.BI_volatility_stock = stock_returns.std() * np.sqrt(self.anaual_trade_day)
+            self.BI_volatility_market = market_returns.std() * np.sqrt(self.anaual_trade_day) 
+        elif mode == 'total':
+            self.BI_volatility_stock = stock_returns.std()
+            self.BI_volatility_market = market_returns.std()
+        else:
+            raise ValueError(f"mode参数只能是 'annual' 或 'total'，当前输入: {mode}")
+    
+    def _calculate_log_volatility(self):
+        """
+        计算对数收益率的波动率
+        Args:
+            mode: 'annual'(年化) / 'total'(区间总计)
+        """
+        # 检查数据是否已准备好
+        if self.mra_data.empty:
+            self.mra_data = self._get_mra_data()
+        # 检查数据是否包含必要的列
+        required_columns = ['close_stock', 'close_market']
+        if not all(col in self.mra_data.columns for col in required_columns):
+            raise ValueError("数据中缺少必要的收益率列")
+        # 对数收益率
+        log_returns_stock = np.log(self.mra_data['close_stock'] / self.mra_data['close_stock'].shift(1))
+        log_returns_market = np.log(self.mra_data['close_market'] / self.mra_data['close_market'].shift(1))
+        
+        if self.mode == 'annual':
+            self.BI_volatility_log_stock = log_returns_stock.std() * np.sqrt(self.anaual_trade_day)
+            self.BI_volatility_log_market = log_returns_market.std() * np.sqrt(self.anaual_trade_day)
+        else:
+            self.BI_volatility_log_stock = log_returns_stock.std()
+            self.BI_volatility_log_market = log_returns_market.std()
+
+    def _calculate_cv(self):
+        """计算变异系数"""
+        # 检查数据是否已准备好
+        if self.mra_data.empty:
+            self.mra_data = self._get_mra_data()
+        # 检查数据是否包含必要的列
+        required_columns = ['close_stock', 'close_market']
+        if not all(col in self.mra_data.columns for col in required_columns):
+            raise ValueError("数据中缺少必要的收益率列")  
+
+        # 变异系数 = 标准差/均值
+        self.BI_cv_stock= self.BI_volatility_stock / self.mra_data['close_stock'].mean()
+        self.BI_cv_market = self.BI_volatility_market / self.mra_data['close_market'].mean()
+
+
 if __name__ == "__main__":
     mra = MRA()
     mra.vendor = base.vendor.akshare
     mra.fq = base.复权.动态复权
     mra.start_date = datetime(2024, 1, 1)
-    mra.end_date = datetime(2024, 11, 25)
+    mra.end_date = datetime(2024, 12, 6)
     mra.ktype = '1d'
-    mra.code = '159949.sz'
+    mra.code = '300347.sz'
     #计算各项指标
     mra.compare_with_market()
     # 输出alpha和beta
-    print(mra.BI_Alpha)
-    print(mra.BI_Beta)
+    print(f'Alpha值:{mra.BI_Alpha:.2f}')
+    print(f'Beta值:{mra.BI_Beta:.2f}') 
+    # 输出累积收益率
+    print(f'个股累积收益率:{mra.BI_return_stock*100:.2f}')
+    print(f'大盘累积收益率:{mra.BI_return_market*100:.2f}')
+    # 输出普通波动率
+    print(f'个股波动率:{mra.BI_volatility_stock:.2f}')
+    print(f'大盘波动率:{mra.BI_volatility_market:.2f}')
+    # 输出对数波动率
+    print(f'个股对数波动率:{mra.BI_volatility_log_stock:.2f}')
+    print(f'大盘对数波动率:{mra.BI_volatility_log_market:.2f}')
+    # 输出变异系数
+    print(f'个股变异系数:{mra.BI_cv_stock:.2f}')
+    print(f'大盘变异系数:{mra.BI_cv_market:.2f}')
+
     # 计算股票与大盘的各项技术指标对比
     mra.calculate_metrics()
     df, results = mra.calculate_metrics()
