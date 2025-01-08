@@ -11,6 +11,19 @@ from datetime import datetime
 from apt.os.hdf5 import hdf5 as hdf5
 
 class MinioClientWrapper:
+    """
+    Minio客户端封装类
+    目前支持的功能有：
+    1. 创建桶 create_bucket
+    2. 列出所有桶 list_buckets
+    3. 上传文件 upload_file
+    4. 下载文件 download_file
+    5. 删除文件 remove_file
+    6. 列出桶中的所有文件 list_files
+    7. 检查文件是否存在 file_exists
+    8. 读取文件内容（二进制流） read_file
+    9. 待增加
+    """
     def __init__(self, endpoint = None, access_key = None, secret_key = None, secure=False, cache_path = None):
         """
         params:
@@ -45,13 +58,12 @@ class MinioClientWrapper:
             secure = secure
         )
 
-    def file_exists(self , bucket_name , object_name , case_sensitive = False) -> bool:
+    def file_exists(self , bucket_name , object_name , case_sensitive = True) -> bool:
         """
         检查文件是否存在
         :param bucket_name: 桶名
         :param object_name: 文件名（带路径的，如akshare/data/1min/600000.SH.h5）
-        :param case_sensitive: 是否区分大小写, 默认不区分大小写
-        TODO: 还没想好是走支持区分大小写
+        :param case_sensitive: 是否区分大小写, 默认区分大小写
         """
         try:
             if case_sensitive:
@@ -68,6 +80,7 @@ class MinioClientWrapper:
                 return False
             else:
                 raise e
+            
     def read_file(self, bucket_name, object_name, encoding='utf-8'):
         """
         读取文件内容(二进制流式传输)
@@ -82,6 +95,8 @@ class MinioClientWrapper:
             # 读取内容
             content = data.read()
             # 如果是HDF5文件，直接返回二进制内容（针对HDF5做特别优化）
+            # 备注：由于HDF5文件采用pd.HDFStore存储，直接读取二进制有困难，因此采用下载至临时文件夹的方法
+            # 临时文件夹默认位于os.getenv("MINIO_CACHE_PATH", "c:\minio_cache")
             if object_name.lower().endswith('.h5'):
                 return content            
             # 如果是文本文件,进行解码
@@ -96,6 +111,7 @@ class MinioClientWrapper:
     def create_bucket(self, bucket_name):
         """
         创建桶
+        params:bucket_name: 桶名称
         """      
         if not self.client.bucket_exists(bucket_name):
             self.client.make_bucket(bucket_name)
@@ -109,21 +125,24 @@ class MinioClientWrapper:
         buckets = self.client.list_buckets()
         return pd.DataFrame([bucket.__dict__ for bucket in buckets])
     
-    def upload_file(self, bucket_name, object_name, file_path):
+    def upload_file(self, bucket_name, object_name, file_path)->bool:
         """
         上传文件
         params:
             bucket_name: 桶名称 例akshare
             object_name: 带路径的对象名称 例akshare/data/1min/600000.SH.h5
+                备注：桶名称和路径如果填写错误，则会自动创建
             file_path: 文件路径 例c:/data/1min/600000.SH.h5
         """
         # 检查file_path是否有效
         if not os.path.exists(file_path):
-            # 路径不存在，创建对应的路径
-            os.makedirs(os.path.dirname(file_path), exist_ok=True)
-            raise FileNotFoundError(f"File not found: {file_path}")
-        
-        self.client.fput_object(bucket_name, object_name, file_path)
+            # 文件路径不存在，跳过上传，返回False
+            return False
+        try:
+            self.client.fput_object(bucket_name, object_name, file_path)
+            return True
+        except Exception:
+            return False
 
     def download_file(self, bucket_name, object_name, file_path)->bool:
         """
@@ -164,19 +183,26 @@ def create_local_file(file_path, content="Hello MinIO!"):
 if __name__ == "__main__":
     # 创建客户端
     minio_client = MinioClientWrapper()
-    # 列出所有桶
+    # 演示：列出所有桶
     print(minio_client.list_buckets())
-    #检查文件是否存在
+    # 演示：检查文件是否存在
     print(minio_client.file_exists("hdf5", "akshare/data/1min/600000.sh.h5"))  # False
-    # 下载文件
+    # 演示：下载文件
     cache_dir = os.getenv("MINIO_CACHE_PATH", "c:/minio_cache")
     file_name = "600000.SH.h5"
     #download_path = os.path.join(cache_dir, "akshare", "data", "1min", file_name)
     download_path = os.path.join("c:\\path",  file_name)
     is_success = minio_client.download_file("hdf5", f"akshare/data/1min/{file_name}", download_path)
     print(f"Downloaded file: {is_success}")
-    # 读取文件内容
+    # 演示：上传文件
+    file_name = "600000_test.SH.h5"
+    local_file = os.path.join("c:\\path",file_name)
+    is_success = minio_client.upload_file("hdf5", f"akshare/data/1min_test/{file_name}", local_file)
+    print(f"Uploaded file: {is_success}")
+    # 演示：读取文件内容（二进制）
     content = minio_client.read_file("hdf5", "akshare/data/1min_test/000001.SZ.h5")
+    
+    ############## 以下代码均为临时测试代码 ################
     # 读取HDF5文件内容，转换为DataFrame
     df_ak = pd.DataFrame() #ak主数据
     a = ak_data()
