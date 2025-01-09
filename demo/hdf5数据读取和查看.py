@@ -14,9 +14,9 @@ a.fq = data.复权.动态复权
 a.code = '601318.sh'
 a.ktype = '1d'
 #a.vendor = a.vendor.tusharePro
-#读取HDF5文件
-#store = pd.HDFStore(path = '.\\data\\hdf5\\demo_day.h5' , key = '/day' )
-store = pd.read_hdf('.\\data\\hdf5\\demo_day_index_test.h5', key = 'test' , where = "date >'2020/1/1'")
+#读取文件
+#store = pd.HDFStore(path = '.\\data\\\\demo_day.h5' , key = '/day' )
+store = pd.read_hdf('.\\data\\\\demo_day_index_test.h5', key = 'test' , where = "date >'2020/1/1'")
 for key in store.keys():
     print(store[key].name)
     print(store[key].shape)
@@ -29,6 +29,6 @@ print(store)
 store.drop_duplicates(subset = ['date'] , keep = 'first' , inplace = True)  #keep = False 实际起到了去重的作用
 store = store.set_index(['code','date'] , drop = True)
 print(store)
-store.to_hdf(path_or_buf='.\\data\\hdf5\\demo_day.h5', mode = 'w' , append  = True , complevel  = 5 , complib  = 'blosc' , format="table" , key='test')
+store.to_hdf(path_or_buf='.\\data\\\\demo_day.h5', mode = 'w' , append  = True , complevel  = 5 , complib  = 'blosc' , format="table" , key='test')
 
 
