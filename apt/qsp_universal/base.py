@@ -9,6 +9,7 @@ from datetime import datetime , timedelta
 from enum import Enum
 import numpy as np
 import pandas as pd
+import tushare as ts
 
 class base():
     """
@@ -53,6 +54,8 @@ class base():
         self.myauth = myauth
         self.server = fwq
         self.vendor = vendor
+        #初始化ts接口
+        self.pro = ts.pro_api('55297f16c0119146589e059db315ba28a9412e89ec9f91e538e655b2')
         #数据校验环节：
         #1. 证券代码不能为空
         #if code == None:
