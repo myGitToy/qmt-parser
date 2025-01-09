@@ -25,7 +25,7 @@ a.code = ak.code = '600038.sh'
 #全市场数据校验下次起始日期2023/12/13
 #2023年已完成校验 2022可能还需要校验
 #2024/1/1-2024/9/20前已完成校验
-a.start_date = ak.start_date =  datetime(2024,11,14,8) #1998/10/20日开始有ETF数据    ETF日线数据和复权数据已更新完毕
+a.start_date = ak.start_date =  datetime(2025,1,6,8) #1998/10/20日开始有ETF数据    ETF日线数据和复权数据已更新完毕
 a.end_date = ak.end_date =  datetime.now()
 #2. 更新证券代码库(stock和ETF资产)
 sec = security()
