@@ -15,6 +15,11 @@ import uuid
 class hdf5(data):
     """
     hdf5文件的读取，加载，删除，更新的基类
+    备注：
+        这里默认使用pd.to_hdf和pd.read_hdf来读取和写入数据
+    差异之处：
+        h5py 直接以 HDF5 的原始层面进行读写，而 pandas 的to_hdf使用了 PyTables 库来管理 DataFrame 元数据，因此两者并不完全兼容。
+        h5py 保存的数据集需要自行处理列名、索引等信息，而to_hdf则会将这些信息一起存储，方便后续用read_hdf直接恢复为 DataFrame。
     """
     def __init__(self , key = 'RawData'):
         #全局变量定义
