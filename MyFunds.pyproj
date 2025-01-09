@@ -4,14 +4,15 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>fe9172f0-51b0-485c-8b74-a2d125475bfa</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>macro\macro_akshare_更新序列（仅更新序列）.py</StartupFile>
+    <StartupFile>
+    </StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>MyFunds</Name>
     <RootNamespace>MyFunds</RootNamespace>
-    <InterpreterId>CondaEnv|CondaEnv|conda_myfund</InterpreterId>
+    <InterpreterId>Global|VisualStudio|conda_myfund</InterpreterId>
     <TestFramework>unittest</TestFramework>
     <SuppressEnvironmentCreationPrompt>True</SuppressEnvironmentCreationPrompt>
     <UnitTestPattern>test*.py</UnitTestPattern>
@@ -212,6 +213,8 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="macro\demo_海龟模型每日更新%28tspro%29.py" />
+    <Compile Include="macro\macro_akshare_修复1分钟线开盘价为零.py" />
+    <Compile Include="macro\macro_akshare_计算全换手间隔.py" />
     <Compile Include="macro\macro_get_percentile.py">
       <SubType>Code</SubType>
     </Compile>
@@ -385,6 +388,8 @@
     <InterpreterReference Include="CondaEnv|CondaEnv|Anaconda3" />
     <InterpreterReference Include="CondaEnv|CondaEnv|conda_myfund" />
     <InterpreterReference Include="CondaEnv|CondaEnv|myFunds" />
+    <InterpreterReference Include="Global|VisualStudio|conda_myfund" />
+    <InterpreterReference Include="Global|VisualStudio|envs" />
     <InterpreterReference Include="Global|VisualStudio|env_myfund" />
   </ItemGroup>
   <ItemGroup>

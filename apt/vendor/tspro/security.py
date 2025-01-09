@@ -13,6 +13,13 @@ class security(base , stock):
     专门处理security的类
     包含交易日历 交易列表
     """
+
+    """
+    #目前这部分初始化内容可以不需要
+    def __init__(self):
+        #初始化父类
+        super().__init__()
+    """
     def update_calendar(self , exchange = 'SSE'):
         """
         更新交易日历
@@ -55,7 +62,7 @@ class security(base , stock):
 
     def get_calendar(self , exchange = 'SSE' , is_open = 1 , all = False):
         """
-        获取交易日历
+        获取交易日历（这里指大盘交易日，个股请使用get_trade_calendar）
         输入：
             exchange：交易所代码 默认全部使用上交所信息 SSE上交所 SZSE深交所
             is_open：获取交易日的类型 默认剔除非交易日
@@ -81,7 +88,50 @@ class security(base , stock):
             return pd.DataFrame()
         else:
             #数据库存在数据
-            return df_db
+           return df_db
+        
+    def get_trade_date(self):
+        """
+        （未来函数预警）获取某一支股票在指定日期间的交易日列表
+        输入：
+            code：股票代码
+            start_date：开始日期
+            end_date：结束日期（这里有未来函数，返回的交易日包含未来的日期）
+        返回：
+            dataframe： code|date|is_open|pretrade_date
+        使用suspend_d接口，具体用见模块内说明
+        """
+        #1. 读取api中的指定日期间的交易日历
+        df_cal = self.pro.trade_cal(exchange = 'SSE', start_date = self.start_date.strftime("%Y%m%d"), end_date = self.end_date.strftime("%Y%m%d") , is_open = '1')
+        #数据类型转换(否则差值计算会出错)       
+        df_cal.rename(columns={"cal_date": "date"} , errors="raise" , inplace = True)
+        df_cal['date'] = pd.to_datetime(df_cal['date'])
+        df_cal['pretrade_date'] = pd.to_datetime(df_cal['pretrade_date'])        
+        # 获取指定股票在指定日期间的每日停牌信息
+        """
+        这里使用suspend_d接口
+        停牌信息是按照股票代码和日期进行查询的，所以需要先获取股票代码的停牌信息，然后再进行日期的筛选
+        接受参数如下：
+            字段	类型	说明
+            ts_code	str	TS代码
+            trade_date	str	停复牌日期
+            suspend_timing	str	日内停牌时间段（重要：全天停牌为None，非全天停牌为时间段）
+            suspend_type	str	停复牌类型：S-停牌，R-复牌
+        """
+        df_suspend = self.pro.suspend_d(ts_code = self.code, suspend_type = 'S' , start_date = self.start_date.strftime("%Y%m%d"), end_date = self.end_date.strftime("%Y%m%d"))
+        #数据类型转换和列名称的转换(否则差值计算会出错) 
+        """
+        PS 经过测试，已排除复牌天数，排除非全天停牌的天数（有时间非None的数据）
+        """
+        df_suspend.rename(columns={"trade_date": "date"} , errors="raise" , inplace = True)
+        df_suspend['date'] = pd.to_datetime(df_suspend['date']) 
+        #去除suspend_timing为非None的数据
+        df_suspend = df_suspend[df_suspend['suspend_timing'].isnull()]
+        #输出最终的结果，即交易日和停牌日的差集
+        df_trade_days = df_cal.merge(df_suspend[['date']], on='date', how='left', indicator=True)
+        df_trade_days = df_trade_days[df_trade_days['_merge'] == 'left_only'].drop(columns=['_merge'])
+        df_trade_days['code'] = self.code
+        return df_trade_days[['code', 'date', 'is_open', 'pretrade_date']]
 
     def update_security_ETF(self ):
         """
@@ -218,6 +268,17 @@ class security(base , stock):
         【输出】
             dataframe:code|symbol|name|market|list_date
         """
+        #检查market是否有输入
+        if len(market) != 0:
+            #market = ['北交所'] , type=['stock','etf'] 输出北交所+ETF
+            #market = ['北交所'] , type=['etf'] 输出ETF 会忽略北交所
+            #补充1：如果market没有输入，则两次引用后，market会变成默认值，但如果填写type=etf，逻辑上可能存在冲突
+            #补充2：目前以type为主，market为辅
+            pass
+            #type = ['stock']
+            #另外如果输入的是字符串，转换为列表
+            if isinstance(market , str):
+                market = [market]        
         #脱机查询
         market_type = ','.join(["'%s'" % item for item in market ])
         type_string = ','.join(["'%s'" % item for item in type ])
@@ -375,11 +436,16 @@ class security(base , stock):
 if __name__=="__main__":
     #测试交易日历功能
     cal = security()
-    cal.start_date = datetime(2023,1,1)
-    cal.end_date = datetime(2023,8,9)
+    cal.start_date = datetime(2024,11,1)
+    cal.end_date = datetime(2024,11,30)
+    cal.code = '603389.sh'
+    ####测试获取指定股票的交易日信息###
+    df_trade_date = cal.get_trade_date()
+    print(df_trade_date)
+    
     df = cal.update_basic()
     print(df)
-    #a =cal.get_security('601318.sh')
+    a =cal.get_security('601318.sh')
     print(a)
     print(cal.dict[cal.ktype])
 
