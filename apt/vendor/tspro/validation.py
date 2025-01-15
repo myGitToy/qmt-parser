@@ -13,7 +13,7 @@ class Validation(ts_data):
         #初始化父类
         super().__init__()
 
-    def check_k_data(self):
+    def check_k_data(self) -> tuple[bool, pd.DataFrame]:
         """
         检查K线数据的有效性
         规则：

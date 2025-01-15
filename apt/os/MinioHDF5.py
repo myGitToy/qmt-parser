@@ -6,6 +6,7 @@ from apt.vendor.tspro.base import stock as stock
 from apt.vendor.tspro.data import data as data
 from apt.vendor.tspro.pro_api import pro_api
 from apt.vendor.akshare.data import data as ak_data
+from apt.os.minio.minio_test import MinioClientWrapper as MinioClient
 import tushare as ts
 import pandas as pd
 import numpy as np
@@ -13,14 +14,10 @@ import pandas as pd
 import h5py
 import os.path
 import uuid
-class hdf5(data):
+import io
+class MinioHDF5Handler(data, MinioClient):
     """
-    hdf5文件的读取，加载，删除，更新的基类
-    备注：
-        这里默认使用pd.to_hdf和pd.read_hdf来读取和写入数据
-    差异之处：
-        h5py 直接以 HDF5 的原始层面进行读写，而 pandas 的to_hdf使用了 PyTables 库来管理 DataFrame 元数据，因此两者并不完全兼容。
-        h5py 保存的数据集需要自行处理列名、索引等信息，而to_hdf则会将这些信息一起存储，方便后续用read_hdf直接恢复为 DataFrame。
+    通过minio对hdf5文件的读取，加载，删除，更新的基类
     """
     def __init__(self , key = 'RawData'):
         #全局变量定义
@@ -30,7 +27,10 @@ class hdf5(data):
         self.update_path = "C:\\Data\\hdf5" #更新列表的存盘目录（用于记录需要更新的数据）
         self.max_row = 8000  #单次更新的最大数据行（tspro的限制）
         self.key = key  #key值
+        #self.minio_client = MinioClient(self)
         super(data , self).__init__()  #支持多态继承，强制声明父类的init方法，注册api，用来对self.pro提供支持
+        super(MinioClient , self).__init__()  #支持多态继承，强制声明父类的init方法，注册minio客户端，用来对self.client提供支持
+
     def data_delete(self):
         """
         【数据删除模块】
@@ -364,14 +364,54 @@ class hdf5(data):
         except Exception as e:
             print(f"读取文件时出错: {str(e)}")
 
+
+    def read_hdf5(self, bucket_name, object_name, key='RawData'):
+        """
+        从MinIO读取HDF5文件并转为DataFrame
+        COPILOT 代码 未经测试
+        """
+        try:
+            # 读取二进制内容
+            content = self.read_file(bucket_name, object_name, encoding=None)
+            
+            # 使用BytesIO将二进制内容转换为文件对象
+            with io.BytesIO(content) as bio:
+                return pd.read_hdf(bio, key=key)
+        except Exception as e:
+            print(f"Error reading HDF5 file: {e}")
+            raise
+    def update_hdf5(self, df, bucket_name, object_name, key='RawData'):
+        """
+        更新DataFrame并上传到MinIO
+        COPILOT 代码 未经测试
+        """
+        try:
+            # 将DataFrame保存为HDF5格式的二进制内容
+            bio = io.BytesIO()
+            df.to_hdf(bio, key=key, mode='w')
+            bio.seek(0)
+            
+            # 上传到MinIO
+            self.minio_client.client.put_object(
+                bucket_name,
+                object_name,
+                bio,
+                bio.getbuffer().nbytes
+            )
+        except Exception as e:
+            print(f"Error updating HDF5 file: {e}")
+            raise
+
 if __name__ == '__main__':
     #2014年数据 2600条 全部更新完毕约7小时
     #2016年数据已更新完毕
-    a = hdf5()
+    a = MinioHDF5Handler()
     a.start_date = datetime(2020,1,7,9,0)
     a.end_date = datetime(2020,1,7,10,30)    
     a.code = '000002.SZ'
     a.ktype = '1m'
+    file = a.read_hdf5('hdf5', 'akshare/data/1min/000002.SZ.h5')
+    print(file)
     c = ak_data()   #初始化ak_data类，从a模块获取类的属性数据
 
     ####读取并打印 HDF5 文件的结构
