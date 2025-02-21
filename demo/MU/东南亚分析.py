@@ -1,12 +1,13 @@
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
+import seaborn as sns
 plt.rcParams['font.sans-serif'] = ['SimHei']    # 使用中文字体
 plt.rcParams['axes.unicode_minus'] = False      # 正常显示负号
 """
 读取桌面目录下的“2025-01-23-13-23-56.csv"文件，找出航班日期，降落风速，着陆距离修正三列，按照月份进行箱体图绘制
 """
-airport = 'VTBS'
+airport = 'VTSP'
 def 数据读取():
     """
     按照指定的目录读取数据并且完成对应的数据清洗
@@ -63,12 +64,29 @@ def 数据读取():
     numeric_columns = [col for col in csv_data.columns if pd.api.types.is_numeric_dtype(csv_data[col])]
 
 def 作图模块(csv_data  = None ,col = None , name = None):
-    # 按照月份进行箱体图绘制，并叠加降落风速的折线图
+    """使用Seaborn按月份分组并根据是否通宵做对比的箱体图"""
+    fig, ax1 = plt.subplots(figsize=(8, 5))
+    
+    # 替换原先的 csv_data.boxplot(...) 调用，使用seaborn展示hue分组
+    sns.boxplot(data=csv_data, x='年月', y=col, hue='是否通宵', ax=ax1)
+    
+    ax1.set_title(f'{airport}|{name} 通宵航班对比图')
+    ax1.set_xlabel('月份')
+    ax1.set_ylabel(name)
+    plt.suptitle('')  # 移除默认子图标题
+    
+    #plt.show()
+    # 保存图片
+    plt.savefig(os.path.join('c:\\test', f'{airport} {name} 通宵航班对比图.png'), dpi=300)
+    return fig    
+    
+    """
+    #原始代码
+     # 按照月份进行箱体图绘制，每个月按照是否通宵进行对比
     fig, ax1 = plt.subplots()
-
-    # 绘制着陆距离修正的箱体图
-    csv_data.boxplot(column=col, by='年月', grid=False, ax=ax1)
-    ax1.set_title(f'{airport}|{name} 与季节性着陆风速关系箱体图')
+    # 绘制{着陆距离}修正的箱体图
+    csv_data.boxplot(column=col, by='年月', hue='是否通宵',grid=False, ax=ax1)
+    ax1.set_title(f'{airport}|{name} 通宵航班对比图')
     ax1.set_xlabel('月份')
     ax1.set_ylabel(name)
     #ax1.set_ylim(1800, 2500)  # Set y-axis limits
@@ -91,7 +109,9 @@ def 作图模块(csv_data  = None ,col = None , name = None):
     plt.savefig(os.path.join('c:\\test', f'{airport} {name} 与季节性着陆风速关系箱体图.png'), dpi=300)
     plt.tight_layout()
     #plt.show()
-    #input("按回车键退出...")
+    #input("按回车键退出...")   
+    """
+
 
 if __name__ == "__main__":
     # 定义需要循环出图的列,json格式，键为列名，值为图表名称
