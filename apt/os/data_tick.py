@@ -14,6 +14,8 @@ import tushare as ts
 import sqlalchemy
 import logging
 import os
+import os   #用于读取文件目录
+from dotenv import load_dotenv #用于读取.env文件
 
 
 class Data_tick(TSOS):  
@@ -36,8 +38,10 @@ class Data_tick(TSOS):
         elif server_name == 3:
             self.engine = sqlalchemy.create_engine('mysql+pymysql://stock_user:a@localhost:3306/stock')            
         """
+        #读取.env文件
+        load_dotenv()
         self.engine = sqlalchemy.create_engine('mysql+pymysql://stock_user:a@1#Yy1c@localhost:3306/stock')
-        auth('13817092632','JQ@tushare123')
+        auth(os.getenv('JQDATA_USER'),os.getenv('JQDATA_PASSWORD'))
     
     def get_tick_data(self , code = None , day = '2020-01-01'):
         day = day   #时间格式必须是YYYY-MM-DD
