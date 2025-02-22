@@ -399,7 +399,9 @@ class data(base,stock):
                     60分钟线需要去除：涨跌幅  涨跌额 振幅  换手率
                 akshare1.14版本：
                     1分钟线需要去除 ：均价
-                    60分钟线需要去除： 同1.12版本                  
+                    60分钟线需要去除： 同1.12版本 
+                akshare1.16版本：
+                    2025/2/18发现ak1分钟线出现更新错误，升级akshare版本后问题修复
                 """
                 if type =='1m' and net_connection == True:
                     #print(df_ak)
