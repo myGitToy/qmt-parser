@@ -3,6 +3,8 @@ from datetime import datetime,date,timedelta
 from apt.vendor.tspro.base import base as base
 from apt.vendor.tspro.base import stock as stock
 from apt.vendor.tspro.data import data as data
+from dotenv import load_dotenv #用于读取.env文件
+import os   #用于读取文件目录
 import tushare as ts
 import pandas as pd
 import numpy as np
@@ -14,8 +16,10 @@ class pro_api(data):
     https://huiqiao.visualstudio.com/MyFunds/_sprints/taskboard/MyFunds%20Team/MyFunds/2023Q1?workitem=449
     """
     def __init__(self):
+        #读取.env文件
+        load_dotenv()        
         #初始化 接入token
-        self.pro = ts.pro_api("55297f16c0119146589e059db315ba28a9412e89ec9f91e538e655b2")
+        self.pro = ts.pro_api(os.getenv('TUSHARE_TOKEN'))
         super().__init__()  # 调用父类的初始化方法
     def stock_basic(self , end_date = datetime(2022,1,1)):
         """

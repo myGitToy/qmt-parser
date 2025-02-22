@@ -2,6 +2,8 @@
 from datetime import datetime,date,timedelta
 from apt.vendor.tspro.data import data as data
 from apt.vendor.akshare.data import data as ak_data
+from dotenv import load_dotenv #用于读取.env文件
+import os   #用于读取文件目录
 import tushare as ts
 import akshare as ak
 import pandas as pd
@@ -15,7 +17,8 @@ class pro_api(data):
     """
     def __init__(self):
         #初始化 接入token
-        self.pro = ts.pro_api("55297f16c0119146589e059db315ba28a9412e89ec9f91e538e655b2")
+        load_dotenv()
+        self.pro = ts.pro_api(os.getenv('TUSHARE_TOKEN'))
         self.token2 = '12345'
     
     def function_A(self):
@@ -84,13 +87,15 @@ class ths(pro_api):
 
 if __name__ == '__main__':
     a = pro_api()
-    th = ths()
+    #th = ths()
     ak_data = ak_data()
     a.start_date = datetime(2023,3,1,8)
     a.end_date = datetime(2023,3,20,16)
     a.code = '159949.SZ'
     a.ktype = '1d'
-    
+    #获取基金持仓，用来测试tspro api token的获取
+    df_fund_stock_list = a.pro.fund_portfolio(ts_code='001753.OF')
+    print(df_fund_stock_list)
     th.function_A()
     th.update()
     #df = a.stock_basic()

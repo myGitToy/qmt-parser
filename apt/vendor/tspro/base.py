@@ -1,6 +1,8 @@
 import tushare as ts
-from dataclasses import dataclass
 import sqlalchemy
+import os   #用于读取文件目录
+from dotenv import load_dotenv #用于读取.env文件
+from dataclasses import dataclass
 from enum import Enum
 from datetime import datetime
 #from apt.vendor.tspro.base import base
@@ -34,6 +36,7 @@ class base():
         aws = 1
         localhost = 2
         centos9 = 3
+        ubuntu186 = 4
 
     def __init__(self , rds_host = 数据源.localhost , myauth = True):
         """
@@ -46,28 +49,28 @@ class base():
             print("aliyun 暂不支持")
         elif rds_host == self.数据源.aws:
             #database-1.cluster-czherlzuxybq.us-west-2.rds.amazonaws.com
-            self.engine = sqlalchemy.create_engine('mysql+pymysql://stock_user:a1#Yy1cTc@database-1.cluster-czherlzuxybq.us-west-2.rds.amazonaws.com:3306/stock')
+            self.engine = sqlalchemy.create_engine(os.getenv('AWS_DB_CONN'))
             #RDS数据库采用Amazon Aurora MySQL Serverless
             if myauth == True:
                 #初始化ts接口
-                self.pro = ts.pro_api('55297f16c0119146589e059db315ba28a9412e89ec9f91e538e655b2')
-                self.token = '55297f16c0119146589e059db315ba28a9412e89ec9f91e538e655b2'
+                self.pro = ts.pro_api(os.getenv('TUSHARE_TOKEN'))
+                self.token = os.getenv('TUSHARE_TOKEN')
         elif rds_host == self.数据源.localhost:
             #self.engine = sqlalchemy.create_engine('mysql+pymysql://root:q19840207@192.168.1.186:3306/stock') #186 ubuntu22LTS
-            self.engine = sqlalchemy.create_engine('mysql+pymysql://stock_user:atp73V4@localhost:3306/stock')   #dell xps15本地数据库
+            self.engine = sqlalchemy.create_engine(os.getenv('LOCAL_DB_CONN'))   #dell xps15本地数据库
             #本地数据源支持脱机访问，其他数据源则不支持脱机
             if self.myauth == True:
                 #初始化ts接口
-                self.pro = ts.pro_api('55297f16c0119146589e059db315ba28a9412e89ec9f91e538e655b2')
-                self.token = '55297f16c0119146589e059db315ba28a9412e89ec9f91e538e655b2'
+                self.pro = ts.pro_api(os.getenv('TUSHARE_TOKEN'))
+                self.token = os.getenv('TUSHARE_TOKEN')
         elif rds_host == self.数据源.centos9:
             #self.engine = sqlalchemy.create_engine('mysql+pymysql://stock:sal62688558@192.168.1.188:3306/stock')
-            self.engine = sqlalchemy.create_engine('mysql+pymysql://stock_user:2fn@DtbVw8Dd@192.168.1.191:3306/stock')
+            self.engine = sqlalchemy.create_engine(os.getenv('CENTOS9_DB_CONN'))
             #本地数据源支持脱机访问，其他数据源则不支持脱机
             if self.myauth == True:
                 #初始化ts接口
-                self.pro = ts.pro_api('55297f16c0119146589e059db315ba28a9412e89ec9f91e538e655b2')
-                self.token = '55297f16c0119146589e059db315ba28a9412e89ec9f91e538e655b2'
+                self.pro = ts.pro_api(os.getenv('TUSHARE_TOKEN'))
+                self.token = os.getenv('TUSHARE_TOKEN')
         else:
             print("不支持的数据源，授权无效")
         super(base , self).__init__()  #支持多态继承
