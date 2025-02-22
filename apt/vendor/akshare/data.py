@@ -1075,7 +1075,7 @@ class data(base,stock):
                                 with self.engine.begin() as connection:
                                     connection.rollback()
                                     print(f"{day.date()}|{code} 修正失败，回滚数据")
-
+        print("1分钟线修正完毕")
         #以下数据作为存档，已无作用
         # 从 akshare_60m 表中获取每天的第一根 K 线的 OPEN 价格
         """

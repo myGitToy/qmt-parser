@@ -2,6 +2,8 @@ import numpy as np
 import tushare as ts
 import pandas as pd
 import matplotlib.pyplot as plt
+import os   #用于读取文件目录
+from dotenv import load_dotenv #用于读取.env文件
 from apt.qsp_universal.base import base as data
 from apt.vendor.tspro.data import data as tspro
 from datetime import datetime,timedelta
@@ -17,7 +19,9 @@ a.end_date = tspro.end_date = datetime.now()
 a.fq = data.复权.动态复权
 a.ktype = '1d'
 a.vendor = a.vendor.tusharePro
-pro = ts.pro_api('55297f16c0119146589e059db315ba28a9412e89ec9f91e538e655b2')
+#读取.env文件
+load_dotenv()
+pro = ts.pro_api(os.getenv('TUSHARE_TOKEN'))
 #基金份额数据获取
 share =  pro.fund_share(ts_code = a.code , start_date = tspro.start_date.strftime('%Y%m%d') , end_date = tspro.end_date.strftime('%Y%m%d'))
 #格式处理

@@ -4,11 +4,15 @@ import pandas as pd
 import tushare as ts
 import sqlalchemy
 import datetime
+import os   #用于读取文件目录
+from dotenv import load_dotenv #用于读取.env文件
 from jqdatasdk import *
 from apt.vendor.jqdata.base import base as base
 #a = bxzj()
 #a.daily_update()
-auth('13817092632','JQ@tushare123')
+#读取.env文件
+load_dotenv()
+auth(os.getenv('JQDATA_USER'),os.getenv('JQDATA_PASSWORD'))
 #显示所有列
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)

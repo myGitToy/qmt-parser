@@ -7,6 +7,8 @@ from apt.vendor.tspro.security import security as tssec
 from apt.vendor.jqdata.security import security as jqsec
 from datetime import datetime , timedelta
 from enum import Enum
+from dotenv import load_dotenv #用于读取.env文件
+import os   #用于读取文件目录
 import numpy as np
 import pandas as pd
 import tushare as ts
@@ -54,8 +56,10 @@ class base():
         self.myauth = myauth
         self.server = fwq
         self.vendor = vendor
+        #读取.env文件
+        load_dotenv()
         #初始化ts接口
-        self.pro = ts.pro_api('55297f16c0119146589e059db315ba28a9412e89ec9f91e538e655b2')
+        self.pro = ts.pro_api(os.getenv('TUSHARE_TOKEN'))
         #数据校验环节：
         #1. 证券代码不能为空
         #if code == None:

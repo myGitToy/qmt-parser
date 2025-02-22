@@ -1,6 +1,8 @@
 import tushare as ts
-from dataclasses import dataclass
 import sqlalchemy
+import os   #用于读取文件目录
+from dataclasses import dataclass
+from dotenv import load_dotenv #用于读取.env文件
 from enum import Enum
 from datetime import datetime
 #from apt.vendor.tspro.base import base
@@ -34,41 +36,58 @@ class base():
         aws = 1
         localhost = 2
         centos9 = 3
+        ubuntu186 = 4
+        ubuntu191 = 5
 
-    def __init__(self , rds_host = 数据源.localhost , myauth = True):
+    def __init__(self , rds_host = None , myauth = True):
         """
         tspro 初始化
         rds_host: 数据源的选择 默认为本地数据
         auth: jqdata授权 默认是授权的，False应对某些特殊情况 比如脱机对数据库进行读取操作
         """
+        #读取.env文件
+        load_dotenv()
+        # 进行数据源的选择和映射
+        if rds_host is None:    #数据源为空时进行映射
+            # 从.env中读取DB_NAME，默认值可以设为"localhost"
+            db_name = os.getenv("DB_NAME", "localhost").strip().lower()
+            mapping = {
+                "aliyun": self.数据源.aliyun,
+                "aws": self.数据源.aws,
+                "localhost": self.数据源.localhost,
+                "centos9": self.数据源.centos9,
+                "ubuntu186": self.数据源.ubuntu186,
+                "ubuntu191": self.数据源.ubuntu191,
+            }      
+            rds_host = mapping.get(db_name, self.数据源.localhost)
         self.myauth = myauth
         if (rds_host == self.数据源.aliyun) and (myauth == True):
             print("aliyun 暂不支持")
         elif rds_host == self.数据源.aws:
             #database-1.cluster-czherlzuxybq.us-west-2.rds.amazonaws.com
-            self.engine = sqlalchemy.create_engine('mysql+pymysql://stock_user:a1#Yy1cTc@database-1.cluster-czherlzuxybq.us-west-2.rds.amazonaws.com:3306/stock')
+            self.engine = sqlalchemy.create_engine(os.getenv('AWS_DB_CONN'))
             #RDS数据库采用Amazon Aurora MySQL Serverless
             if myauth == True:
                 #初始化ts接口
-                self.pro = ts.pro_api('55297f16c0119146589e059db315ba28a9412e89ec9f91e538e655b2')
-                self.token = '55297f16c0119146589e059db315ba28a9412e89ec9f91e538e655b2'
+                self.pro = ts.pro_api(os.getenv('TUSHARE_TOKEN'))
+                self.token = os.getenv('TUSHARE_TOKEN')
         elif rds_host == self.数据源.localhost:
-            self.engine = sqlalchemy.create_engine('mysql+pymysql://root:q19840207@192.168.1.186:3306/stock') #186 ubuntu22LTS
+            #self.engine = sqlalchemy.create_engine('mysql+pymysql://root:q19840207@192.168.1.186:3306/stock') #186 ubuntu22LTS
             #self.engine = sqlalchemy.create_engine('mysql+pymysql://stock_user:atp73V4@localhost:3306/stock')   #dell xps15本地数据库
-            #self.engine = sqlalchemy.create_engine('mysql+pymysql://root:sal62688558@localhost:3306/stock')
+            self.engine = sqlalchemy.create_engine(os.getenv('LOCAL_DB_CONN'))
             #本地数据源支持脱机访问，其他数据源则不支持脱机
             if self.myauth == True:
                 #初始化ts接口
-                self.pro = ts.pro_api('55297f16c0119146589e059db315ba28a9412e89ec9f91e538e655b2')
-                self.token = '55297f16c0119146589e059db315ba28a9412e89ec9f91e538e655b2'
+                self.pro = ts.pro_api(os.getenv('TUSHARE_TOKEN'))
+                self.token = os.getenv('TUSHARE_TOKEN')
         elif rds_host == self.数据源.centos9:
             #self.engine = sqlalchemy.create_engine('mysql+pymysql://stock:sal62688558@192.168.1.188:3306/stock')
-            self.engine = sqlalchemy.create_engine('mysql+pymysql://stock_user:2fn@DtbVw8Dd@192.168.1.191:3306/stock')
+            self.engine = sqlalchemy.create_engine(os.getenv('CENTOS9_DB_CONN'))
             #本地数据源支持脱机访问，其他数据源则不支持脱机
             if self.myauth == True:
                 #初始化ts接口
-                self.pro = ts.pro_api('55297f16c0119146589e059db315ba28a9412e89ec9f91e538e655b2')
-                self.token = '55297f16c0119146589e059db315ba28a9412e89ec9f91e538e655b2'
+                self.pro = ts.pro_api(os.getenv('TUSHARE_TOKEN'))
+                self.token = os.getenv('TUSHARE_TOKEN')
         else:
             print("不支持的数据源，授权无效")
         super(base , self).__init__()  #支持多态继承
@@ -141,5 +160,6 @@ class stock():
 
 if __name__=="__main__":
     a = base(myauth = True)
+    #用于测试pro_api接口是否可以获取数据
     df = a.pro.daily(trade_date= '20220602')
     print(df)
