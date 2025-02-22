@@ -6,12 +6,12 @@ from apt.vendor.tspro.base import stock as stock
 from apt.vendor.tspro.data import data as data
 from apt.vendor.tspro.pro_api import pro_api
 from apt.vendor.akshare.data import data as ak_data
-from apt.os.minio.minio_test import MinioClientWrapper as MinioClient
+from apt.os.minio.MinioHandler import MinioClientWrapper as MinioClient
 import tushare as ts
 import pandas as pd
 import numpy as np
 import pandas as pd
-import h5py
+import h5py 
 import os.path
 import uuid
 import io
@@ -19,10 +19,21 @@ class MinioHDF5Handler(data, MinioClient):
     """
     通过minio对hdf5文件的读取，加载，删除，更新的基类
     """
-    def __init__(self , key = 'RawData'):
+    def __init__(self , bucket_prefix = '/akshare/data/1min/' , cache_dir =None , key = 'RawData'):
+        """
+        初始化参数
+        param：
+            bucket_prefix: 桶前缀
+            cache_dir: 缓存目录
+            key: h5文件的key值
+        """
         #全局变量定义
         #关于如何调用，请参考task449
         #https://huiqiao.visualstudio.com/MyFunds/_sprints/taskboard/MyFunds%20Team/MyFunds/2023Q1?workitem=449
+        if cache_dir is None:
+            cache_dir = os.getenv('TEMP')
+        
+        
         self.file_path = "C:\\Data\\hdf5\\1min"  #数据存盘的根目录
         self.update_path = "C:\\Data\\hdf5" #更新列表的存盘目录（用于记录需要更新的数据）
         self.max_row = 8000  #单次更新的最大数据行（tspro的限制）
@@ -365,11 +376,18 @@ class MinioHDF5Handler(data, MinioClient):
             print(f"读取文件时出错: {str(e)}")
 
 
-    def read_hdf5(self, bucket_name, object_name, key='RawData'):
+    def get_hdf5(self, bucket_name, object_name, cache_path ,key='RawData'):
         """
         从MinIO读取HDF5文件并转为DataFrame
+        params:
+            bucket_name: MinIO桶名称
+            object_name: MinIO对象名称（带路径的）
+            cache_path: 本地路径
+            key: HDF5文件中的键
         COPILOT 代码 未经测试
         """
+        # 第一步 将HDF5文件下载到本地  
+
         try:
             # 读取二进制内容
             content = self.read_file(bucket_name, object_name, encoding=None)
