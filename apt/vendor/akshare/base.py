@@ -37,8 +37,9 @@ class base():
         localhost = 2
         centos9 = 3
         ubuntu186 = 4
-        
-    def __init__(self , rds_host = 数据源.localhost , myauth = True):
+        ubuntu191 = 5
+
+    def __init__(self , rds_host = None , myauth = True):
         """
         tspro 初始化
         rds_host: 数据源的选择 默认为本地数据
@@ -46,6 +47,19 @@ class base():
         """
         #读取.env文件
         load_dotenv()
+        # 进行数据源的选择和映射
+        if rds_host is None:    #数据源为空时进行映射
+            # 从.env中读取DB_NAME，默认值可以设为"localhost"
+            db_name = os.getenv("DB_NAME", "localhost").strip().lower()
+            mapping = {
+                "aliyun": self.数据源.aliyun,
+                "aws": self.数据源.aws,
+                "localhost": self.数据源.localhost,
+                "centos9": self.数据源.centos9,
+                "ubuntu186": self.数据源.ubuntu186,
+                "ubuntu191": self.数据源.ubuntu191,
+            }      
+            rds_host = mapping.get(db_name, self.数据源.localhost)
         self.myauth = myauth
         if (rds_host == self.数据源.aliyun) and (myauth == True):
             print("aliyun 暂不支持")
