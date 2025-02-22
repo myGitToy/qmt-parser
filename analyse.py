@@ -37,8 +37,6 @@ class Technical_Analysis():
     """技术分析主类，下设各种技术分析指标，每个指标一个类"""
     #关于network_OK的说明：默认需要调用network_connection才能返回正确的结果，如果之前调用过，再使用network_OK可节约ping，增加效率
     network_OK = None
-    #tushare社区的token
-    #_token = "55297f16c0119146589e059db315ba28a9412e89ec9f91e538e655b2"
     def network_connection(self,testing_url = None):
         """检查网络连接情况，可自定义网址，默认ping 百度；连通返回True 断开返回False"""
         print("CHECKING NETWORK CONNECTION......")
