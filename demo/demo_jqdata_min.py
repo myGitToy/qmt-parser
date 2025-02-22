@@ -5,7 +5,7 @@ import sqlalchemy
 from apt.vendor.jqdata.jqdata import data as jqdata
 #显示所有列
 pd.set_option('display.max_columns', None)
-#auth('13817092632','JQ@tushare123')
+
 #jqdata_60m更新 已完成2018-2020年11月的数据导入
 #jqdata_5m更新 已完成2019.7至今的数据
 #day = datetime.datetime(2004,1,1)  #2005年之前的数据不存在，聚宽未收录

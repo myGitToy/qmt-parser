@@ -339,8 +339,11 @@ ASALocalRun/
 # BeatPulse healthcheck temp database
 healthchecksdb
 
-#本地文件 证券代码类CSV格式文件
+#锟斤拷锟斤拷锟侥硷拷 证券锟斤拷锟斤拷锟斤拷CSV锟斤拷式锟侥硷拷
 data/
 data2/
 trade/
 .codegpt
+
+#娣诲姞.env鏂囦欢
+.env
