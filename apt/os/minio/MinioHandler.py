@@ -4,6 +4,8 @@ import pandas as pd
 import numpy as np
 import tables
 import h5py
+import os   #用于读取文件目录
+from dotenv import load_dotenv #用于读取.env文件
 from minio import Minio
 from minio.error import S3Error
 from apt.vendor.akshare.data import data as ak_data
@@ -26,30 +28,30 @@ class MinioClientWrapper:
     """
     def __init__(self, endpoint = None, access_key = None, secret_key = None, secure=False, cache_path = None):
         """
-        params:
+        params（目前这些参数接口保留，但实际都是从本地的env环境变量配置文件中读取数据）:
             endpoint: MinIO服务端点
             access_key: MinIO访问密钥
             secret_key: MinIO访问密钥
             secure: 是否启用安全连接HTTPS
-            cache_path: MinIO缓存路径
+            cache_path: MinIO本地缓存路径
+        对外参数：
+            client: MinIO客户端对象（主接口）
+            MINIO_CACHE_PATH: MinIO本地缓存路径
+
         """
+        #读取.env文件
+        load_dotenv()           
         # 定义默认缓存路径
-        default_cache_path = "c:\minio_cache"
-        try:
-            if cache_path is not None:
-                os.environ["MINIO_CACHE_PATH"] = cache_path
-            else:
-                os.environ["MINIO_CACHE_PATH"] = default_cache_path
-                if not os.path.exists(default_cache_path):
-                    os.makedirs(default_cache_path, exist_ok=True)   
-        except Exception as e:
-            print(f"设置环境变量失败: {e}")
+        self.MINIO_CACHE_PATH = os.getenv('CACHE_PATH', "c:\\minio_cache")
+        #检查缓存路径是否存在
+        if not os.path.exists(self.MINIO_CACHE_PATH):
+            os.makedirs(self.MINIO_CACHE_PATH, exist_ok=True)                
         # 检查参数是否有效    
         if access_key is None or secret_key is None or endpoint is None:
             # 配置默认的参数
-            endpoint = "192.168.1.201:19000"
-            access_key = "A9LUdGKJSbSTyV9FrfsF"
-            secret_key = "dyyJTGH2bhqXp2ziyIzbJ8os3GOuEbPDauvdMq60"            
+            endpoint = os.getenv('ENDPOINT')
+            access_key = os.getenv('ACCESS_KEY')
+            secret_key = os.getenv('SECRET_KEY')
             
         self.client = Minio(
             endpoint = endpoint,
@@ -57,6 +59,8 @@ class MinioClientWrapper:
             secret_key = secret_key,
             secure = secure
         )
+        if access_key is None or secret_key is None or endpoint is None:
+            raise ValueError("MinIO客户端初始化失败，目前不允许自定义设置，仅从env文件中读取配置")
 
     def file_exists(self , bucket_name , object_name , case_sensitive = True) -> bool:
         """
@@ -98,7 +102,7 @@ class MinioClientWrapper:
             # 备注：由于HDF5文件采用pd.HDFStore存储，直接读取二进制有困难，因此采用下载至临时文件夹的方法
             # 临时文件夹默认位于os.getenv("MINIO_CACHE_PATH", "c:\minio_cache")
             if object_name.lower().endswith('.h5'):
-                return content            
+                raise NotImplementedError("HDF5文件读取需要特殊处理")       
             # 如果是文本文件,进行解码
             if encoding:
                 return content.decode(encoding)
@@ -129,10 +133,10 @@ class MinioClientWrapper:
         """
         上传文件
         params:
-            bucket_name: 桶名称 例akshare
-            object_name: 带路径的对象名称 例akshare/data/1min/600000.SH.h5
+            bucket_name: 桶名称 例hdf5
+            object_name: 带路径的对象名称（不包括桶名称） 例akshare/data/1min/600000.SH.h5
                 备注：桶名称和路径如果填写错误，则会自动创建
-            file_path: 文件路径 例c:/data/1min/600000.SH.h5
+            file_path: 文件路径 例c:\\data\\1min\\600000.SH.h5
         """
         # 检查file_path是否有效
         if not os.path.exists(file_path):
@@ -149,8 +153,8 @@ class MinioClientWrapper:
         下载文件
         params:
             bucket_name: 桶名称 例akshare
-            object_name: 带路径的对象名称 例akshare/data/1min/600000.SH.h5
-            file_path: 文件路径 例c:/data/1min/600000.SH.h5
+            object_name: 带路径的对象名称（不包括桶名称） 例akshare/data/1min/600000.SH.h5
+            file_path: 文件路径 例c:\\data\\1min\\600000.SH.h5
         return: bool 是否下载成功        
         """
         # 检查file_path是否有效
@@ -170,10 +174,17 @@ class MinioClientWrapper:
     def list_files(self, bucket_name, prefix=None):
         files = self.client.list_objects(bucket_name, prefix=prefix, recursive=True)
         return [obj.object_name for obj in files]
-def create_local_file(file_path, content="Hello MinIO!"):
-    with open(file_path, 'w', encoding='utf-8') as f:
-        f.write(content)
+    def create_local_file(file_path, content="Hello MinIO!"):
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(content)
 
+    def get_object(self, bucket_name, object_name):
+        """
+        获取对象，返回 Minio 客户端的对象数据
+        如果hdf5文件，需要使用get_object读取二进制流，以避免HDF5文件的读取问题
+        pandas.read_hdf() 无法直接读取二进制数据，需要将二进制数据包装为文件流
+        """        
+        return self.client.get_object(bucket_name, object_name)
 
 
 
@@ -188,20 +199,26 @@ if __name__ == "__main__":
     # 演示：检查文件是否存在
     print(minio_client.file_exists("hdf5", "akshare/data/1min/600000.sh.h5"))  # False
     # 演示：下载文件
-    cache_dir = os.getenv("MINIO_CACHE_PATH", "c:/minio_cache")
     file_name = "600000.SH.h5"
     #download_path = os.path.join(cache_dir, "akshare", "data", "1min", file_name)
-    download_path = os.path.join("c:\\path",  file_name)
+    download_path = os.path.join(minio_client.MINIO_CACHE_PATH, file_name)
     is_success = minio_client.download_file("hdf5", f"akshare/data/1min/{file_name}", download_path)
     print(f"Downloaded file: {is_success}")
     # 演示：上传文件
     file_name = "600000_test.SH.h5"
-    local_file = os.path.join("c:\\path",file_name)
+    local_file = os.path.join(minio_client.MINIO_CACHE_PATH,file_name)
     is_success = minio_client.upload_file("hdf5", f"akshare/data/1min_test/{file_name}", local_file)
     print(f"Uploaded file: {is_success}")
-    # 演示：读取文件内容（二进制）
-    content = minio_client.read_file("hdf5", "akshare/data/1min_test/000001.SZ.h5")
-    
+    # 演示：读取文件内容（二进制）（copilot代码）
+    #content = minio_client.read_file("hdf5", "akshare/data/1min_test/000001.SZ.h5")
+    # 演示：读取文件内容（二进制）（deepseek代码）
+    #   从 Minio 读取二进制数据
+    binary_data = minio_client.get_object("hdf5", f"akshare/data/1min_test/{file_name}").read()
+    #   将二进制数据包装为文件流
+    data_buffer = io.BytesIO(binary_data)
+    #   读取 HDF5 文件，指定 key（数据集路径）
+    df = pd.read_hdf(data_buffer, key="RawData")  # 替换为实际路径
+    print(df)
     ############## 以下代码均为临时测试代码 ################
     # 读取HDF5文件内容，转换为DataFrame
     df_ak = pd.DataFrame() #ak主数据
