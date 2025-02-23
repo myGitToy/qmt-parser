@@ -88,6 +88,20 @@ class base():
                 #初始化ts接口
                 self.pro = ts.pro_api(os.getenv('TUSHARE_TOKEN'))
                 self.token = os.getenv('TUSHARE_TOKEN')
+        elif rds_host == self.数据源.ubuntu186:
+            self.engine = sqlalchemy.create_engine(os.getenv('UBUNTU186_DB_CONN'))
+            #本地数据源支持脱机访问，其他数据源则不支持脱机
+            if self.myauth == True:
+                #初始化ts接口
+                self.pro = ts.pro_api(os.getenv('TUSHARE_TOKEN'))
+                self.token = os.getenv('TUSHARE_TOKEN')
+        elif rds_host == self.数据源.ubuntu191:
+            self.engine = sqlalchemy.create_engine(os.getenv('UBUNTU191_DB_CONN'))
+            #本地数据源支持脱机访问，其他数据源则不支持脱机
+            if self.myauth == True:
+                #初始化ts接口
+                self.pro = ts.pro_api(os.getenv('TUSHARE_TOKEN'))
+                self.token = os.getenv('TUSHARE_TOKEN') 
         else:
             print("不支持的数据源，授权无效")
         super(base , self).__init__()  #支持多态继承
