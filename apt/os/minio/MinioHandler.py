@@ -162,12 +162,30 @@ class MinioClientWrapper:
 
     def list_buckets(self) -> pd.DataFrame:
         """
-        列出所有桶
-        params:
-        return: pandas.DataFrame
+        列出所有桶及其对象信息
+        return: pandas.DataFrame 包含桶名称、创建日期、对象数及总大小
         """
         buckets = self.client.list_buckets()
-        return pd.DataFrame([bucket.__dict__ for bucket in buckets])
+        data = []
+        for bucket in buckets:
+            objects = list(self.client.list_objects(bucket.name, recursive=True))
+            count = len(objects)
+            total_size = sum(obj.size for obj in objects)
+            def sizeof_fmt(num, suffix="B"):
+                for unit in ["", "K", "M", "G", "T"]:
+                    if abs(num) < 1024.0:
+                        return f"{num:3.1f} {unit}{suffix}"
+                    num /= 1024.0
+                return f"{num:.1f} P{suffix}"
+            
+            bucket_info = {
+                '桶名称': bucket.name,
+                '创建日期': bucket.creation_date.strftime('%Y-%m-%d %H:%M'),
+                '总文件数': count,
+                '总大小': sizeof_fmt(total_size)
+            }
+            data.append(bucket_info)
+        return pd.DataFrame(data)
     
     def upload_file(self, bucket_name, object_name, file_path)->bool:
         """
