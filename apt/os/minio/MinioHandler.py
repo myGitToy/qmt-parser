@@ -14,7 +14,22 @@ from apt.os.hdf5 import hdf5 as hdf5
 
 class MinioClientWrapper:
     """
-    Minio客户端封装类
+    Minio客户端封装类\n
+    Attributes:
+        MINIO_CACHE_PATH (str): 本地缓存路径
+        client: MinIO客户端对象
+
+    Methods:
+        create_bucket(bucket_name): 创建桶
+        list_buckets(): 列出所有桶
+
+        file_exists(bucket_name, object_name): 检查文件是否存在
+        read_file(bucket_name, object_name, encoding='utf-8'): 读取文件内容
+        upload_file(bucket_name, object_name, file_path): 上传文件
+        download_file(bucket_name, object_name, file_path): 下载文件
+        remove_file(bucket_name, object_name): 删除文件
+        list_files(bucket_name, prefix=None): 罗列文件
+
     目前支持的功能有：
     1. 创建桶 create_bucket
     2. 列出所有桶 list_buckets
@@ -25,19 +40,39 @@ class MinioClientWrapper:
     7. 检查文件是否存在 file_exists
     8. 读取文件内容（二进制流） read_file
     9. 待增加
+    备注：如果要对Minio文件系统中的hdf5进行操作，请使用专用接口os.MinioHDF5.py
     """
     def __init__(self, endpoint = None, access_key = None, secret_key = None, secure=False, cache_path = None):
         """
-        params（目前这些参数接口保留，但实际都是从本地的env环境变量配置文件中读取数据）:
+        Parameters:
             endpoint: MinIO服务端点
             access_key: MinIO访问密钥
             secret_key: MinIO访问密钥
             secure: 是否启用安全连接HTTPS
             cache_path: MinIO本地缓存路径
-        对外参数：
-            client: MinIO客户端对象（主接口）
+
+        Returns:
+            N/A
+        
+        Attributes: 
+            对类属性进行说明。
+
+        Yields: 
+            用于生成器函数，描述 yield 的值。
+
+        Examples: 
+            给出使用示例。
+
+        Notes: 
+            对外参数：client: MinIO客户端对象（主接口）
             MINIO_CACHE_PATH: MinIO本地缓存路径
 
+        See Also: 
+            引用相关资源或文档。
+
+        References: 
+            （目前这些参数接口保留，但实际都是从本地的env环境变量配置文件中读取数据）
+           
         """
         #读取.env文件
         load_dotenv()           
@@ -65,9 +100,14 @@ class MinioClientWrapper:
     def file_exists(self , bucket_name , object_name , case_sensitive = True) -> bool:
         """
         检查文件是否存在
-        :param bucket_name: 桶名
-        :param object_name: 文件名（带路径的，如akshare/data/1min/600000.SH.h5）
-        :param case_sensitive: 是否区分大小写, 默认区分大小写
+
+        Parameters:
+            bucket_name: 桶名
+            object_name: 文件名（带路径的，如akshare/data/1min/600000.SH.h5）
+            case_sensitive: 是否区分大小写, 默认区分大小写
+        
+        Returns:
+            bool: True if the file exists, False otherwise.        
         """
         try:
             if case_sensitive:
@@ -150,7 +190,7 @@ class MinioClientWrapper:
 
     def download_file(self, bucket_name, object_name, file_path)->bool:
         """
-        下载文件
+        下载文件\n
         params:
             bucket_name: 桶名称 例akshare
             object_name: 带路径的对象名称（不包括桶名称） 例akshare/data/1min/600000.SH.h5
@@ -202,7 +242,7 @@ if __name__ == "__main__":
     file_name = "600000.SH.h5"
     #download_path = os.path.join(cache_dir, "akshare", "data", "1min", file_name)
     download_path = os.path.join(minio_client.MINIO_CACHE_PATH, file_name)
-    is_success = minio_client.download_file("hdf5", f"akshare/data/1min/{file_name}", download_path)
+    is_success = minio_client.download_file("hdf5", f"/akshare/data/1min/{file_name}", download_path)
     print(f"Downloaded file: {is_success}")
     # 演示：上传文件
     file_name = "600000_test.SH.h5"

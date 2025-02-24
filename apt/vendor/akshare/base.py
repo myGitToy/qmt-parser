@@ -39,8 +39,27 @@ class base():
         ubuntu186 = 4
         ubuntu191 = 5
 
-    def __init__(self , rds_host = None , myauth = True):
+    def __init__(self , rds_host = None , myauth = True):           
         """
+        Initialize the base class by setting up the database engine and (optionally) the Tushare API based on the specified data source and authorization flag.
+        Parameters:
+            rds_host (optional): The database source selection. If None, the data source is determined by the "DB_NAME" environment variable, which is mapped to one of the supported sources:
+                - "aliyun"
+                - "aws"
+                - "localhost"
+                - "centos9"
+                - "ubuntu186"
+                - "ubuntu191"
+              If the environment variable does not match any supported source, it defaults to "localhost".
+            myauth (bool, optional): Flag indicating whether to perform authorization. When True, the Tushare API is initialized for data access (with the token read from the environment). Some data sources (e.g., "aliyun") may not support authorization and will log a message if myauth is True.
+        Behavior:
+            - Loads environment variables from a .env file.
+            - Selects the appropriate database engine connection using SQLAlchemy based on the resolved data source.
+            - Initializes the Tushare API (if applicable) using the environment variable 'TUSHARE_TOKEN'.
+            - Supports offline data access specifically for the "localhost" data source.
+            - Logs an unsupported data source if an invalid source is provided.
+
+
         tspro 初始化
         rds_host: 数据源的选择 默认为本地数据
         auth: jqdata授权 默认是授权的，False应对某些特殊情况 比如脱机对数据库进行读取操作
