@@ -22,8 +22,18 @@ Minio 模块
   
    MinioClientWrapper
    OtherClass
-   
+
+
+
+akshare 模块
+=============
+
+.. automodule:: apt.vendor.akshare.base
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    :noindex:
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
-
