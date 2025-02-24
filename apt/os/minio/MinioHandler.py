@@ -152,13 +152,27 @@ class MinioClientWrapper:
             print(f"Error reading file: {err}")
             raise    
 
-    def create_bucket(self, bucket_name):
+    def create_bucket(self, bucket_name) -> bool:
         """
         创建桶
-        params:bucket_name: 桶名称
+        params: bucket_name: 桶名称
+        return: bool - 如果成功创建则返回True，如果桶已经存在则返回False
         """      
         if not self.client.bucket_exists(bucket_name):
             self.client.make_bucket(bucket_name)
+            return True
+        return False
+    
+    def delete_bucket(self, bucket_name) -> bool:
+        """
+        删除桶
+        params: bucket_name: 桶名称
+        return: bool - 如果成功删除则返回True，如果桶不存在则返回False
+        """
+        if self.client.bucket_exists(bucket_name):
+            self.client.remove_bucket(bucket_name)
+            return True
+        return False
 
     def list_buckets(self) -> pd.DataFrame:
         """
@@ -287,79 +301,12 @@ if __name__ == "__main__":
     a.code = '601318.sh'
     a.ktype = '1m'
 
-#   从 MinioClientWrapper 获取对象流并写入内存缓冲区
-    buffer = io.BytesIO(content)
-    with h5py.File(buffer, 'r') as file:
-        def visit_item(name, node):
-            if isinstance(node, h5py.Dataset):
-                print("Dataset:", name)
-            else:
-                print("Group:", name)
-        file.visititems(visit_item)
-    #raw_data = file['RawData/table'][:]
-    pd_df = pd.read_hdf(content, key='RawData')
-    print(pd_df)
-    #print(raw_data)
-    #with pd.HDFStore(buffer, mode='r') as store:
-        #df_buffer = store['RawData']
-    #print(df_ak)
 
-    # 使用tables直接从内存读取
-    df = pd.read_hdf(io.BytesIO(content), key='RawData')
-    print(content)
-    arr = np.frombuffer(content, dtype=np.uint8)
-    fileh = tables.open_file(arr.tobytes(), mode='r', driver="H5FD_CORE", 
-                            driver_core_image=content,
-                            driver_core_backing_store=0)
-    # 打印文件结构以便调试
-    print("HDF5文件结构:")
-    fileh.list_nodes('/')
 
-    # 正确读取表数据
-    table = fileh.get_node('/', 'RawData')  # 获取根目录下的RawData节点
-    df = pd.DataFrame(table[:])  # 使用切片操作读取所有数据
-    
-    print("\n数据预览:")
-    print(df.head())    
-    fileh.close()
-    # 使用get_node读取数据
-    tables2 = fileh.get_node('/RawData')
-    df2 = pd.DataFrame(tables2.read())
-    print(df2)
-    print(tables2)
-    # 转换为DataFrame
-    df = pd.DataFrame(fileh.root['RawData'][:])
-    fileh.close()
-    print(df)
 
-    # 使用BytesIO读取HDF5数据
-    with io.BytesIO(content) as bio:
-        df = pd.read_hdf(
-            bio, 
-            key='RawData',
-            where=f"date >='{a.start_date}' and date <='{a.end_date}'"
-        )
     #####1.1 从mysql中取出时间段内的所有数据（
     #df = ts.pro_bar(api = a.api , ts_code = a.code , freq = '1min' , adj = None , start_date = dt.strftime('%Y-%m-%d %H:%M:%S') , end_date = tmp_end_date.strftime('%Y-%m-%d %H:%M:%S') , adjfactor = True , factors = ['tor', 'vr'] , asset = 'E')
     #df = a.get_k_data() #从数据库中读取数据
     print(df)
     df_h5 = hdf5(a).data_query()
     print(df_h5)
-
-
-
-
-    # 显示某个桶里的全部文件
-    print(minio_client.list_files("hdf5", "akshare/data/1min"))
-    test_bucket = "testbucket"
-    minio_client.create_bucket(test_bucket)
-
-    local_file = "test.txt"
-    create_local_file(local_file, "这是文件内容")
-    minio_client.upload_file(test_bucket, "test.txt", local_file)
-    minio_client.download_file(test_bucket, "test.txt", "downloaded_test.txt")
-    print(minio_client.list_files(test_bucket))
-    minio_client.remove_file(test_bucket, "test.txt")
-
-    if os.path.exists(local_file):
-        os.remove(local_file)
