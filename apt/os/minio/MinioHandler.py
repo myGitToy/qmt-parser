@@ -32,14 +32,16 @@ class MinioClientWrapper:
 
     目前支持的功能有：
     1. 创建桶 create_bucket
-    2. 列出所有桶 list_buckets
-    3. 上传文件 upload_file
-    4. 下载文件 download_file
-    5. 删除文件 remove_file
-    6. 列出桶中的所有文件 list_files
-    7. 检查文件是否存在 file_exists
-    8. 读取文件内容（二进制流） read_file
-    9. 待增加
+    2. 删除桶 delete_bucket
+    3. 列出所有桶 list_buckets
+    7. 列出桶中的所有文件 list_files
+    4. 上传文件 upload_file
+    5. 下载文件 download_file
+    6. 删除文件 remove_file
+    
+    8. 检查文件是否存在 file_exists
+    9. 读取文件内容（二进制流） read_file
+    10. 待增加
     备注：如果要对Minio文件系统中的hdf5进行操作，请使用专用接口os.MinioHDF5.py
     """
     def __init__(self, endpoint = None, access_key = None, secret_key = None, secure=False, cache_path = None):
@@ -243,9 +245,35 @@ class MinioClientWrapper:
     def remove_file(self, bucket_name, object_name):
         self.client.remove_object(bucket_name, object_name)
 
-    def list_files(self, bucket_name, prefix=None):
-        files = self.client.list_objects(bucket_name, prefix=prefix, recursive=True)
-        return [obj.object_name for obj in files]
+    def list_files(self, bucket_name, prefix=None) -> pd.DataFrame:
+        """
+        列出指定 bucket 中的所有文件，可根据前缀进行过滤，并返回包含详细信息的 DataFrame。
+
+        参数:
+            bucket_name (str): 要列出文件的 bucket 名称。
+            prefix (str, 可选): 用于过滤对象的前缀。如果提供的话，只返回对象名称以此前缀开始的文件。
+
+        返回:
+            pandas.DataFrame: 包含文件详细信息，列包括文件名称、修改日期、文件大小（智能化格式）等。
+        """
+        objects = self.client.list_objects(bucket_name, prefix=prefix, recursive=True)
+        data = []
+        for obj in objects:
+            def sizeof_fmt(num, suffix="B"):
+                for unit in ["", "K", "M", "G", "T"]:
+                    if abs(num) < 1024.0:
+                        return f"{num:3.1f}{unit}{suffix}"
+                    num /= 1024.0
+                return f"{num:.1f}P{suffix}"
+            file_info = {
+            "文件名称": obj.object_name,
+            "修改日期": obj.last_modified.strftime('%Y-%m-%d %H:%M:%S') if hasattr(obj, 'last_modified') else "",
+            "文件大小": sizeof_fmt(obj.size)
+            }
+            data.append(file_info)
+        return pd.DataFrame(data)
+    
+
     def create_local_file(file_path, content="Hello MinIO!"):
         with open(file_path, 'w', encoding='utf-8') as f:
             f.write(content)
