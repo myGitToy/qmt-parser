@@ -11,7 +11,8 @@
 	"settings": {
 		"python.terminal.executeInFileDir": true,
 		"figma.autocompleteProperties": true,
-		"CodeGPT.apiKey": "CodeGPT Plus Beta"
+		"CodeGPT.apiKey": "CodeGPT Plus Beta",
+		"figma.autocompleteBlocks": false
 	},
 	"launch": {
 		"version": "0.2.0",
