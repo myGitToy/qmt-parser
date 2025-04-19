@@ -64,7 +64,9 @@ class MinioHDF5Handler(data, MinioClient):
 
     def data_query(self):
         """
-        【minio已测试】
+
+        数据查询 类似于get_k_data 【minio已测试】
+        # TODO 考虑是否改名get_k_data
         param：
             code: 证券代码（由基类提供参数）
             start_date: 开始日期（由基类提供参数）
@@ -470,6 +472,9 @@ if __name__ == '__main__':
     a.end_date = datetime(2025,1,7,10,30)    
     a.code = '000001.SZ'
     a.ktype = '1m'
+    # 测试文件结构
+    file_structure = a.print_hdf5_structure(os.path.join(a.MINIO_CACHE_PATH,'000002.SZ.h5'))
+    print(file_structure)
     db = a.data_query_by_count()
 
     print(db)
