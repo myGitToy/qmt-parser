@@ -363,8 +363,10 @@ class data(base,stock):
                     #df_tspro = ts.pro_bar(api = self.api , ts_code = code, freq = self.dict[type] , adj = None , start_date = start_date.strftime('%Y%m%d') , end_date = (end_date + timedelta(days = 1)).strftime('%Y%m%d') , adjfactor = True , factors = ['tor', 'vr'] , asset = 'E')
                     #print(self.dict[type])
                     try:
+                        df_ak = pd.DataFrame()
                         df_ak =  ak.stock_zh_a_hist_min_em(symbol = symbol , start_date = start_date.strftime('%Y%m%d %H:%M:%S'), end_date = end_date.strftime('%Y%m%d %H:%M:%S'), period = self.dict[type], adjust = '')
                     except:
+                        
                         print("网络连接失败！")
                         #跳出当前的for循环
                         
