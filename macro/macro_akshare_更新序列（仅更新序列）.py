@@ -13,9 +13,8 @@ def run_script():
     a.end_date = datetime.now()
     #a.update_etf_day()
     #优先更新高权限序列 
-    a.update_sequence_launch(priority = 1 , sleep = 0.00) 
-    a.update_sequence_launch(priority = 0 , sleep = 0.00) 
-
+    a.update_sequence_launch(priority = 1 , sleep = 0.05) 
+    a.update_sequence_launch(priority = 0 , sleep = 0.35) 
 while True:
     try:
         run_script()
@@ -23,3 +22,8 @@ while True:
     except Exception as e:
         print(f"Error occurred: {e}. Retrying in 5 seconds.")
         time.sleep(5)  # 等待5秒后重试
+
+"""
+反爬虫测试：
+1. 60m数据41分钟更新4600条后被限制
+"""

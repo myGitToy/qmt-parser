@@ -7,7 +7,7 @@ def run_script():
     #全换手区间数据导入：2005-2023
     #全换手区间数据计算：2005-2023，目前正在计算
     #价格区间数据计算：2008-2024.3.1含，目前正在计算
-    tspro.start_date= datetime(2025,2,1,8)
+    tspro.start_date= datetime(2025,3,21,8)
     tspro.end_date = datetime.now()
     #tspro.update_day()
     #tspro.update_day_ETF()

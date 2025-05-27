@@ -1,8 +1,8 @@
 NAME,ID,SIZE,MODIFIED
-qwen2.5:14b,7cdf5a0187d5,9.0 GB,2025-04-05
-phi4:latest,ac896e5b8b34,9.1 GB,2025-04-05
-gemma3:27b,30ddded7fba6,17 GB,2025-04-05
-linux6200/bge-reranker-v2-m3:latest,abf5c6d8bc56,1.2 GB,2025-03-27
-qwq:32b,cc1091b0e276,19 GB,2025-03-27
-bge-m3:latest,790764642607,1.2 GB,2025-02-27
-bge-large:latest,b3d71c928059,670 MB,2025-02-27
+qwen2.5:14b,7cdf5a0187d5,9.0 GB,2025-05-03
+phi4:latest,ac896e5b8b34,9.1 GB,2025-05-03
+gemma3:27b,30ddded7fba6,17 GB,2025-05-03
+linux6200/bge-reranker-v2-m3:latest,abf5c6d8bc56,1.2 GB,2025-04-24
+qwq:32b,cc1091b0e276,19 GB,2025-04-24
+bge-m3:latest,790764642607,1.2 GB,2025-03-27
+bge-large:latest,b3d71c928059,670 MB,2025-03-27
