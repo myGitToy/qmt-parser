@@ -133,10 +133,10 @@ class DatabaseSync:
 
 
 if __name__ == "__main__":
-    start_date = datetime(2025, 1, 1)
-    end_date = datetime(2025, 5, 1)
+    start_date = datetime(2025, 4, 1)
+    end_date = datetime(2025, 5, 11)
     code = None
-    datatable_name = 'akshare_1m'
+    datatable_name = 'akshare_60m'
     dual_sync = True
     syncer = DatabaseSync(datatable_name=datatable_name, 
                           start_date=start_date, end_date=end_date, 
