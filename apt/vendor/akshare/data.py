@@ -366,11 +366,8 @@ class data(base,stock):
                         df_ak = pd.DataFrame()
                         df_ak =  ak.stock_zh_a_hist_min_em(symbol = symbol , start_date = start_date.strftime('%Y%m%d %H:%M:%S'), end_date = end_date.strftime('%Y%m%d %H:%M:%S'), period = self.dict[type], adjust = '')
                     except:
-                        
                         print("网络连接失败！")
-                        #跳出当前的for循环
-                        
-
+                        df_ak = pd.DataFrame()  # 修复：网络失败时清空df_ak，防止写入错误数据
                         net_connection = False
                     #print(df_ak)
                 elif myclass == 'etf':
@@ -743,7 +740,7 @@ class data(base,stock):
         count : 获取K线条目的个数 默认是全部输出  
         flag_forward：用于获取N日之后X条数据，类似于后复权数据 默认为False
             在这种模式下，start_date为基准日期，先后输出count条数据
-            其余模式end_date均为基准日期
+            其余模式end_date 均为基准日期
             详见https://huiqiao.visualstudio.com/MyFunds/_workitems/edit/296
         flag_resample：T/F 用于标识是否进行重采样 60分钟线目前无法重采样，因为默认按照整点小时划分
             无论设置如何，resample只对tushare数据有效，akshare60分钟线每日正常有4条数据，无需重采样
@@ -896,7 +893,7 @@ class data(base,stock):
         count : 获取K线条目的个数 默认是全部输出  
         flag_forward：用于获取N日之后X条数据，类似于后复权数据 默认为False
             在这种模式下，start_date为基准日期，先后输出count条数据
-            其余模式end_date均为基准日期
+            其余模式end_date 均为基准日期
             详见https://huiqiao.visualstudio.com/MyFunds/_workitems/edit/296
         接受前复权 后复权 不复权 动态复权四种复权模式
         成交量、成交额目前未进行复权处理
