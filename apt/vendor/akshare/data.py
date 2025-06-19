@@ -988,10 +988,105 @@ class data(base,stock):
             else:
                 raise ValueError(f'不支持的复权模式，请检查！')
                 return df_db
-    
+
+    def fix_1min_error_v3(self, day = datetime(2023,12,1)):
+            """
+            第三版的更新逻辑（正在开发中）
+            自2025/4起东财做了更新限制，目前比较难获取5m数据，因此第三版针对这一情况做修正
+            本模块使用日线数据对1分钟线进行数据修正，目前存在以下几个问题：
+            1. 当日停盘个股在1分钟线上是有数据的（成交量为0），如果隔日截取，则停盘日取不到1分钟数据；
+            2. 如果对历史的1分钟数据进行截取，则开盘价open均为0（1分钟线数据仅保留5天）
+            3. 当日临时停盘，未知
+
+            【输入】
+                start_date
+                end_date
+
+            """  
+            # 基础数据准备：获取全部证券代码
+            df_all_code = security.get_all_code(self)
+            #print(df_all_code)
+            #第一部分：修正当日停盘数据
+            """
+            df_tingpai = pro_api.suspend_k(self)
+            #print(df_tingpai.query('suspend_timing == suspend_timing'))
+            for index , row in df_tingpai.query('suspend_timing != suspend_timing').iterrows():
+                code = row['code']
+                date = row['date']
+                suspend_type = row['suspend_type']
+                if suspend_type == 'S':
+                    #全天停牌，删除对应的一分钟线数据
+                    count_query = text(f"SELECT COUNT(*) FROM akshare_1m WHERE code = '{code}' AND date(date) = '{date.date()}'")
+                    sql_query = text(f"delete from akshare_1m where code = '{code}' and date(date) = '{date.date()}'")
+                    try:
+                        with self.engine.begin() as connection:
+                            # 首先执行计数查询
+                            count_result = connection.execute(count_query).scalar()
+                            # 再执行删除操作
+                            connection.execute(sql_query)
+                            print(f"删除{code}|{date.date()} 成功，共删除{count_result}行数据！")
+                    except exc.ResourceClosedError:
+                        print(f"删除{code}|{date.date()} 失败！")
+                elif suspend_type == 'R':    
+                    pass    #复牌，不做任何处理
+                else:
+                    pass    #其他
+            #第二部分：修正当日部分时段停盘数据
+            print(df_tingpai.query('suspend_timing == suspend_timing'))
+            """
+            # 第三部分：修复开盘价为0的数据
+            
+            for code in df_all_code['code']:
+                # 3.1 按代码循环查询每个代码的开盘和交易日数据
+                df_code_day_string = f"select date,open from akshare_1m where code = '{code}' and date between '{self.start_date}' and '{self.end_date}'"
+                # 初始化1m并赋值
+                df_1m = pd.DataFrame()
+                df_1m = pd.read_sql_query(df_code_day_string, self.engine)
+                # 收集开盘价为0的日期，聚合到日期
+                df_open_zero_date = df_1m.query('open == 0')
+                #print(f"代码 {code} 开盘价为0的日期：{df_open_zero_date['date'].dt.date.unique()}")
+                # 3.2 按日进行修复
+                for day in df_open_zero_date['date'].dt.date.unique():
+                    # 获取当天1d的开盘价
+                    open_price = pd.read_sql_query(f"select open from tspro_1d where code = '{code}' and date(date) = '{day}'", self.engine)
+                    # open_price有数据则修复，否则报错
+                    if open_price.empty or open_price['open'].values[0] == 0:
+                        raise ValueError(f"{code} {day} 无法修复，开盘价无数据或为0")
+                    else:
+                        print(f"正在修复代码 {code} 日期 {day} 的开盘价为0的数据，当日收盘价为{open_price['open'].values[0]}")
+                        # 获取1m需要修复的当天数据
+                        df_1m_today = pd.DataFrame()
+                        df_1m_today = pd.read_sql_query(f"select id,code,date,open,close from akshare_1m where code = '{code}' and date(date) = '{day}' order by date asc", self.engine)
+                        #print("##########修复前数据如下")
+                        #print(df_1m_today)
+                        # 3.3 修复逻辑
+                        # 当天第一条open价格直接用1d的开盘价，其余open价格为前一根K线的close价格
+                        df_1m_today.loc[df_1m_today.index[0], 'open'] = open_price['open'].values[0]
+                        df_1m_today.loc[df_1m_today['open'] == 0, 'open'] = df_1m_today['close'].shift(1).fillna(df_1m_today['close'])
+                        # 将修复后的数据更新回数据库
+                        #通过mysql事务的方式，一次性更新全部need_fix = 1 的数据
+                        #print("##########修复后数据如下")
+                        #print(df_1m_today)
+                        try:
+                            with self.engine.begin() as connection:
+                                #connection.begin()
+                                for index, row in df_1m_today.iterrows():
+                                    id = row['id']
+                                    open_price = row['open']
+                                    sql_update= text(f"update akshare_1m set open = {open_price} where id = {id}")
+                                    connection.execute(sql_update)
+                                connection.commit()
+                                print(f"{day}|{code} 修正成功")
+                        except:
+                            with self.engine.begin() as connection:
+                                connection.rollback()
+                                print(f"{day}|{code} 修正失败，回滚数据")
+            print("1分钟线修正完毕")
+            
     def fix_1min_error_v2(self, day = datetime(2023,12,1)):
         """
         目前采用第二版的更新逻辑
+        自2025/4起东财做了更新限制，目前比较难获取5m数据，因此后续将会修改
         本模块使用5分钟线数据对1分钟线进行数据修正，目前存在以下几个问题：
         1. 当日停盘个股在1分钟线上是有数据的（成交量为0），如果隔日截取，则停盘日取不到1分钟数据；
         2. 如果对历史的1分钟数据进行截取，则开盘价open均为0（1分钟线数据仅保留5天）
@@ -1002,6 +1097,7 @@ class data(base,stock):
             end_date
 
         """  
+        raise ValueError(f'已移除该功能')
         #第一部分：修正当日停盘数据
         df_tingpai = pro_api.suspend_k(self)
         #print(df_tingpai.query('suspend_timing == suspend_timing'))
@@ -1121,6 +1217,7 @@ class data(base,stock):
         #优点：点断续传后，已修正的代码就不会重复计算，节约时间
         #缺点：会历遍整个数据库，目前大约需要耗时1分钟，将来会显著增加，而且如果当天没有更新完毕，后面一天的数据进来后，优势就不存在了，因为又需要从头开始进行修正
         #TO DO: 从其他渠道取得代码，然后进行修正
+        raise ValueError(f'已移除该功能')
         sql_1d = f"select code from tspro_1d where date >= '{day}' group by code order by code"
         df_1d_code = pd.read_sql_query(sql_1d , self.engine)
         sql_code = 'select code from akshare_1m group by code' #2023/12/13查询耗时7秒
