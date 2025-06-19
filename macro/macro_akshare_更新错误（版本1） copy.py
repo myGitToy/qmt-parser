@@ -139,17 +139,17 @@ def check_and_fix(engine, code, day, freq):
             conn.execute(text(f"delete from akshare_{freq} where code='{code}' and date(date)='{day}'"))
         print(f"{code} {day} {freq} 存在异常，已删除该日全部数据")
 
-def main(start_date, end_date):
-    codes = get_all_codes(engine)
-    days = get_trade_days(engine, start_date, end_date)
-    for code in codes:
-        for day in days:
-            for freq in ['5m', '60m']:
-                check_and_fix(engine, code, day, freq)
+    def main(start_date, end_date):
+        codes = get_all_codes(engine)
+        days = get_trade_days(engine, start_date, end_date)
+        for code in codes:
+            for day in days:
+                for freq in ['5m', '60m']:
+                    check_and_fix(engine, code, day, freq)
 
 if __name__ == "__main__":
     # 初始化
-    ak_fix_process = fix_akshare_update_error()
+    ak_fix_process = fix_akshare_update_errorV1()
     # 设置需要检查的日期区间
     ak_fix_process.start_date = datetime(2025, 1, 1, 8) # 起始日期
     ak_fix_process.end_date = datetime(2025, 1, 8,18)# 结束日期
