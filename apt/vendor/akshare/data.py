@@ -1042,6 +1042,9 @@ class data(base,stock):
                 # 初始化1m并赋值
                 df_1m = pd.DataFrame()
                 df_1m = pd.read_sql_query(df_code_day_string, self.engine)
+                if df_1m.empty:
+                    print(f"代码 {code} 在指定日期范围内没有1分钟线数据，跳过修复")
+                    continue
                 # 收集开盘价为0的日期，聚合到日期
                 df_open_zero_date = df_1m.query('open == 0')
                 #print(f"代码 {code} 开盘价为0的日期：{df_open_zero_date['date'].dt.date.unique()}")
@@ -1053,7 +1056,7 @@ class data(base,stock):
                     if open_price.empty or open_price['open'].values[0] == 0:
                         raise ValueError(f"{code} {day} 无法修复，开盘价无数据或为0")
                     else:
-                        print(f"正在修复代码 {code} 日期 {day} 的开盘价为0的数据，当日收盘价为{open_price['open'].values[0]}")
+                        #print(f"正在修复代码 {code} 日期 {day} 的开盘价为0的数据，当日收盘价为{open_price['open'].values[0]}")
                         # 获取1m需要修复的当天数据
                         df_1m_today = pd.DataFrame()
                         df_1m_today = pd.read_sql_query(f"select id,code,date,open,close from akshare_1m where code = '{code}' and date(date) = '{day}' order by date asc", self.engine)
@@ -1286,18 +1289,93 @@ class data(base,stock):
         """
         raise ValueError(f'已移除该功能')
         return tspro_data.e_cumulative_turnover(self) 
-       
+
+    def resample_1m_to_60m(self, df_1m , flash_to_database = False):
+        """
+        将1分钟K线重采样为特定4个时间点的60分钟K线
+        
+        参数:
+        df_1m: DataFrame，包含1分钟K线数据，至少需要包含以下列:
+            - datetime: 日期时间列，为datetime类型
+            - open: 开盘价
+            - high: 最高价
+            - low: 最低价
+            - close: 收盘价
+            - volume: 成交量
+            - money: 成交额
+        
+        返回:
+        DataFrame: 重采样后的60分钟K线数据
+        """
+        # 确保datetime列为索引且为datetime类型
+        if 'datetime' in df_1m.columns:
+            df_1m = df_1m.set_index('datetime')
+        
+        # 创建交易日期列和时间列
+        df_1m['trade_date'] = df_1m.index.date
+        df_1m['time'] = df_1m.index.time
+        
+        # 定义4个时间段的结束时间点
+        time_slots = {
+            '10:30:00': ('09:30:00', '10:30:00'),
+            '11:30:00': ('10:31:00', '11:30:00'),
+            '14:00:00': ('13:00:00', '14:00:00'),
+            '15:00:00': ('14:01:00', '15:00:00')
+        }
+        
+        results = []
+        
+        # 按交易日分组处理
+        for date, group in df_1m.groupby('trade_date'):
+            for end_time, (start_time, end_time) in time_slots.items():
+                # 转换为datetime.time对象进行比较
+                start_time_obj = pd.to_datetime(start_time).time()
+                end_time_obj = pd.to_datetime(end_time).time()
+                
+                # 筛选当前时间段的数据
+                mask = (group.index.time >= start_time_obj) & (group.index.time <= end_time_obj)
+                period_data = group[mask]
+                
+                if not period_data.empty:
+                    # 创建重采样K线
+                    new_row = {
+                        'datetime': pd.Timestamp.combine(date, pd.to_datetime(end_time).time()),
+                        'open': period_data['open'].iloc[0],
+                        'high': period_data['high'].max(),
+                        'low': period_data['low'].min(),
+                        'close': period_data['close'].iloc[-1],
+                        'volume': period_data['volume'].sum(),
+                        'trade_date': date
+                    }
+                    results.append(new_row)
+        
+        # 创建结果DataFrame
+        df_60m = pd.DataFrame(results)
+        
+        # 将datetime设置为索引
+        if 'datetime' in df_60m.columns:
+            df_60m = df_60m.set_index('datetime')
+        
+        return df_60m       
 if __name__=="__main__":
     #pd.set_option('display.max_rows', None)
+
     #测试项目akshare更新1.14后的差异
     #fund_etf_hist_min_em
     #df = ak.stock_zh_a_hist_min_em(symbol = '000001' , start_date = '2024-08-06 09:30:00', end_date = '2024-08-07 18:30:00', period = '60', adjust = '')
-    df = ak.fund_etf_hist_min_em(symbol = '159949' , start_date = '2024-08-06 09:30:00', end_date = '2024-08-07 18:30:00', period = '5', adjust = '')
-    print(df)
+    #df = ak.fund_etf_hist_min_em(symbol = '159949' , start_date = '2024-08-06 09:30:00', end_date = '2024-08-07 18:30:00', period = '5', adjust = '')
+    #print(df)
+
     #测试项目1：使用ak数据源，获取日线数据
     akdata = data() #这里的data默认本地data源，是akdata
-    akdata.code ='601318.sh'
-    akdata.start_date= datetime(2024,4,1,8)
+    akdata.code ='000014.SZ'
+    akdata.start_date= datetime(2025,5,14,8)
     akdata.end_date = datetime.now()
-    akdata.fq = akdata.复权.动态复权
+    akdata.fq = akdata.复权.不复权
     akdata.ktype = '1d'
+
+    #测试项目2：1m重采样
+    akdata.ktype = '1m'
+    df_1m = akdata.get_k_data()
+    df_60m = akdata.resample_1m_to_60m(df_1m)
+    print(df_60m)
