@@ -1388,11 +1388,19 @@ class data(base,stock):
             df_60m = self.get_k_data()
             # 比对差集
             df_diff = df_resample_60m[~df_resample_60m['date'].isin(df_60m['date'])]
+            # 检查差集数据，删除open=0的全部行
+            len_origin = len(df_diff)
+            df_diff = df_diff[df_diff['open'] != 0]
+            len_update = len(df_diff)
             print(df_diff)
             # 将数据写回数据库
             if not df_diff.empty:
                 df_diff.to_sql('akshare_60m', self.engine, if_exists='append', index=False)
-                print(f"{self.code} | 60分钟K线数据差集已写入数据库，总共{len(df_diff)}条记录")
+                if len_origin == len_update:
+                    print(f"{self.code} | 60分钟K线数据差集已写入数据库，总共{len_origin}条记录")
+                else:
+                    print(f"{self.code} | 60分钟K线数据差集含无效数据，扣除{len_origin - len_update}条后已写入数据库，总共{len_update}条记录")
+
             else:
                 print(f"{self.code} | 60分钟K线数据无差集，无需写入数据库")
         else:  # 不写回，跳过
@@ -1410,7 +1418,7 @@ if __name__=="__main__":
 
     #测试项目1：使用ak数据源，获取日线数据
     akdata = data() #这里的data默认本地data源，是akdata
-    akdata.code ='688888.SH'
+    akdata.code ='688126.SH'
     akdata.start_date= datetime(2025,5,14,8)
     akdata.end_date = datetime(2025,7,5,18)
     akdata.fq = akdata.复权.不复权
