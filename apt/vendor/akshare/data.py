@@ -577,6 +577,7 @@ class data(base,stock):
         df_all_code = security.get_all_code(self)   
         for code in df_all_code['code']:
             self.code = code
+            #self.resample_1m_to_5m(flash_to_database=True)
             self.resample_1m_to_60m(flash_to_database=True)
 
 
@@ -1392,8 +1393,15 @@ class data(base,stock):
         if flash_to_database == True:    # 判断是否写回数据库
             # 获取60m数据
             df_60m = self.get_k_data()
-            # 比对差集
-            df_diff = df_resample_60m[~df_resample_60m['date'].isin(df_60m['date'])]
+            
+            # 如果数据库中没有60m数据，则直接写入所有重采样数据
+            if df_60m.empty:
+                df_diff = df_resample_60m.copy()
+                print(f"{self.code} | 数据库中无60分钟K线数据，将写入全部重采样数据")
+            else:
+                # 比对差集
+                df_diff = df_resample_60m[~df_resample_60m['date'].isin(df_60m['date'])]
+            
             # 检查差集数据，删除open=0的全部行
             len_origin = len(df_diff)
             df_diff = df_diff[df_diff['open'] != 0]
@@ -1416,6 +1424,157 @@ class data(base,stock):
 
 
 
+    def resample_1m_to_5m(self, flash_to_database=False):
+        """
+        将指定区间的1分钟K线重采样为5分钟K线
+        按照中国股市的交易时间规则，生成48根5分钟K线
+        
+        时间区间规则：
+        原始1m数据：上午09:30-11:30, 下午13:01-15:00（剔除09:30集合竞价）
+        上午：09:31-09:35→09:35, 09:36-09:40→09:40, ..., 11:26-11:30→11:30 (共24根)
+        下午：13:01-13:05→13:05, 13:06-13:10→13:10, ..., 14:56-15:00→15:00 (共24根)
+        总计：48根5分钟K线
+        
+        默认返回5m的dataframe数据
+        flash_to_database：将5m的差额数据写回数据库，默认不写入 为False
+        
+        参数:
+        flash_to_database: bool, 是否将数据写入数据库
+        
+        返回:
+        DataFrame: 重采样后的5分钟K线数据
+        """
+        # 设置复权方式和K线类型
+        self.fq = self.复权.不复权
+        self.ktype = '1m'
+        df_1m = self.get_k_data()  # 获取1分钟K线数据
+        
+        # 如果1m数据为空，则跳过
+        if df_1m.empty:
+            print(f"{self.code} | 1分钟K线数据为空，无法进行重采样！")
+            return pd.DataFrame()
+            
+        # 重置K线类型为5分钟
+        self.ktype = '5m'
+        
+        # 确保date列为索引且为datetime类型
+        if 'date' in df_1m.columns:
+            df_1m['date'] = pd.to_datetime(df_1m['date'])
+            df_1m = df_1m.set_index('date')
+        
+        # 剔除每天09:30的1分钟数据，使逻辑更清晰
+        df_1m = df_1m[df_1m.index.time != pd.to_datetime('09:30:00').time()]
+        
+        # 创建交易日期列和时间列
+        df_1m['trade_date'] = df_1m.index.date
+        df_1m['time'] = df_1m.index.time
+        
+        # 定义5分钟时间段的明确区间
+        # 每个时间段定义为 (开始时间, 结束时间, 采样时间) 的元组
+        time_intervals = []
+        
+        # 上午时间段：09:31-09:35, 09:36-09:40, ..., 11:26-11:30 (24根K线)
+        # 09:31-09:35, 09:36-09:40, 09:41-09:45, 09:46-09:50, 09:51-09:55, 09:56-10:00
+        # 10:01-10:05, 10:06-10:10, 10:11-10:15, 10:16-10:20, 10:21-10:25, 10:26-10:30
+        # 10:31-10:35, 10:36-10:40, 10:41-10:45, 10:46-10:50, 10:51-10:55, 10:56-11:00
+        # 11:01-11:05, 11:06-11:10, 11:11-11:15, 11:16-11:20, 11:21-11:25, 11:26-11:30
+        morning_intervals = [
+            ('09:31:00', '09:35:00'), ('09:36:00', '09:40:00'), ('09:41:00', '09:45:00'), ('09:46:00', '09:50:00'), ('09:51:00', '09:55:00'), ('09:56:00', '10:00:00'),
+            ('10:01:00', '10:05:00'), ('10:06:00', '10:10:00'), ('10:11:00', '10:15:00'), ('10:16:00', '10:20:00'), ('10:21:00', '10:25:00'), ('10:26:00', '10:30:00'),
+            ('10:31:00', '10:35:00'), ('10:36:00', '10:40:00'), ('10:41:00', '10:45:00'), ('10:46:00', '10:50:00'), ('10:51:00', '10:55:00'), ('10:56:00', '11:00:00'),
+            ('11:01:00', '11:05:00'), ('11:06:00', '11:10:00'), ('11:11:00', '11:15:00'), ('11:16:00', '11:20:00'), ('11:21:00', '11:25:00'), ('11:26:00', '11:30:00')
+        ]
+        
+        for start, end in morning_intervals:
+            time_intervals.append((start, end, end))  # 采样时间为结束时间
+        
+        # 下午时间段：13:01-13:05, 13:06-13:10, ..., 14:56-15:00 (24根K线)
+        # 13:01-13:05, 13:06-13:10, 13:11-13:15, 13:16-13:20, 13:21-13:25, 13:26-13:30
+        # 13:31-13:35, 13:36-13:40, 13:41-13:45, 13:46-13:50, 13:51-13:55, 13:56-14:00
+        # 14:01-14:05, 14:06-14:10, 14:11-14:15, 14:16-14:20, 14:21-14:25, 14:26-14:30
+        # 14:31-14:35, 14:36-14:40, 14:41-14:45, 14:46-14:50, 14:51-14:55, 14:56-15:00
+        afternoon_intervals = [
+            ('13:01:00', '13:05:00'), ('13:06:00', '13:10:00'), ('13:11:00', '13:15:00'), ('13:16:00', '13:20:00'), ('13:21:00', '13:25:00'), ('13:26:00', '13:30:00'),
+            ('13:31:00', '13:35:00'), ('13:36:00', '13:40:00'), ('13:41:00', '13:45:00'), ('13:46:00', '13:50:00'), ('13:51:00', '13:55:00'), ('13:56:00', '14:00:00'),
+            ('14:01:00', '14:05:00'), ('14:06:00', '14:10:00'), ('14:11:00', '14:15:00'), ('14:16:00', '14:20:00'), ('14:21:00', '14:25:00'), ('14:26:00', '14:30:00'),
+            ('14:31:00', '14:35:00'), ('14:36:00', '14:40:00'), ('14:41:00', '14:45:00'), ('14:46:00', '14:50:00'), ('14:51:00', '14:55:00'), ('14:56:00', '15:00:00')
+        ]
+        
+        for start, end in afternoon_intervals:
+            time_intervals.append((start, end, end))  # 采样时间为结束时间
+        
+        results = []
+        
+        # 按交易日分组处理
+        for date, group in df_1m.groupby('trade_date'):
+            for start_time, end_time, sample_time in time_intervals:
+                # 转换为time对象进行比较
+                start_time_obj = pd.to_datetime(start_time).time()
+                end_time_obj = pd.to_datetime(end_time).time()
+                sample_time_obj = pd.to_datetime(sample_time).time()
+                
+                # 筛选当前5分钟时间段的数据（闭区间）
+                mask = (group.index.time >= start_time_obj) & (group.index.time <= end_time_obj)
+                period_data = group[mask]
+                
+                if not period_data.empty:
+                    # 创建重采样K线，使用采样时间点作为时间戳
+                    new_row = {
+                        'date': pd.Timestamp.combine(date, sample_time_obj),
+                        'open': period_data['open'].iloc[0],
+                        'high': period_data['high'].max(),
+                        'low': period_data['low'].min(),
+                        'close': period_data['close'].iloc[-1],
+                        'volume': period_data['volume'].sum(),
+                        'money': period_data['money'].sum(),
+                        'trade_date': date
+                    }
+                    results.append(new_row)
+        
+        # 创建结果DataFrame
+        df_resample_5m = pd.DataFrame(results)
+        
+        # 增加code列
+        if not df_resample_5m.empty:
+            df_resample_5m['code'] = self.code
+            
+            # 丢弃trade_date列
+            if 'trade_date' in df_resample_5m.columns:
+                df_resample_5m = df_resample_5m.drop(columns=['trade_date'])
+        
+        if flash_to_database == True:  # 判断是否写回数据库
+            # 获取5m数据
+            df_5m = self.get_k_data()
+            
+            # 如果数据库中没有5m数据，则直接写入所有重采样数据
+            if df_5m.empty:
+                df_diff = df_resample_5m.copy()
+                print(f"{self.code} | 数据库中无5分钟K线数据，将写入全部重采样数据")
+            else:
+                # 比对差集
+                df_diff = df_resample_5m[~df_resample_5m['date'].isin(df_5m['date'])]
+            
+            # 检查差集数据，删除open=0的全部行
+            len_origin = len(df_diff)
+            df_diff = df_diff[df_diff['open'] != 0]
+            len_update = len(df_diff)
+            
+            # 将数据写回数据库
+            if not df_diff.empty:
+                df_diff.to_sql('akshare_5m', self.engine, if_exists='append', index=False)
+                if len_origin == len_update:
+                    print(f"{self.code} | 5分钟K线数据差集已写入数据库，总共{len_origin}条记录")
+                else:
+                    print(f"{self.code} | 5分钟K线数据差集含无效数据，扣除{len_origin - len_update}条后已写入数据库，总共{len_update}条记录")
+            else:
+                print(f"{self.code} | 5分钟K线数据无差集，无需写入数据库")
+        
+        return df_resample_5m[['code', 'date', 'open', 'high', 'low', 'close', 'volume', 'money']] if not df_resample_5m.empty else pd.DataFrame()
+
+
+
+
+
 if __name__=="__main__":
     #pd.set_option('display.max_rows', None)
 
@@ -1428,7 +1587,7 @@ if __name__=="__main__":
     #测试项目1：使用ak数据源，获取日线数据
     akdata = data() #这里的data默认本地data源，是akdata
     akdata.code ='688126.SH'
-    akdata.start_date= datetime(2025,5,14,8)
+    akdata.start_date= datetime(2025,5,6,8)
     akdata.end_date = datetime(2025,7,5,18)
     akdata.fq = akdata.复权.不复权
     akdata.ktype = '1d'
@@ -1436,6 +1595,9 @@ if __name__=="__main__":
     #测试项目2：1m重采样
     akdata.ktype = '1m'
     df_1m = akdata.get_k_data()
-    df_60m = akdata.resample_1m_to_60m(flash_to_database=True)
-    akdata.update_ak_resample()
+    df_5m = akdata.resample_1m_to_5m(flash_to_database=False)
+    print(df_5m)
+    #df_60m = akdata.resample_1m_to_60m(flash_to_database=True)
+    #akdata.update_ak_resample()
+    #print(df_5m)
     #print(df_60m)
