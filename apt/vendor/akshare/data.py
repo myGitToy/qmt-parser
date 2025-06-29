@@ -569,6 +569,11 @@ class data(base,stock):
                         if_exists = 'append')
                 print(f"{code}数据已上传完成({self.ktype}，新增数据{df_diff.shape[0]})")
 
+    def update_ak_resample(self):
+        """
+        本模块用于将akshare1m数据重采样后，比对5m和60m的数据，差集再写回数据库
+        """        
+        
     def code_ts_to_ak(self):
         """
         将tushare代码类型转换成akshare类型
@@ -1007,7 +1012,6 @@ class data(base,stock):
             df_all_code = security.get_all_code(self)
             #print(df_all_code)
             #第一部分：修正当日停盘数据
-            """
             df_tingpai = pro_api.suspend_k(self)
             #print(df_tingpai.query('suspend_timing == suspend_timing'))
             for index , row in df_tingpai.query('suspend_timing != suspend_timing').iterrows():
@@ -1033,7 +1037,6 @@ class data(base,stock):
                     pass    #其他
             #第二部分：修正当日部分时段停盘数据
             print(df_tingpai.query('suspend_timing == suspend_timing'))
-            """
             # 第三部分：修复开盘价为0的数据
             
             for code in df_all_code['code']:
@@ -1290,10 +1293,14 @@ class data(base,stock):
         raise ValueError(f'已移除该功能')
         return tspro_data.e_cumulative_turnover(self) 
 
-    def resample_1m_to_60m(self, df_1m , flash_to_database = False):
+    def resample_1m_to_60m(self, flash_to_database = False):
         """
-        将1分钟K线重采样为特定4个时间点的60分钟K线
-        
+        将指定区间的1分钟K线重采样为特定4个时间点的60分钟K线
+        默认返回60m的dataframe数据
+        flash_to_database：将60m的差额数据写回数据库，默认不写入 为False
+        备注：
+            1. 目前不进行1m线与1d线的校验，也就是不能保证重采样的完整性
+            2. 默认数据为不复权
         参数:
         df_1m: DataFrame，包含1分钟K线数据，至少需要包含以下列:
             - datetime: 日期时间列，为datetime类型
@@ -1307,9 +1314,21 @@ class data(base,stock):
         返回:
         DataFrame: 重采样后的60分钟K线数据
         """
-        # 确保datetime列为索引且为datetime类型
-        if 'datetime' in df_1m.columns:
-            df_1m = df_1m.set_index('datetime')
+        akdata.fq = akdata.复权.不复权
+        self.ktype = '1m'
+        df_1m = self.get_k_data()  # 获取1分钟K线数据
+        # 如果1m数据为空，则跳过
+        if df_1m.empty:
+            print(f"{self.code} | 1分钟K线数据为空，无法进行重采样！")
+            return pd.DataFrame()
+        self.ktype = '60m'  # 重置K线类型为60分钟
+        #df_60m = self.get_k_data()  # 获取60分钟K线数据（用于对比）
+        # df_1m 表头为 id	code	date	open	high	low	close	volume	money
+
+        # 确保date列为索引且为datetime类型
+        if 'date' in df_1m.columns:
+            df_1m['date'] = pd.to_datetime(df_1m['date'])  # 确保date为datetime类型
+            df_1m = df_1m.set_index('date')  # 设置date为索引
         
         # 创建交易日期列和时间列
         df_1m['trade_date'] = df_1m.index.date
@@ -1339,24 +1358,47 @@ class data(base,stock):
                 if not period_data.empty:
                     # 创建重采样K线
                     new_row = {
-                        'datetime': pd.Timestamp.combine(date, pd.to_datetime(end_time).time()),
-                        'open': period_data['open'].iloc[0],
-                        'high': period_data['high'].max(),
-                        'low': period_data['low'].min(),
-                        'close': period_data['close'].iloc[-1],
-                        'volume': period_data['volume'].sum(),
-                        'trade_date': date
+                    'date': pd.Timestamp.combine(date, pd.to_datetime(end_time).time()),
+                    'open': period_data['open'].iloc[0],
+                    'high': period_data['high'].max(),
+                    'low': period_data['low'].min(),
+                    'close': period_data['close'].iloc[-1],
+                    'volume': period_data['volume'].sum(),
+                    'money': period_data['money'].sum(),
+                    'trade_date': date
                     }
                     results.append(new_row)
         
         # 创建结果DataFrame
-        df_60m = pd.DataFrame(results)
+        df_resample_60m = pd.DataFrame(results)
         
         # 将datetime设置为索引
-        if 'datetime' in df_60m.columns:
-            df_60m = df_60m.set_index('datetime')
+        if 'datetime' in df_resample_60m.columns:
+            df_resample_60m = df_resample_60m.set_index('datetime')
+
+        # 增加code列
+        df_resample_60m['code'] = self.code
+        # 丢弃trade_date列
+        if 'trade_date' in df_resample_60m.columns:
+            df_resample_60m = df_resample_60m.drop(columns=['trade_date'])
+
+
+        if flash_to_database == True:    # 判断是否写回数据库
+            # 获取60m数据
+            df_60m = self.get_k_data()
+            # 比对差集
+            df_diff = df_resample_60m[~df_resample_60m['date'].isin(df_60m['date'])]
+            print(df_diff)
+            # 将数据写回数据库
+            if not df_diff.empty:
+                df_diff.to_sql('akshare_60m', self.engine, if_exists='append', index=False)
+                print(f"{self.code} | 60分钟K线数据差集已写入数据库，总共{len(df_diff)}条记录")
+            else:
+                print(f"{self.code} | 60分钟K线数据无差集，无需写入数据库")
+        else:  # 不写回，跳过
+            pass
         
-        return df_60m       
+        return df_resample_60m[['code', 'date', 'open', 'high', 'low', 'close', 'volume', 'money']]
 if __name__=="__main__":
     #pd.set_option('display.max_rows', None)
 
@@ -1368,14 +1410,14 @@ if __name__=="__main__":
 
     #测试项目1：使用ak数据源，获取日线数据
     akdata = data() #这里的data默认本地data源，是akdata
-    akdata.code ='000014.SZ'
+    akdata.code ='688888.SH'
     akdata.start_date= datetime(2025,5,14,8)
-    akdata.end_date = datetime.now()
+    akdata.end_date = datetime(2025,7,5,18)
     akdata.fq = akdata.复权.不复权
     akdata.ktype = '1d'
 
     #测试项目2：1m重采样
     akdata.ktype = '1m'
     df_1m = akdata.get_k_data()
-    df_60m = akdata.resample_1m_to_60m(df_1m)
-    print(df_60m)
+    df_60m = akdata.resample_1m_to_60m(flash_to_database=True)
+    #print(df_60m)
