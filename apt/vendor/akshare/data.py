@@ -573,7 +573,13 @@ class data(base,stock):
         """
         本模块用于将akshare1m数据重采样后，比对5m和60m的数据，差集再写回数据库
         """        
-        
+        # 基础数据准备：获取全部证券代码
+        df_all_code = security.get_all_code(self)   
+        for code in df_all_code['code']:
+            self.code = code
+            self.resample_1m_to_60m(flash_to_database=True)
+
+
     def code_ts_to_ak(self):
         """
         将tushare代码类型转换成akshare类型
@@ -1392,7 +1398,7 @@ class data(base,stock):
             len_origin = len(df_diff)
             df_diff = df_diff[df_diff['open'] != 0]
             len_update = len(df_diff)
-            print(df_diff)
+            #print(df_diff)
             # 将数据写回数据库
             if not df_diff.empty:
                 df_diff.to_sql('akshare_60m', self.engine, if_exists='append', index=False)
@@ -1404,9 +1410,12 @@ class data(base,stock):
             else:
                 print(f"{self.code} | 60分钟K线数据无差集，无需写入数据库")
         else:  # 不写回，跳过
-            pass
-        
+            pass       
         return df_resample_60m[['code', 'date', 'open', 'high', 'low', 'close', 'volume', 'money']]
+
+
+
+
 if __name__=="__main__":
     #pd.set_option('display.max_rows', None)
 
@@ -1428,4 +1437,5 @@ if __name__=="__main__":
     akdata.ktype = '1m'
     df_1m = akdata.get_k_data()
     df_60m = akdata.resample_1m_to_60m(flash_to_database=True)
+    akdata.update_ak_resample()
     #print(df_60m)
