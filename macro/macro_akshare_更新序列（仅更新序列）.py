@@ -17,7 +17,7 @@ def run_script():
     # a.update_etf_day()
     # 优先更新高权限序列 
     a.update_sequence_launch(priority=1, sleep=0.05)
-    #a.update_sequence_launch(priority=0, sleep=0.0)  # 0.35秒间隔
+    a.update_sequence_launch(priority=0, sleep=1.5)  # 0.35秒间隔
 
 error_count = 0
 max_retries = 20

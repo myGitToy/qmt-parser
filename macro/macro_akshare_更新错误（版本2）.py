@@ -19,6 +19,10 @@ from apt.vendor.akshare.data import data as ak_data
 from apt.vendor.tspro.security import security as ak_sec
 from dotenv import load_dotenv #用于读取.env文件
 class fix_akshare_update_errorV2(ak_data):
+    # Set class docstring to ensure it displays when referenced
+    __doc__ = """
+    版本2逻辑：在指定区间段内检索日线数据，然后用1m的数据去校验5m和60m，如果有1m没有5m或者60m，则进行重采样
+    """
     def __init__(self):
         super().__init__()
         sec = ak_sec()
@@ -149,7 +153,7 @@ if __name__ == "__main__":
     # 初始化
     ak_fix_process = fix_akshare_update_errorV2()
     # 设置需要检查的日期区间
-    ak_fix_process.start_date = datetime(2025, 1, 1, 8) # 起始日期
-    ak_fix_process.end_date = datetime(2025, 1, 8,18)# 结束日期
+    ak_fix_process.start_date = datetime(2025,5,14,8) # 起始日期
+    ak_fix_process.end_date = datetime(2025,7,8,18)# 结束日期
     print(ak_fix_process.df_code)
     ak_fix_process.main_process()
