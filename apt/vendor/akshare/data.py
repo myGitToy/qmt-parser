@@ -444,9 +444,7 @@ class data(base,stock):
                 #print(df_ak)
                 #print(df_db)
                 #5. 两个DataFrame进行差值处理
-                #Feature Warning: 在当前的版本中，如果你连接的 DataFrame 中有一列全部是空值或 NA
-                #那么这一列将不会被包含在结果的数据类型决定中。但在未来的版本中，
-                #这种行为将不再存在，即使一列全部是空值或 NA，它也会被包含在结果的数据类型决定中。
+                #Feature Warning Fix
                 df_ak = df_ak.dropna(how='all', axis=1)
                 df_db = df_db.dropna(how='all', axis=1)
                 df_diff = pd.concat([df_ak , df_db , df_db] ).drop_duplicates(subset=['date'] , keep = False)
@@ -574,11 +572,13 @@ class data(base,stock):
         本模块用于将akshare1m数据重采样后，比对5m和60m的数据，差集再写回数据库
         """        
         # 基础数据准备：获取全部证券代码
+        print("############正在准备更新akshare分时线数据(5m 60m 重采样)###########")
         df_all_code = security.get_all_code(self)   
         for code in df_all_code['code']:
             self.code = code
-            #self.resample_1m_to_5m(flash_to_database=True)
+            self.resample_1m_to_5m(flash_to_database=True)
             self.resample_1m_to_60m(flash_to_database=True)
+        print("############akshare分时线数据重采样完成###########")
 
 
     def code_ts_to_ak(self):
@@ -1147,7 +1147,7 @@ class data(base,stock):
             for code in df_code['code']:    #循环读取每个代码
                 sql_1m_day = f"select date(date) as date , count(date) as num  from akshare_1m where date(date) ='{day.date()}' and code = '{code}' and open = 0 group by date(date)"
                 df_1m_day = pd.read_sql_query(sql_1m_day , self.engine)
-                #print(df_1m_day)
+                #print(df_1m_day )
                 if df_1m_day.empty == True:
                     #无数据，跳过
                     print(f"{day.date()}|{code} 无数据，跳过")
@@ -1264,7 +1264,7 @@ class data(base,stock):
             df_db_1min.loc[(df_db_1min.fix_mode == '60min_mode1'), "open_x"] = df_db_1min.loc[(df_db_1min.fix_mode == '60min_mode1'), "open_y"] 
             df_db_1min.loc[(df_db_1min.fix_mode == '60min_mode2'), "open_x"] = df_db_1min.loc[(df_db_1min.fix_mode == '60min_mode2'), "open_y"] 
             ####3. 对于offset的数据进行填充
-            df_db_1min.loc[(df_db_1min.fix_mode == 'offset'), "open_x"] = df_db_1min['close'].shift(1).fillna(df_db_1min['close'])           
+            df_db_1min.loc[(df_db_1min.fix_mode == 'offset'), "open_x"] = df_db_1min['close'].shift(1).fillna(df_db_1m_today['close'])           
             df_db = df_db_1min[['id','code','date_x','open_x','close','fix_mode']]
             #df_db.to_csv('.\\data\\海龟模型\\1min_fix.csv', encoding = 'utf_8_sig')
             ####4. 重新写回数据库
@@ -1300,7 +1300,7 @@ class data(base,stock):
         raise ValueError(f'已移除该功能')
         return tspro_data.e_cumulative_turnover(self) 
 
-    def resample_1m_to_60m(self, flash_to_database = False):
+    def resample_1m_to_60m(self, flash_to_database = False, show_timing=False):
         """
         将指定区间的1分钟K线重采样为特定4个时间点的60分钟K线
         默认返回60m的dataframe数据
@@ -1317,13 +1317,28 @@ class data(base,stock):
             - close: 收盘价
             - volume: 成交量
             - money: 成交额
+            
+        参数:
+        flash_to_database: bool, 是否将数据写入数据库，默认为False
+        show_timing: bool, 是否显示各步骤的耗时信息，默认为False
         
         返回:
         DataFrame: 重采样后的60分钟K线数据
         """
-        akdata.fq = akdata.复权.不复权
+        func_start_time = time.time()
+        if show_timing:
+            print(f"{self.code} | 开始执行 resample_1m_to_60m...")
+        
+        self.fq = self.复权.不复权
         self.ktype = '1m'
+        
+        # 阶段1: 获取1分钟数据
+        step1_start = time.time()
         df_1m = self.get_k_data()  # 获取1分钟K线数据
+        step1_time = time.time() - step1_start
+        if show_timing:
+            print(f"{self.code} | 步骤1-获取1m数据耗时: {step1_time:.2f}秒")
+        
         # 如果1m数据为空，则跳过
         if df_1m.empty:
             print(f"{self.code} | 1分钟K线数据为空，无法进行重采样！")
@@ -1331,6 +1346,9 @@ class data(base,stock):
         self.ktype = '60m'  # 重置K线类型为60分钟
         #df_60m = self.get_k_data()  # 获取60分钟K线数据（用于对比）
         # df_1m 表头为 id	code	date	open	high	low	close	volume	money
+        
+        # 阶段2: 数据预处理
+        step2_start = time.time()
 
         # 确保date列为索引且为datetime类型
         if 'date' in df_1m.columns:
@@ -1340,7 +1358,12 @@ class data(base,stock):
         # 创建交易日期列和时间列
         df_1m['trade_date'] = df_1m.index.date
         df_1m['time'] = df_1m.index.time
+        step2_time = time.time() - step2_start
+        if show_timing:
+            print(f"{self.code} | 步骤2-数据预处理耗时: {step2_time:.2f}秒")
         
+        # 阶段3: 定义时间段
+        step3_start = time.time()
         # 定义4个时间段的结束时间点
         time_slots = {
             '10:30:00': ('09:30:00', '10:30:00'),
@@ -1348,7 +1371,12 @@ class data(base,stock):
             '14:00:00': ('13:00:00', '14:00:00'),
             '15:00:00': ('14:01:00', '15:00:00')
         }
+        step3_time = time.time() - step3_start
+        if show_timing:
+            print(f"{self.code} | 步骤3-时间段定义耗时: {step3_time:.2f}秒")
         
+        # 阶段4: 重采样计算
+        step4_start = time.time()
         results = []
         
         # 按交易日分组处理
@@ -1376,6 +1404,12 @@ class data(base,stock):
                     }
                     results.append(new_row)
         
+        step4_time = time.time() - step4_start
+        if show_timing:
+            print(f"{self.code} | 步骤4-重采样计算耗时: {step4_time:.2f}秒")
+        
+        # 阶段5: 结果DataFrame创建
+        step5_start = time.time()
         # 创建结果DataFrame
         df_resample_60m = pd.DataFrame(results)
         
@@ -1384,13 +1418,19 @@ class data(base,stock):
             df_resample_60m = df_resample_60m.set_index('datetime')
 
         # 增加code列
-        df_resample_60m['code'] = self.code
-        # 丢弃trade_date列
+        df_resample_60m['code'] = self.code        # 丢弃trade_date列
         if 'trade_date' in df_resample_60m.columns:
             df_resample_60m = df_resample_60m.drop(columns=['trade_date'])
-
-
+            
+        step5_time = time.time() - step5_start
+        if show_timing:
+            print(f"{self.code} | 步骤5-DataFrame创建耗时: {step5_time:.2f}秒")
+        
+        # 阶段6: 数据库操作（如果需要）
         if flash_to_database == True:    # 判断是否写回数据库
+            step6_start = time.time()
+            if show_timing:
+                print(f"{self.code} | 开始数据库操作...")
             # 获取60m数据
             df_60m = self.get_k_data()
             
@@ -1417,14 +1457,22 @@ class data(base,stock):
 
             else:
                 print(f"{self.code} | 60分钟K线数据无差集，无需写入数据库")
+            
+            step6_time = time.time() - step6_start
+            if show_timing:
+                print(f"{self.code} | 步骤6-数据库操作耗时: {step6_time:.2f}秒")
         else:  # 不写回，跳过
             pass       
+        
+        end_time = time.time()
+        if show_timing:
+            print(f"{self.code} | resample_1m_to_60m 执行完成，耗时: {end_time - func_start_time:.2f}秒")
         return df_resample_60m[['code', 'date', 'open', 'high', 'low', 'close', 'volume', 'money']]
 
 
 
 
-    def resample_1m_to_5m(self, flash_to_database=False):
+    def resample_1m_to_5m(self, flash_to_database=False, show_timing=False):
         """
         将指定区间的1分钟K线重采样为5分钟K线
         按照中国股市的交易时间规则，生成48根5分钟K线
@@ -1440,14 +1488,26 @@ class data(base,stock):
         
         参数:
         flash_to_database: bool, 是否将数据写入数据库
+        show_timing: bool, 是否显示各步骤的耗时信息，默认为False
         
         返回:
         DataFrame: 重采样后的5分钟K线数据
         """
+        import time
+        func_start_time = time.time()
+        if show_timing:
+            print(f"{self.code} | 开始执行 resample_1m_to_5m...")
+        
         # 设置复权方式和K线类型
         self.fq = self.复权.不复权
         self.ktype = '1m'
+        
+        # 阶段1: 获取1分钟数据
+        step1_start = time.time()
         df_1m = self.get_k_data()  # 获取1分钟K线数据
+        step1_time = time.time() - step1_start
+        if show_timing:
+            print(f"{self.code} | 步骤1-获取1m数据耗时: {step1_time:.2f}秒")
         
         # 如果1m数据为空，则跳过
         if df_1m.empty:
@@ -1457,6 +1517,8 @@ class data(base,stock):
         # 重置K线类型为5分钟
         self.ktype = '5m'
         
+        # 阶段2: 数据预处理
+        step2_start = time.time()
         # 确保date列为索引且为datetime类型
         if 'date' in df_1m.columns:
             df_1m['date'] = pd.to_datetime(df_1m['date'])
@@ -1468,7 +1530,12 @@ class data(base,stock):
         # 创建交易日期列和时间列
         df_1m['trade_date'] = df_1m.index.date
         df_1m['time'] = df_1m.index.time
+        step2_time = time.time() - step2_start
+        if show_timing:
+            print(f"{self.code} | 步骤2-数据预处理耗时: {step2_time:.2f}秒")
         
+        # 阶段3: 定义时间区间
+        step3_start = time.time()
         # 定义5分钟时间段的明确区间
         # 每个时间段定义为 (开始时间, 结束时间, 采样时间) 的元组
         time_intervals = []
@@ -1503,6 +1570,12 @@ class data(base,stock):
         for start, end in afternoon_intervals:
             time_intervals.append((start, end, end))  # 采样时间为结束时间
         
+        step3_time = time.time() - step3_start
+        if show_timing:
+            print(f"{self.code} | 步骤3-时间区间定义耗时: {step3_time:.2f}秒")
+        
+        # 阶段4: 重采样计算
+        step4_start = time.time()
         results = []
         
         # 按交易日分组处理
@@ -1531,6 +1604,12 @@ class data(base,stock):
                     }
                     results.append(new_row)
         
+        step4_time = time.time() - step4_start
+        if show_timing:
+            print(f"{self.code} | 步骤4-重采样计算耗时: {step4_time:.2f}秒")
+        
+        # 阶段5: 结果DataFrame创建
+        step5_start = time.time()
         # 创建结果DataFrame
         df_resample_5m = pd.DataFrame(results)
         
@@ -1541,8 +1620,16 @@ class data(base,stock):
             # 丢弃trade_date列
             if 'trade_date' in df_resample_5m.columns:
                 df_resample_5m = df_resample_5m.drop(columns=['trade_date'])
+                
+        step5_time = time.time() - step5_start
+        if show_timing:
+            print(f"{self.code} | 步骤5-DataFrame创建耗时: {step5_time:.2f}秒")
         
+        # 阶段6: 数据库操作（如果需要）
         if flash_to_database == True:  # 判断是否写回数据库
+            step6_start = time.time()
+            if show_timing:
+                print(f"{self.code} | 开始数据库操作...")
             # 获取5m数据
             df_5m = self.get_k_data()
             
@@ -1568,36 +1655,280 @@ class data(base,stock):
                     print(f"{self.code} | 5分钟K线数据差集含无效数据，扣除{len_origin - len_update}条后已写入数据库，总共{len_update}条记录")
             else:
                 print(f"{self.code} | 5分钟K线数据无差集，无需写入数据库")
+            
+            step6_time = time.time() - step6_start
+            if show_timing:
+                print(f"{self.code} | 步骤6-数据库操作耗时: {step6_time:.2f}秒")
         
+        end_time = time.time()
+        if show_timing:
+            print(f"{self.code} | resample_1m_to_5m 执行完成，耗时: {end_time - func_start_time:.2f}秒")
         return df_resample_5m[['code', 'date', 'open', 'high', 'low', 'close', 'volume', 'money']] if not df_resample_5m.empty else pd.DataFrame()
 
+    def test_resample_5m_accuracy(self):
+        """
+        单元测试：验证5分钟重采样的准确性
+        测试数据：300059.SZ 2025/7/1 - 2025/7/5
+        预期结果：192条记录，第一条money=431319139.000，最后一条money=240238925.000
+        """
+        print("\n=== 开始5分钟重采样准确性测试 ===")
+        
+        # 设置测试参数
+        original_code = self.code
+        original_start = self.start_date
+        original_end = self.end_date
+        original_ktype = self.ktype
+        
+        try:
+            # 设置测试数据
+            self.code = '300059.SZ'
+            self.start_date = datetime(2025, 7, 1)
+            self.end_date = datetime(2025, 7, 5)
+            
+            # 执行重采样
+            print(f"测试股票: {self.code}")
+            print(f"测试时间范围: {self.start_date.date()} 到 {self.end_date.date()}")
+            
+            df_5m = self.resample_1m_to_5m(flash_to_database=False, show_timing=True)
+            
+            if df_5m.empty:
+                print("❌ 测试失败：重采样结果为空")
+                return False
+            
+            # 验证记录数量
+            record_count = len(df_5m)
+            expected_count = 192
+            print(f"📊 实际记录数: {record_count}, 预期记录数: {expected_count}")
+            
+            if record_count != expected_count:
+                print(f"⚠️ 警告：记录数量不匹配 (实际: {record_count}, 预期: {expected_count})")
+            
+            # 验证第一条记录的money
+            if record_count > 0:
+                first_money = df_5m.iloc[0]['money']
+                expected_first_money = 431319139.000
+                print(f"💰 第一条记录money: {first_money}, 预期: {expected_first_money}")
+                
+                if abs(first_money - expected_first_money) < 0.001:
+                    print("✅ 第一条记录money验证通过")
+                    first_test_pass = True
+                else:
+                    print("❌ 第一条记录money验证失败")
+                    first_test_pass = False
+            else:
+                first_test_pass = False
+            
+            # 验证最后一条记录的money
+            if record_count > 0:
+                last_money = df_5m.iloc[-1]['money']
+                expected_last_money = 240238925.000
+                print(f"💰 最后一条记录money: {last_money}, 预期: {expected_last_money}")
+                
+                if abs(last_money - expected_last_money) < 0.001:
+                    print("✅ 最后一条记录money验证通过")
+                    last_test_pass = True
+                else:
+                    print("❌ 最后一条记录money验证失败")
+                    last_test_pass = False
+            else:
+                last_test_pass = False
+            
+            # 显示测试结果详情
+            print(f"\n📋 测试结果详情:")
+            print(f"   - 数据时间范围: {df_5m['date'].min()} 到 {df_5m['date'].max()}")
+            print(f"   - 总记录数: {record_count}")
+            print(f"   - 第一条记录: {df_5m.iloc[0].to_dict()}" if record_count > 0 else "   - 第一条记录: 无数据")
+            print(f"   - 最后一条记录: {df_5m.iloc[-1].to_dict()}" if record_count > 0 else "   - 最后一条记录: 无数据")
+            
+            # 综合测试结果
+            all_tests_pass = (
+                record_count == expected_count and 
+                first_test_pass and 
+                last_test_pass
+            )
+            
+            if all_tests_pass:
+                print("\n🎉 所有测试通过！5分钟重采样功能正常")
+                return True
+            else:
+                print("\n⚠️ 部分测试未通过，请检查重采样逻辑")
+                return False
+                
+        except Exception as e:
+            print(f"\n💥 测试过程中发生错误: {e}")
+            return False
+            
+        finally:
+            # 恢复原始设置
+            self.code = original_code
+            self.start_date = original_start
+            self.end_date = original_end
+            self.ktype = original_ktype
+            print(f"\n🔄 已恢复原始设置: {self.code}")
 
+    def test_resample_60m_accuracy(self):
+        """
+        单元测试：验证60分钟重采样的准确性
+        测试数据：300059.SZ 2025/7/1 - 2025/7/5
+        预期结果：16条记录，第一条money=3039734046.000，最后一条money=2206680278.000
+        """
+        print("\n=== 开始60分钟重采样准确性测试 ===")
+        
+        # 设置测试参数
+        original_code = self.code
+        original_start = self.start_date
+        original_end = self.end_date
+        original_ktype = self.ktype
+        
+        try:
+            # 设置测试数据
+            self.code = '300059.SZ'
+            self.start_date = datetime(2025, 7, 1)
+            self.end_date = datetime(2025, 7, 5)
+            
+            # 执行重采样
+            print(f"测试股票: {self.code}")
+            print(f"测试时间范围: {self.start_date.date()} 到 {self.end_date.date()}")
+            
+            df_60m = self.resample_1m_to_60m(flash_to_database=False, show_timing=True)
+            
+            if df_60m.empty:
+                print("❌ 测试失败：60分钟重采样结果为空")
+                return False
+            
+            # 验证记录数量
+            record_count = len(df_60m)
+            expected_count = 16
+            print(f"📊 实际记录数: {record_count}, 预期记录数: {expected_count}")
+            
+            if record_count != expected_count:
+                print(f"⚠️ 警告：记录数量不匹配 (实际: {record_count}, 预期: {expected_count})")
+            
+            # 验证第一条记录的money
+            if record_count > 0:
+                first_money = df_60m.iloc[0]['money']
+                expected_first_money = 3039734046.000
+                print(f"💰 第一条记录money: {first_money}, 预期: {expected_first_money}")
+                
+                if abs(first_money - expected_first_money) < 0.001:
+                    print("✅ 第一条记录money验证通过")
+                    first_test_pass = True
+                else:
+                    print("❌ 第一条记录money验证失败")
+                    first_test_pass = False
+            else:
+                first_test_pass = False
+            
+            # 验证最后一条记录的money
+            if record_count > 0:
+                last_money = df_60m.iloc[-1]['money']
+                expected_last_money = 2206680278.000
+                print(f"💰 最后一条记录money: {last_money}, 预期: {expected_last_money}")
+                
+                if abs(last_money - expected_last_money) < 0.001:
+                    print("✅ 最后一条记录money验证通过")
+                    last_test_pass = True
+                else:
+                    print("❌ 最后一条记录money验证失败")
+                    last_test_pass = False
+            else:
+                last_test_pass = False
+            
+            # 显示测试结果详情
+            print(f"\n📋 测试结果详情:")
+            print(f"   - 数据时间范围: {df_60m['date'].min()} 到 {df_60m['date'].max()}")
+            print(f"   - 总记录数: {record_count}")
+            print(f"   - 第一条记录: {df_60m.iloc[0].to_dict()}" if record_count > 0 else "   - 第一条记录: 无数据")
+            print(f"   - 最后一条记录: {df_60m.iloc[-1].to_dict()}" if record_count > 0 else "   - 最后一条记录: 无数据")
+            
+            # 综合测试结果
+            all_tests_pass = (
+                record_count == expected_count and 
+                first_test_pass and 
+                last_test_pass
+            )
+            
+            if all_tests_pass:
+                print("\n🎉 所有测试通过！60分钟重采样功能正常")
+                return True
+            else:
+                print("\n⚠️ 部分测试未通过，请检查60分钟重采样逻辑")
+                return False
+                
+        except Exception as e:
+            print(f"\n💥 测试过程中发生错误: {e}")
+            return False
+            
+        finally:
+            # 恢复原始设置
+            self.code = original_code
+            self.start_date = original_start
+            self.end_date = original_end
+            self.ktype = original_ktype
+            print(f"\n🔄 已恢复原始设置: {self.code}")
 
+    def run_all_tests(self):
+        """
+        运行所有单元测试
+        """
+        print("🚀 开始运行所有单元测试...")
+        
+        test_results = []
+        
+        # 测试1: 5分钟重采样准确性
+        result1 = self.test_resample_5m_accuracy()
+        test_results.append(("5分钟重采样准确性", result1))
+        
+        # 测试2: 60分钟重采样准确性
+        result2 = self.test_resample_60m_accuracy()
+        test_results.append(("60分钟重采样准确性", result2))
+        
+        # 汇总结果
+        print("\n" + "="*50)
+        print("📊 单元测试结果汇总:")
+        print("="*50)
+        
+        passed_count = 0
+        for test_name, result in test_results:
+            status = "✅ 通过" if result else "❌ 失败"
+            print(f"{test_name}: {status}")
+            if result:
+                passed_count += 1
+        
+        total_tests = len(test_results)
+        print(f"\n总计: {passed_count}/{total_tests} 个测试通过")
+        
+        if passed_count == total_tests:
+            print("🎉 所有测试通过！重采样功能正常运行")
+        else:
+            print("⚠️ 部分测试失败，建议检查相关功能")
+        
+        return passed_count == total_tests
 
-
-if __name__=="__main__":
-    #pd.set_option('display.max_rows', None)
-
-    #测试项目akshare更新1.14后的差异
-    #fund_etf_hist_min_em
-    #df = ak.stock_zh_a_hist_min_em(symbol = '000001' , start_date = '2024-08-06 09:30:00', end_date = '2024-08-07 18:30:00', period = '60', adjust = '')
-    #df = ak.fund_etf_hist_min_em(symbol = '159949' , start_date = '2024-08-06 09:30:00', end_date = '2024-08-07 18:30:00', period = '5', adjust = '')
-    #print(df)
-
-    #测试项目1：使用ak数据源，获取日线数据
-    akdata = data() #这里的data默认本地data源，是akdata
-    akdata.code ='688126.SH'
-    akdata.start_date= datetime(2025,5,6,8)
-    akdata.end_date = datetime(2025,7,5,18)
+if __name__ == "__main__":
+    # 测试项目1：使用ak数据源，获取日线数据
+    akdata = data()  # 这里的data默认本地data源，是akdata
+    akdata.code = '688126.SH'
+    akdata.start_date = datetime(2025, 5, 6, 8)
+    akdata.end_date = datetime(2025, 7, 5, 18)
     akdata.fq = akdata.复权.不复权
     akdata.ktype = '1d'
 
-    #测试项目2：1m重采样
+    # 测试项目2：重采样功能测试
+    print("开始重采样功能测试...")
     akdata.ktype = '1m'
     df_1m = akdata.get_k_data()
-    df_5m = akdata.resample_1m_to_5m(flash_to_database=False)
-    print(df_5m)
-    #df_60m = akdata.resample_1m_to_60m(flash_to_database=True)
-    #akdata.update_ak_resample()
-    #print(df_5m)
-    #print(df_60m)
+    
+    # 测试5分钟重采样
+    df_5m = akdata.resample_1m_to_5m(flash_to_database=False, show_timing=True)
+    print(f"5分钟重采样结果：{len(df_5m)}条记录")
+    
+    # 测试60分钟重采样
+    df_60m = akdata.resample_1m_to_60m(flash_to_database=False, show_timing=True)
+    print(f"60分钟重采样结果：{len(df_60m)}条记录")
+    
+    # 测试项目3：运行完整单元测试套件
+    print("\n" + "="*60)
+    print("开始运行单元测试套件...")
+    print("="*60)
+    akdata.run_all_tests()
