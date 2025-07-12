@@ -50,14 +50,15 @@ class base():
         # 进行数据源的选择和映射
         if rds_host is None:    #数据源为空时进行映射
             # 从.env中读取DB_NAME，默认值可以设为"localhost"
-            db_name = os.getenv("DB_NAME", "localhost").strip().lower()
+            db_name = os.getenv("DB_NAME", "UBUNTU186_DB_CONN").strip()
             mapping = {
                 "aliyun": self.数据源.aliyun,
-                "aws": self.数据源.aws,
+                "AWS_DB_CONN": self.数据源.aws,
                 "localhost": self.数据源.localhost,
                 "centos9": self.数据源.centos9,
                 "ubuntu186": self.数据源.ubuntu186,
                 "ubuntu191": self.数据源.ubuntu191,
+                "UBUNTU186_DB_CONN": self.数据源.ubuntu186,
             }      
             rds_host = mapping.get(db_name, self.数据源.localhost)        
         self.myauth = myauth
