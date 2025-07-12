@@ -1,2 +1,0 @@
-正常更新有时候会遇到ssl问题，用阿里云的安装源
-pip3 install tables -i http://mirrors.aliyun.com/pypi/simple --trusted-host mirrors.aliyun.com

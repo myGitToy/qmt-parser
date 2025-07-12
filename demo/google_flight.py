@@ -35,5 +35,5 @@ class FlightSearcher:
 # Example usage:
 if __name__ == "__main__":
     searcher = FlightSearcher(client_id='rXbr6ZWtqNPddA2oGwXQIHYAdMtABAs6', client_secret='DMczAEMDZPpjlCqq')
-    flights = searcher.search_flights(origin='PVG', destination='HND', departure_date='2024-12-15', adults=1)
+    flights = searcher.search_flights(origin='PVG', destination='HND', departure_date='2025-07-15', adults=1)
     searcher.print_flight_info(flights)

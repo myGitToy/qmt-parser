@@ -1469,9 +1469,6 @@ class data(base,stock):
             print(f"{self.code} | resample_1m_to_60m 执行完成，耗时: {end_time - func_start_time:.2f}秒")
         return df_resample_60m[['code', 'date', 'open', 'high', 'low', 'close', 'volume', 'money']]
 
-
-
-
     def resample_1m_to_5m(self, flash_to_database=False, show_timing=False):
         """
         将指定区间的1分钟K线重采样为5分钟K线
