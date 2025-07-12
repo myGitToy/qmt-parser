@@ -1502,6 +1502,7 @@ class data(base,stock):
         # 阶段1: 获取1分钟数据
         step1_start = time.time()
         df_1m = self.get_k_data()  # 获取1分钟K线数据
+        print(df_1m)
         step1_time = time.time() - step1_start
         if show_timing:
             print(f"{self.code} | 步骤1-获取1m数据耗时: {step1_time:.2f}秒")
@@ -1571,35 +1572,57 @@ class data(base,stock):
         if show_timing:
             print(f"{self.code} | 步骤3-时间区间定义耗时: {step3_time:.2f}秒")
         
-        # 阶段4: 重采样计算
+        # 阶段4: 重采样计算（终极优化版本）
         step4_start = time.time()
+        
+        # 预处理：转换时间区间为秒数，便于快速比较
+        time_intervals_seconds = []
+        for start_time, end_time, sample_time in time_intervals:
+            start_seconds = pd.to_datetime(start_time).hour * 3600 + pd.to_datetime(start_time).minute * 60 + pd.to_datetime(start_time).second
+            end_seconds = pd.to_datetime(end_time).hour * 3600 + pd.to_datetime(end_time).minute * 60 + pd.to_datetime(end_time).second
+            sample_time_obj = pd.to_datetime(sample_time).time()
+            time_intervals_seconds.append((start_seconds, end_seconds, sample_time_obj))
+        
+        # 使用列表推导式和向量化操作
         results = []
         
         # 按交易日分组处理
         for date, group in df_1m.groupby('trade_date'):
-            for start_time, end_time, sample_time in time_intervals:
-                # 转换为time对象进行比较
-                start_time_obj = pd.to_datetime(start_time).time()
-                end_time_obj = pd.to_datetime(end_time).time()
-                sample_time_obj = pd.to_datetime(sample_time).time()
+            # 预先计算时间的秒数，避免重复计算
+            group_time_seconds = group.index.hour * 3600 + group.index.minute * 60 + group.index.second
+            
+            # 预先获取数据数组
+            group_open = group['open'].values
+            group_high = group['high'].values
+            group_low = group['low'].values
+            group_close = group['close'].values
+            group_volume = group['volume'].values
+            group_money = group['money'].values
+            
+            # 批量处理所有时间区间
+            for start_seconds, end_seconds, sample_time_obj in time_intervals_seconds:
+                # 使用numpy数组比较，速度更快
+                mask = (group_time_seconds >= start_seconds) & (group_time_seconds <= end_seconds)
                 
-                # 筛选当前5分钟时间段的数据（闭区间）
-                mask = (group.index.time >= start_time_obj) & (group.index.time <= end_time_obj)
-                period_data = group[mask]
-                
-                if not period_data.empty:
-                    # 创建重采样K线，使用采样时间点作为时间戳
-                    new_row = {
+                if np.any(mask):  # 如果有匹配的数据
+                    # 直接使用numpy数组操作
+                    masked_open = group_open[mask]
+                    masked_high = group_high[mask]
+                    masked_low = group_low[mask]
+                    masked_close = group_close[mask]
+                    masked_volume = group_volume[mask]
+                    masked_money = group_money[mask]
+                    
+                    results.append({
                         'date': pd.Timestamp.combine(date, sample_time_obj),
-                        'open': period_data['open'].iloc[0],
-                        'high': period_data['high'].max(),
-                        'low': period_data['low'].min(),
-                        'close': period_data['close'].iloc[-1],
-                        'volume': period_data['volume'].sum(),
-                        'money': period_data['money'].sum(),
+                        'open': masked_open[0],
+                        'high': masked_high.max(),
+                        'low': masked_low.min(),
+                        'close': masked_close[-1],
+                        'volume': masked_volume.sum(),
+                        'money': masked_money.sum(),
                         'trade_date': date
-                    }
-                    results.append(new_row)
+                    })
         
         step4_time = time.time() - step4_start
         if show_timing:
@@ -1905,7 +1928,7 @@ class data(base,stock):
 if __name__ == "__main__":
     # 测试项目1：使用ak数据源，获取日线数据
     akdata = data()  # 这里的data默认本地data源，是akdata
-    akdata.code = '688126.SH'
+    akdata.code = '601318.SH'
     akdata.start_date = datetime(2025, 5, 6, 8)
     akdata.end_date = datetime(2025, 7, 5, 18)
     akdata.fq = akdata.复权.不复权
@@ -1917,11 +1940,11 @@ if __name__ == "__main__":
     df_1m = akdata.get_k_data()
     
     # 测试5分钟重采样
-    df_5m = akdata.resample_1m_to_5m(flash_to_database=False, show_timing=True)
+    df_5m = akdata.resample_1m_to_5m(flash_to_database=True, show_timing=True)
     print(f"5分钟重采样结果：{len(df_5m)}条记录")
     
     # 测试60分钟重采样
-    df_60m = akdata.resample_1m_to_60m(flash_to_database=False, show_timing=True)
+    df_60m = akdata.resample_1m_to_60m(flash_to_database=True, show_timing=True)
     print(f"60分钟重采样结果：{len(df_60m)}条记录")
     
     # 测试项目3：运行完整单元测试套件
