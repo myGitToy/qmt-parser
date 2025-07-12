@@ -15,7 +15,7 @@ import os.path
 import uuid
 import os   #用于读取文件目录
 from dotenv import load_dotenv #用于读取.env文件
-class hdf5(data):
+class hdf5ClientWrapper(data):
     """
     hdf5文件的读取，加载，删除，更新的基类（本地操作）
     备注：
@@ -25,7 +25,7 @@ class hdf5(data):
         h5py 保存的数据集需要自行处理列名、索引等信息，而to_hdf则会将这些信息一起存储，方便后续用read_hdf直接恢复为 DataFrame。
         pd.read_hdf 无法对二进制内存流进行操作，必须要保存本地后再进行读取
     """
-    def __init__(self , key = 'RawData'):
+    def __init__(self , key = 'akshare'):
         #全局变量定义
         #关于如何调用，请参考task449
         #https://huiqiao.visualstudio.com/MyFunds/_sprints/taskboard/MyFunds%20Team/MyFunds/2023Q1?workitem=449
