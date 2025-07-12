@@ -12,12 +12,14 @@ import winsound  # 用于语音提醒（Windows）
 def run_script():
     # 1. 更新序列
     a = data()
-    a.start_date = datetime(2024, 6, 1)
+    a.start_date = datetime(2025, 6, 20)
     a.end_date = datetime.now()
     # a.update_etf_day()
     # 优先更新高权限序列 
     a.update_sequence_launch(priority=1, sleep=0.05)
     a.update_sequence_launch(priority=0, sleep=1.5)  # 0.35秒间隔
+    #a.fix_1min_error_v3()  # 修复1分钟线数据错误
+    #a.update_ak_resample()  # 更新分时线数据（5m和60m重采样）
 
 error_count = 0
 max_retries = 20
