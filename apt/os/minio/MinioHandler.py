@@ -10,7 +10,7 @@ from minio import Minio
 from minio.error import S3Error
 from apt.vendor.akshare.data import data as ak_data
 from datetime import datetime
-from apt.os.hdf5 import hdf5 as hdf5
+from apt.os.hdf5.hdf5Handler import hdf5ClientWrapper
 
 class MinioClientWrapper:
     """
@@ -79,16 +79,16 @@ class MinioClientWrapper:
         #读取.env文件
         load_dotenv()           
         # 定义默认缓存路径
-        self.MINIO_CACHE_PATH = os.getenv('CACHE_PATH', "c:\\minio_cache")
+        self.MINIO_CACHE_PATH = os.getenv('minio_CACHE_PATH', "c:\\minio_cache")
         #检查缓存路径是否存在
         if not os.path.exists(self.MINIO_CACHE_PATH):
             os.makedirs(self.MINIO_CACHE_PATH, exist_ok=True)                
         # 检查参数是否有效    
         if access_key is None or secret_key is None or endpoint is None:
             # 配置默认的参数
-            endpoint = os.getenv('ENDPOINT')
-            access_key = os.getenv('ACCESS_KEY')
-            secret_key = os.getenv('SECRET_KEY')
+            endpoint = os.getenv('minio_ENDPOINT')
+            access_key = os.getenv('minio_ACCESS_KEY')
+            secret_key = os.getenv('minio_SECRET_KEY')
             
         self.client = Minio(
             endpoint = endpoint,
@@ -142,7 +142,7 @@ class MinioClientWrapper:
             content = data.read()
             # 如果是HDF5文件，直接返回二进制内容（针对HDF5做特别优化）
             # 备注：由于HDF5文件采用pd.HDFStore存储，直接读取二进制有困难，因此采用下载至临时文件夹的方法
-            # 临时文件夹默认位于os.getenv("MINIO_CACHE_PATH", "c:\minio_cache")
+            # 临时文件夹默认位于os.getenv("minio_CACHE_PATH", "c:\minio_cache")
             if object_name.lower().endswith('.h5'):
                 raise NotImplementedError("HDF5文件读取需要特殊处理")       
             # 如果是文本文件,进行解码
@@ -336,5 +336,5 @@ if __name__ == "__main__":
     #df = ts.pro_bar(api = a.api , ts_code = a.code , freq = '1min' , adj = None , start_date = dt.strftime('%Y-%m-%d %H:%M:%S') , end_date = tmp_end_date.strftime('%Y-%m-%d %H:%M:%S') , adjfactor = True , factors = ['tor', 'vr'] , asset = 'E')
     #df = a.get_k_data() #从数据库中读取数据
     print(df)
-    df_h5 = hdf5(a).data_query()
+    df_h5 = hdf5ClientWrapper(a).data_query()
     print(df_h5)
