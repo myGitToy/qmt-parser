@@ -1502,7 +1502,7 @@ class data(base,stock):
         # 阶段1: 获取1分钟数据
         step1_start = time.time()
         df_1m = self.get_k_data()  # 获取1分钟K线数据
-        print(df_1m)
+        #print(df_1m)
         step1_time = time.time() - step1_start
         if show_timing:
             print(f"{self.code} | 步骤1-获取1m数据耗时: {step1_time:.2f}秒")
@@ -1925,6 +1925,23 @@ class data(base,stock):
         
         return passed_count == total_tests
 
+    def data_prepare_task101(self) -> pd.DataFrame:
+        """
+        task101: 数据预处理任务 akshare 1m->5m重采样
+        key: task101
+        存储方式：Redis List
+        数据类型："code": "300679.SZ", "start_date": "2025-07-10 08:00:00", "end_date": "2025-07-14 18:55:26"
+                
+        """
+        # 基础数据准备：获取全部证券代码
+        df_all_code = security.get_all_code(self)
+        # 仅留下code列
+        df_all_code = df_all_code[['code']]
+        # 增加开始时间和结束时间列
+        df_all_code['start_date'] = self.start_date
+        df_all_code['end_date'] = self.end_date
+        return df_all_code
+    
 if __name__ == "__main__":
     # 测试项目1：使用ak数据源，获取日线数据
     akdata = data()  # 这里的data默认本地data源，是akdata
