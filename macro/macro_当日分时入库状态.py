@@ -15,6 +15,6 @@ print(df_tspro1)
 print(df_tspro60)
 """
 #检查ak1分钟线
-df_ak1 = ak.stock_zh_a_minute(symbol = 'sh601318',period = '5')
+df_ak1 = ak.stock_zh_a_minute(symbol = 'sh601318',period = '1')
 print(df_ak1)
 

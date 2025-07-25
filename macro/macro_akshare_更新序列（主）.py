@@ -26,20 +26,20 @@ a.code = ak.code = '600038.sh'
 #全市场数据校验下次起始日期2023/12/13
 #2023年已完成校验 2022可能还需要校验
 #2024/1/1-2024/9/20前已完成校验
-a.start_date = ak.start_date =  datetime(2025,7,10,8) #1998/10/20日开始有ETF数据    ETF日线数据和复权数据已更新完毕
+a.start_date = ak.start_date =  datetime(2025,7,21,8) #1998/10/20日开始有ETF数据    ETF日线数据和复权数据已更新完毕
 a.end_date = ak.end_date =  datetime.now()
 #2. 更新证券代码库(stock和ETF资产)
 sec = security()
-#sec.update_security()
-#sec.update_security_ETF()
+sec.update_security()
+sec.update_security_ETF()
 
 #更新交易日历
-#sec.update_calendar()
+sec.update_calendar()
 
 #更新基础信息daily basic（1991年至今）nb             
 #此数据库未删除，为老版本
 sec.start_date = datetime(2025,6,4)
-#sec.update_basic(sleep = 0.2)
+sec.update_basic(sleep = 0.2)
 #sec.get_basic(to_csv = True)
 
 #更新资金流向（2007年至今） 数据更新时间20：00
@@ -47,19 +47,19 @@ flow = money()
 #此数据库未删除，为老版本
 flow.start_date = datetime(2025,6,24)
 flow.end_date = a.end_date
-#flow.daily_update(sleep = 0.2)
+flow.daily_update(sleep = 0.2)
 
 #更新累计成交数据库(目前库数据不全，2023年含零碎数据，2023年前数据无，计划更新自2006年以来的数据)
-#ct.insert_cumulative_turnover(a)
+ct.insert_cumulative_turnover(a)
 
 #3. 更新股票日线数据和复权因子（忽略）
 a.ktype = '1d'
-#a.update_day(flag_verify_db = False)
-#a.update_factor(flag_verify_db = False)
+a.update_day(flag_verify_db = False)
+a.update_factor(flag_verify_db = False)
 
 #5. 更新ETF日线数据和复权因子
-#a.update_day_ETF()          #包含2020年起的数据
-#a.update_factor_ETF() 
+a.update_day_ETF()          #包含2020年起的数据
+a.update_factor_ETF() 
 
 #4. 更新股票小时线数据   60分钟线最后更新日期2022/7/6含；1分钟线2020全年写入更新序列
 #此处的数据更新采用akshare数据源 2023/6/11
@@ -71,9 +71,9 @@ ak.ktype = '5m' #更新5分钟线 起始日期2023/4/26
 #ak.update_sequence_add(myclass = 'stock' , type = '5m' , priority = 0) #更新stock
 #ak.update_sequence_add(myclass = 'etf' , type = '5m' , priority = 1) #更新etf
 
-ak.ktype = '1m' #更新5分钟线 起始日期2023/6/7
-#ak.update_sequence_add(myclass = 'stock' , type = '1m' , priority = 1) #更新stock
-#ak.update_sequence_add(myclass = 'etf' , type = '1m' , priority = 1) #更新etf
+ak.ktype = '1m' #更新1分钟线 起始日期2023/6/7
+ak.update_sequence_add(myclass = 'stock' , type = '1m' , priority = 1) #更新stock
+ak.update_sequence_add(myclass = 'etf' , type = '1m' , priority = 1) #更新etf
 
 rds = redisClient()
 # task101 akshare 1m->5m重采样
