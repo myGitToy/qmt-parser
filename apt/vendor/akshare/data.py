@@ -19,6 +19,11 @@ from apt.vendor.tspro.data import data as tspro_data
 from tqdm import tqdm
 #from apt.vendor.tspro.security import get_calendar
 
+#加入redis和json支持
+from apt.os.redis.redisHandler import RedisClientWrapper as redisClient
+import json
+import traceback
+
 class data(base,stock):
     """
     数据接口 基类
@@ -1146,6 +1151,7 @@ class data(base,stock):
             df_code = pd.read_sql_query(sql_code , self.engine)
             for code in df_code['code']:    #循环读取每个代码
                 sql_1m_day = f"select date(date) as date , count(date) as num  from akshare_1m where date(date) ='{day.date()}' and code = '{code}' and open = 0 group by date(date)"
+               
                 df_1m_day = pd.read_sql_query(sql_1m_day , self.engine)
                 #print(df_1m_day )
                 if df_1m_day.empty == True:
@@ -1449,7 +1455,11 @@ class data(base,stock):
             #print(df_diff)
             # 将数据写回数据库
             if not df_diff.empty:
-                df_diff.to_sql('akshare_60m', self.engine, if_exists='append', index=False)
+                df_diff.to_sql(
+                        name = 'akshare_60m',
+                        con = self.engine,
+                        index = False,
+                        if_exists = 'append')
                 if len_origin == len_update:
                     print(f"{self.code} | 60分钟K线数据差集已写入数据库，总共{len_origin}条记录")
                 else:
@@ -1941,7 +1951,244 @@ class data(base,stock):
         df_all_code['start_date'] = self.start_date
         df_all_code['end_date'] = self.end_date
         return df_all_code
-    
+
+    def task_process_task101(self):
+        """
+        多任务处理，从redis读取task101键值，进行重采样任务
+        支持5线程同时处理
+        
+        线程安全说明：
+        - 每个线程创建独立的data实例，避免实例变量互相干扰
+        - 使用线程安全的queue进行任务分发
+        - 使用锁保护共享的统计变量
+        """
+        import threading
+        import queue
+        import traceback
+        import json
+        from datetime import datetime
+        
+        print("############正在处理task101重采样任务###########")
+
+        # 获取Redis连接
+        rds = redisClient()
+        rds_conn = rds.client  # 修复：client是属性，不是方法
+        
+        # 检查队列是否存在且有数据
+        if not rds_conn.exists('task101') or rds_conn.llen('task101') == 0:
+            print("task101队列不存在或为空，无任务需要处理")
+            return
+
+        # 获取队列长度
+        queue_length = rds_conn.llen('task101')
+        print(f"队列中共有{queue_length}个任务待处理")
+
+        # 创建线程安全的队列用于任务分发
+        task_queue = queue.Queue()
+        
+        # 方案1：一次性取出所有任务（当前方案 - 速度快但有风险）
+        # 优点：处理速度快，减少Redis访问
+        # 缺点：程序崩溃可能丢失任务
+        print("正在从Redis获取任务...")
+        while rds_conn.llen('task101') > 0:
+            task_data = rds_conn.lpop('task101')  # 消费性操作：取出并删除
+            if task_data is None:
+                break
+            task_queue.put(task_data)
+        
+        print(f"已从Redis获取{task_queue.qsize()}个任务，Redis队列现在为空（这是正常的）")
+        
+        # 统计变量（线程安全）
+        stats_lock = threading.Lock()
+        processed_count = 0
+        error_count = 0
+        
+        def worker_thread():
+            """
+            工作线程函数
+            每个线程创建独立的data实例，确保线程安全
+            """
+            nonlocal processed_count, error_count
+            
+            while True:
+                try:
+                    # 从队列获取任务（超时5秒）
+                    task_data = task_queue.get(timeout=5)
+                    if task_data is None:
+                        break
+                    
+                    # 解析任务数据
+                    if isinstance(task_data, bytes):
+                        task_json = json.loads(task_data.decode('utf-8'))
+                    else:
+                        task_json = json.loads(task_data)
+                    
+                    code = task_json['code']
+                    start_date = datetime.strptime(task_json['start_date'], '%Y-%m-%d %H:%M:%S')
+                    end_date = datetime.strptime(task_json['end_date'], '%Y-%m-%d %H:%M:%S')
+                    
+                    print(f"线程{threading.current_thread().name}: 正在处理任务 {code} ({start_date.date()} 到 {end_date.date()})")
+                    
+                    # 关键点：为每个线程创建独立的数据处理实例
+                    # 这确保了不同线程之间的code, start_date, end_date, ktype等变量不会互相干扰
+                    worker_instance = data(myauth=True)
+                    worker_instance.code = code
+                    worker_instance.start_date = start_date
+                    worker_instance.end_date = end_date
+                    
+                    # 执行1分钟到5分钟的重采样
+                    df_5m = worker_instance.resample_1m_to_5m(flash_to_database=True, show_timing=False)
+                    
+                    # 线程安全地更新统计
+                    with stats_lock:
+                        processed_count += 1
+                    
+                    print(f"线程{threading.current_thread().name}: 任务完成 {code} - 生成{len(df_5m)}条5分钟K线数据")
+                    
+                except Exception as e:
+                    # 线程安全地更新错误统计
+                    with stats_lock:
+                        error_count += 1
+                    print(f"线程{threading.current_thread().name}: 任务处理失败 {code if 'code' in locals() else '未知'} - 错误: {str(e)}")
+                    traceback.print_exc()
+                finally:
+                    # 标记任务完成
+                    task_queue.task_done()
+        
+        # 创建并启动5个工作线程
+        threads = []
+        for i in range(5):
+            thread = threading.Thread(target=worker_thread, name=f"Worker-{i+1}")
+            thread.daemon = True
+            thread.start()
+            threads.append(thread)
+        
+        print(f"已启动5个工作线程，开始处理{queue_length}个任务...")
+        
+        # 等待所有任务完成
+        task_queue.join()
+        
+        # 等待所有线程完成
+        for thread in threads:
+            thread.join()
+        
+        print(f"############task101重采样任务处理完成###########")
+        print(f"成功处理: {processed_count}个任务")
+        print(f"失败任务: {error_count}个")
+
+    def task_process_task101_safe(self):
+        """
+        更安全的任务处理方案：逐个消费Redis任务
+        优点：不会因程序崩溃而丢失任务
+        缺点：Redis访问频率较高
+        """
+        import threading
+        import traceback
+        import json
+        from datetime import datetime
+        
+        print("############正在处理task101重采样任务（安全模式）###########")
+
+        # 获取Redis连接
+        rds = redisClient()
+        rds_conn = rds.client
+        
+        # 检查队列是否存在且有数据
+        if not rds_conn.exists('task101') or rds_conn.llen('task101') == 0:
+            print("task101队列不存在或为空，无任务需要处理")
+            return
+
+        # 获取初始队列长度
+        initial_queue_length = rds_conn.llen('task101')
+        print(f"队列中共有{initial_queue_length}个任务待处理")
+
+        # 统计变量（线程安全）
+        stats_lock = threading.Lock()
+        processed_count = 0
+        error_count = 0
+        redis_lock = threading.Lock()  # Redis访问锁
+        
+        def worker_thread_safe():
+            """
+            安全的工作线程函数：直接从Redis消费任务
+            """
+            nonlocal processed_count, error_count
+            
+            while True:
+                task_data = None
+                try:
+                    # 线程安全地从Redis获取任务
+                    with redis_lock:
+                        if rds_conn.llen('task101') > 0:
+                            task_data = rds_conn.lpop('task101')
+                        else:
+                            break  # 队列为空，退出
+                    
+                    if task_data is None:
+                        break
+                    
+                    # 解析任务数据
+                    if isinstance(task_data, bytes):
+                        task_json = json.loads(task_data.decode('utf-8'))
+                    else:
+                        task_json = json.loads(task_data)
+                    
+                    code = task_json['code']
+                    start_date = datetime.strptime(task_json['start_date'], '%Y-%m-%d %H:%M:%S')
+                    end_date = datetime.strptime(task_json['end_date'], '%Y-%m-%d %H:%M:%S')
+                    
+                    print(f"线程{threading.current_thread().name}: 正在处理任务 {code} ({start_date.date()} 到 {end_date.date()})")
+                    
+                    # 为每个线程创建独立的数据处理实例
+                    worker_instance = data(myauth=True)
+                    worker_instance.code = code
+                    worker_instance.start_date = start_date
+                    worker_instance.end_date = end_date
+                    
+                    # 执行1分钟到5分钟的重采样
+                    df_5m = worker_instance.resample_1m_to_5m(flash_to_database=True, show_timing=False)
+                    
+                    # 线程安全地更新统计
+                    with stats_lock:
+                        processed_count += 1
+                    
+                    print(f"线程{threading.current_thread().name}: 任务完成 {code} - 生成{len(df_5m)}条5分钟K线数据")
+                    
+                except Exception as e:
+                    # 如果处理失败，将任务放回队列（可选）
+                    if task_data is not None:
+                        with redis_lock:
+                            rds_conn.rpush('task101_failed', task_data)  # 放入失败队列
+                    
+                    # 线程安全地更新错误统计
+                    with stats_lock:
+                        error_count += 1
+                    print(f"线程{threading.current_thread().name}: 任务处理失败 {code if 'code' in locals() else '未知'} - 错误: {str(e)}")
+                    traceback.print_exc()
+        
+        # 创建并启动5个工作线程
+        threads = []
+        for i in range(5):
+            thread = threading.Thread(target=worker_thread_safe, name=f"SafeWorker-{i+1}")
+            thread.daemon = True
+            thread.start()
+            threads.append(thread)
+        
+        print(f"已启动5个工作线程，开始处理{initial_queue_length}个任务...")
+        
+        # 等待所有线程完成
+        for thread in threads:
+            thread.join()
+        
+        print(f"############task101重采样任务处理完成（安全模式）###########")
+        print(f"成功处理: {processed_count}个任务")
+        print(f"失败任务: {error_count}个")
+        
+        # 检查是否有失败的任务
+        if rds_conn.exists('task101_failed'):
+            failed_count = rds_conn.llen('task101_failed')
+            print(f"失败任务已存储在task101_failed队列中，共{failed_count}个")
+        
 if __name__ == "__main__":
     # 测试项目1：使用ak数据源，获取日线数据
     akdata = data()  # 这里的data默认本地data源，是akdata
@@ -1950,7 +2197,7 @@ if __name__ == "__main__":
     akdata.end_date = datetime(2025, 7, 5, 18)
     akdata.fq = akdata.复权.不复权
     akdata.ktype = '1d'
-
+    akdata.task_process_task101()  # 执行重采样任务处理
     # 测试项目2：重采样功能测试
     print("开始重采样功能测试...")
     akdata.ktype = '1m'
