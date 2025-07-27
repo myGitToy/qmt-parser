@@ -1,0 +1,16 @@
+# Bloomberg Terminal Demo - 依赖包
+
+# 基础依赖
+streamlit>=1.28.0
+plotly>=5.15.0
+pandas>=1.5.0
+numpy>=1.21.0
+
+# 数据可视化
+plotly-express>=0.4.1
+
+# 如果需要更多功能
+dash>=2.14.0
+dash-bootstrap-components>=1.4.0
+fastapi>=0.100.0
+uvicorn>=0.23.0
