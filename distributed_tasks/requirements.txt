@@ -1,0 +1,29 @@
+# 分布式任务系统依赖包
+
+# 核心依赖
+redis>=4.5.0
+celery>=5.3.0
+pandas>=1.5.0
+sqlalchemy>=2.0.0
+pymysql>=1.0.0
+
+# 数据源
+akshare>=1.9.0
+
+# 配置管理
+python-dotenv>=1.0.0
+
+# 日志和监控
+flower>=2.0.0  # Celery监控
+tqdm>=4.65.0   # 进度条
+
+# 可选的额外功能
+psutil>=5.9.0  # 系统监控
+schedule>=1.2.0  # 定时任务调度
+
+# 开发和测试
+pytest>=7.0.0
+pytest-asyncio>=0.21.0
+mock>=5.0.0
+
+

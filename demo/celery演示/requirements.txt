@@ -1,0 +1,27 @@
+# Celery 证券数据更新系统依赖包
+
+# 核心依赖
+celery[redis]==5.3.4
+redis==5.0.1
+mysql-connector-python==8.2.0
+
+# 环境变量管理
+python-dotenv==1.0.0
+
+# 监控和管理
+flower==2.0.1
+
+# 数据处理
+pandas==2.1.4
+numpy==1.24.3
+
+# 证券数据接口（可选）
+tushare==1.2.89
+akshare==1.11.80
+
+# 工具和其他
+requests==2.31.0
+
+# 开发和测试
+pytest==7.4.3
+pytest-cov==4.1.0
