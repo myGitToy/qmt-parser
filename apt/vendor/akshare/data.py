@@ -19,6 +19,11 @@ from apt.vendor.tspro.data import data as tspro_data
 from tqdm import tqdm
 #from apt.vendor.tspro.security import get_calendar
 
+#加入redis和json支持
+from apt.os.redis.redisHandler import RedisClientWrapper as redisClient
+import json
+import traceback
+
 class data(base,stock):
     """
     数据接口 基类
@@ -363,12 +368,11 @@ class data(base,stock):
                     #df_tspro = ts.pro_bar(api = self.api , ts_code = code, freq = self.dict[type] , adj = None , start_date = start_date.strftime('%Y%m%d') , end_date = (end_date + timedelta(days = 1)).strftime('%Y%m%d') , adjfactor = True , factors = ['tor', 'vr'] , asset = 'E')
                     #print(self.dict[type])
                     try:
+                        df_ak = pd.DataFrame()
                         df_ak =  ak.stock_zh_a_hist_min_em(symbol = symbol , start_date = start_date.strftime('%Y%m%d %H:%M:%S'), end_date = end_date.strftime('%Y%m%d %H:%M:%S'), period = self.dict[type], adjust = '')
                     except:
                         print("网络连接失败！")
-                        #跳出当前的for循环
-                        
-
+                        df_ak = pd.DataFrame()  # 修复：网络失败时清空df_ak，防止写入错误数据
                         net_connection = False
                     #print(df_ak)
                 elif myclass == 'etf':
@@ -399,7 +403,9 @@ class data(base,stock):
                     60分钟线需要去除：涨跌幅  涨跌额 振幅  换手率
                 akshare1.14版本：
                     1分钟线需要去除 ：均价
-                    60分钟线需要去除： 同1.12版本                  
+                    60分钟线需要去除： 同1.12版本 
+                akshare1.16版本：
+                    2025/2/18发现ak1分钟线出现更新错误，升级akshare版本后问题修复
                 """
                 if type =='1m' and net_connection == True:
                     #print(df_ak)
@@ -443,9 +449,7 @@ class data(base,stock):
                 #print(df_ak)
                 #print(df_db)
                 #5. 两个DataFrame进行差值处理
-                #Feature Warning: 在当前的版本中，如果你连接的 DataFrame 中有一列全部是空值或 NA
-                #那么这一列将不会被包含在结果的数据类型决定中。但在未来的版本中，
-                #这种行为将不再存在，即使一列全部是空值或 NA，它也会被包含在结果的数据类型决定中。
+                #Feature Warning Fix
                 df_ak = df_ak.dropna(how='all', axis=1)
                 df_db = df_db.dropna(how='all', axis=1)
                 df_diff = pd.concat([df_ak , df_db , df_db] ).drop_duplicates(subset=['date'] , keep = False)
@@ -567,6 +571,20 @@ class data(base,stock):
                         index = False,
                         if_exists = 'append')
                 print(f"{code}数据已上传完成({self.ktype}，新增数据{df_diff.shape[0]})")
+
+    def update_ak_resample(self):
+        """
+        本模块用于将akshare1m数据重采样后，比对5m和60m的数据，差集再写回数据库
+        """        
+        # 基础数据准备：获取全部证券代码
+        print("############正在准备更新akshare分时线数据(5m 60m 重采样)###########")
+        df_all_code = security.get_all_code(self)   
+        for code in df_all_code['code']:
+            self.code = code
+            self.resample_1m_to_5m(flash_to_database=True)
+            self.resample_1m_to_60m(flash_to_database=True)
+        print("############akshare分时线数据重采样完成###########")
+
 
     def code_ts_to_ak(self):
         """
@@ -739,7 +757,7 @@ class data(base,stock):
         count : 获取K线条目的个数 默认是全部输出  
         flag_forward：用于获取N日之后X条数据，类似于后复权数据 默认为False
             在这种模式下，start_date为基准日期，先后输出count条数据
-            其余模式end_date均为基准日期
+            其余模式end_date 均为基准日期
             详见https://huiqiao.visualstudio.com/MyFunds/_workitems/edit/296
         flag_resample：T/F 用于标识是否进行重采样 60分钟线目前无法重采样，因为默认按照整点小时划分
             无论设置如何，resample只对tushare数据有效，akshare60分钟线每日正常有4条数据，无需重采样
@@ -892,7 +910,7 @@ class data(base,stock):
         count : 获取K线条目的个数 默认是全部输出  
         flag_forward：用于获取N日之后X条数据，类似于后复权数据 默认为False
             在这种模式下，start_date为基准日期，先后输出count条数据
-            其余模式end_date均为基准日期
+            其余模式end_date 均为基准日期
             详见https://huiqiao.visualstudio.com/MyFunds/_workitems/edit/296
         接受前复权 后复权 不复权 动态复权四种复权模式
         成交量、成交额目前未进行复权处理
@@ -987,10 +1005,106 @@ class data(base,stock):
             else:
                 raise ValueError(f'不支持的复权模式，请检查！')
                 return df_db
-    
+
+    def fix_1min_error_v3(self, day = datetime(2023,12,1)):
+            """
+            第三版的更新逻辑（正在开发中）
+            自2025/4起东财做了更新限制，目前比较难获取5m数据，因此第三版针对这一情况做修正
+            本模块使用日线数据对1分钟线进行数据修正，目前存在以下几个问题：
+            1. 当日停盘个股在1分钟线上是有数据的（成交量为0），如果隔日截取，则停盘日取不到1分钟数据；
+            2. 如果对历史的1分钟数据进行截取，则开盘价open均为0（1分钟线数据仅保留5天）
+            3. 当日临时停盘，未知
+
+            【输入】
+                start_date
+                end_date
+
+            """  
+            # 基础数据准备：获取全部证券代码
+            df_all_code = security.get_all_code(self)
+            #print(df_all_code)
+            #第一部分：修正当日停盘数据
+            df_tingpai = pro_api.suspend_k(self)
+            #print(df_tingpai.query('suspend_timing == suspend_timing'))
+            for index , row in df_tingpai.query('suspend_timing != suspend_timing').iterrows():
+                code = row['code']
+                date = row['date']
+                suspend_type = row['suspend_type']
+                if suspend_type == 'S':
+                    #全天停牌，删除对应的一分钟线数据
+                    count_query = text(f"SELECT COUNT(*) FROM akshare_1m WHERE code = '{code}' AND date(date) = '{date.date()}'")
+                    sql_query = text(f"delete from akshare_1m where code = '{code}' and date(date) = '{date.date()}'")
+                    try:
+                        with self.engine.begin() as connection:
+                            # 首先执行计数查询
+                            count_result = connection.execute(count_query).scalar()
+                            # 再执行删除操作
+                            connection.execute(sql_query)
+                            print(f"删除{code}|{date.date()} 成功，共删除{count_result}行数据！")
+                    except exc.ResourceClosedError:
+                        print(f"删除{code}|{date.date()} 失败！")
+                elif suspend_type == 'R':    
+                    pass    #复牌，不做任何处理
+                else:
+                    pass    #其他
+            #第二部分：修正当日部分时段停盘数据
+            print(df_tingpai.query('suspend_timing == suspend_timing'))
+            # 第三部分：修复开盘价为0的数据
+            
+            for code in df_all_code['code']:
+                # 3.1 按代码循环查询每个代码的开盘和交易日数据
+                df_code_day_string = f"select date,open from akshare_1m where code = '{code}' and date between '{self.start_date}' and '{self.end_date}'"
+                # 初始化1m并赋值
+                df_1m = pd.DataFrame()
+                df_1m = pd.read_sql_query(df_code_day_string, self.engine)
+                if df_1m.empty:
+                    print(f"代码 {code} 在指定日期范围内没有1分钟线数据，跳过修复")
+                    continue
+                # 收集开盘价为0的日期，聚合到日期
+                df_open_zero_date = df_1m.query('open == 0')
+                #print(f"代码 {code} 开盘价为0的日期：{df_open_zero_date['date'].dt.date.unique()}")
+                # 3.2 按日进行修复
+                for day in df_open_zero_date['date'].dt.date.unique():
+                    # 获取当天1d的开盘价
+                    open_price = pd.read_sql_query(f"select open from tspro_1d where code = '{code}' and date(date) = '{day}'", self.engine)
+                    # open_price有数据则修复，否则报错
+                    if open_price.empty or open_price['open'].values[0] == 0:
+                        raise ValueError(f"{code} {day} 无法修复，开盘价无数据或为0")
+                    else:
+                        #print(f"正在修复代码 {code} 日期 {day} 的开盘价为0的数据，当日收盘价为{open_price['open'].values[0]}")
+                        # 获取1m需要修复的当天数据
+                        df_1m_today = pd.DataFrame()
+                        df_1m_today = pd.read_sql_query(f"select id,code,date,open,close from akshare_1m where code = '{code}' and date(date) = '{day}' order by date asc", self.engine)
+                        #print("##########修复前数据如下")
+                        #print(df_1m_today)
+                        # 3.3 修复逻辑
+                        # 当天第一条open价格直接用1d的开盘价，其余open价格为前一根K线的close价格
+                        df_1m_today.loc[df_1m_today.index[0], 'open'] = open_price['open'].values[0]
+                        df_1m_today.loc[df_1m_today['open'] == 0, 'open'] = df_1m_today['close'].shift(1).fillna(df_1m_today['close'])
+                        # 将修复后的数据更新回数据库
+                        #通过mysql事务的方式，一次性更新全部need_fix = 1 的数据
+                        #print("##########修复后数据如下")
+                        #print(df_1m_today)
+                        try:
+                            with self.engine.begin() as connection:
+                                #connection.begin()
+                                for index, row in df_1m_today.iterrows():
+                                    id = row['id']
+                                    open_price = row['open']
+                                    sql_update= text(f"update akshare_1m set open = {open_price} where id = {id}")
+                                    connection.execute(sql_update)
+                                connection.commit()
+                                print(f"{day}|{code} 修正成功")
+                        except:
+                            with self.engine.begin() as connection:
+                                connection.rollback()
+                                print(f"{day}|{code} 修正失败，回滚数据")
+            print("1分钟线修正完毕")
+            
     def fix_1min_error_v2(self, day = datetime(2023,12,1)):
         """
         目前采用第二版的更新逻辑
+        自2025/4起东财做了更新限制，目前比较难获取5m数据，因此后续将会修改
         本模块使用5分钟线数据对1分钟线进行数据修正，目前存在以下几个问题：
         1. 当日停盘个股在1分钟线上是有数据的（成交量为0），如果隔日截取，则停盘日取不到1分钟数据；
         2. 如果对历史的1分钟数据进行截取，则开盘价open均为0（1分钟线数据仅保留5天）
@@ -1001,6 +1115,7 @@ class data(base,stock):
             end_date
 
         """  
+        raise ValueError(f'已移除该功能')
         #第一部分：修正当日停盘数据
         df_tingpai = pro_api.suspend_k(self)
         #print(df_tingpai.query('suspend_timing == suspend_timing'))
@@ -1036,8 +1151,9 @@ class data(base,stock):
             df_code = pd.read_sql_query(sql_code , self.engine)
             for code in df_code['code']:    #循环读取每个代码
                 sql_1m_day = f"select date(date) as date , count(date) as num  from akshare_1m where date(date) ='{day.date()}' and code = '{code}' and open = 0 group by date(date)"
+               
                 df_1m_day = pd.read_sql_query(sql_1m_day , self.engine)
-                #print(df_1m_day)
+                #print(df_1m_day )
                 if df_1m_day.empty == True:
                     #无数据，跳过
                     print(f"{day.date()}|{code} 无数据，跳过")
@@ -1120,6 +1236,7 @@ class data(base,stock):
         #优点：点断续传后，已修正的代码就不会重复计算，节约时间
         #缺点：会历遍整个数据库，目前大约需要耗时1分钟，将来会显著增加，而且如果当天没有更新完毕，后面一天的数据进来后，优势就不存在了，因为又需要从头开始进行修正
         #TO DO: 从其他渠道取得代码，然后进行修正
+        raise ValueError(f'已移除该功能')
         sql_1d = f"select code from tspro_1d where date >= '{day}' group by code order by code"
         df_1d_code = pd.read_sql_query(sql_1d , self.engine)
         sql_code = 'select code from akshare_1m group by code' #2023/12/13查询耗时7秒
@@ -1153,7 +1270,7 @@ class data(base,stock):
             df_db_1min.loc[(df_db_1min.fix_mode == '60min_mode1'), "open_x"] = df_db_1min.loc[(df_db_1min.fix_mode == '60min_mode1'), "open_y"] 
             df_db_1min.loc[(df_db_1min.fix_mode == '60min_mode2'), "open_x"] = df_db_1min.loc[(df_db_1min.fix_mode == '60min_mode2'), "open_y"] 
             ####3. 对于offset的数据进行填充
-            df_db_1min.loc[(df_db_1min.fix_mode == 'offset'), "open_x"] = df_db_1min['close'].shift(1).fillna(df_db_1min['close'])           
+            df_db_1min.loc[(df_db_1min.fix_mode == 'offset'), "open_x"] = df_db_1min['close'].shift(1).fillna(df_db_1m_today['close'])           
             df_db = df_db_1min[['id','code','date_x','open_x','close','fix_mode']]
             #df_db.to_csv('.\\data\\海龟模型\\1min_fix.csv', encoding = 'utf_8_sig')
             ####4. 重新写回数据库
@@ -1188,18 +1305,914 @@ class data(base,stock):
         """
         raise ValueError(f'已移除该功能')
         return tspro_data.e_cumulative_turnover(self) 
-       
-if __name__=="__main__":
-    #pd.set_option('display.max_rows', None)
-    #测试项目akshare更新1.14后的差异
-    #fund_etf_hist_min_em
-    #df = ak.stock_zh_a_hist_min_em(symbol = '000001' , start_date = '2024-08-06 09:30:00', end_date = '2024-08-07 18:30:00', period = '60', adjust = '')
-    df = ak.fund_etf_hist_min_em(symbol = '159949' , start_date = '2024-08-06 09:30:00', end_date = '2024-08-07 18:30:00', period = '5', adjust = '')
-    print(df)
-    #测试项目1：使用ak数据源，获取日线数据
-    akdata = data() #这里的data默认本地data源，是akdata
-    akdata.code ='601318.sh'
-    akdata.start_date= datetime(2024,4,1,8)
-    akdata.end_date = datetime.now()
-    akdata.fq = akdata.复权.动态复权
+
+    def resample_1m_to_60m(self, flash_to_database = False, show_timing=False):
+        """
+        将指定区间的1分钟K线重采样为特定4个时间点的60分钟K线
+        默认返回60m的dataframe数据
+        flash_to_database：将60m的差额数据写回数据库，默认不写入 为False
+        备注：
+            1. 目前不进行1m线与1d线的校验，也就是不能保证重采样的完整性
+            2. 默认数据为不复权
+        参数:
+        df_1m: DataFrame，包含1分钟K线数据，至少需要包含以下列:
+            - datetime: 日期时间列，为datetime类型
+            - open: 开盘价
+            - high: 最高价
+            - low: 最低价
+            - close: 收盘价
+            - volume: 成交量
+            - money: 成交额
+            
+        参数:
+        flash_to_database: bool, 是否将数据写入数据库，默认为False
+        show_timing: bool, 是否显示各步骤的耗时信息，默认为False
+        
+        返回:
+        DataFrame: 重采样后的60分钟K线数据
+        """
+        func_start_time = time.time()
+        if show_timing:
+            print(f"{self.code} | 开始执行 resample_1m_to_60m...")
+        
+        self.fq = self.复权.不复权
+        self.ktype = '1m'
+        
+        # 阶段1: 获取1分钟数据
+        step1_start = time.time()
+        df_1m = self.get_k_data()  # 获取1分钟K线数据
+        step1_time = time.time() - step1_start
+        if show_timing:
+            print(f"{self.code} | 步骤1-获取1m数据耗时: {step1_time:.2f}秒")
+        
+        # 如果1m数据为空，则跳过
+        if df_1m.empty:
+            print(f"{self.code} | 1分钟K线数据为空，无法进行重采样！")
+            return pd.DataFrame()
+        self.ktype = '60m'  # 重置K线类型为60分钟
+        #df_60m = self.get_k_data()  # 获取60分钟K线数据（用于对比）
+        # df_1m 表头为 id	code	date	open	high	low	close	volume	money
+        
+        # 阶段2: 数据预处理
+        step2_start = time.time()
+
+        # 确保date列为索引且为datetime类型
+        if 'date' in df_1m.columns:
+            df_1m['date'] = pd.to_datetime(df_1m['date'])  # 确保date为datetime类型
+            df_1m = df_1m.set_index('date')  # 设置date为索引
+        
+        # 创建交易日期列和时间列
+        df_1m['trade_date'] = df_1m.index.date
+        df_1m['time'] = df_1m.index.time
+        step2_time = time.time() - step2_start
+        if show_timing:
+            print(f"{self.code} | 步骤2-数据预处理耗时: {step2_time:.2f}秒")
+        
+        # 阶段3: 定义时间段
+        step3_start = time.time()
+        # 定义4个时间段的结束时间点
+        time_slots = {
+            '10:30:00': ('09:30:00', '10:30:00'),
+            '11:30:00': ('10:31:00', '11:30:00'),
+            '14:00:00': ('13:00:00', '14:00:00'),
+            '15:00:00': ('14:01:00', '15:00:00')
+        }
+        step3_time = time.time() - step3_start
+        if show_timing:
+            print(f"{self.code} | 步骤3-时间段定义耗时: {step3_time:.2f}秒")
+        
+        # 阶段4: 重采样计算
+        step4_start = time.time()
+        results = []
+        
+        # 按交易日分组处理
+        for date, group in df_1m.groupby('trade_date'):
+            for end_time, (start_time, end_time) in time_slots.items():
+                # 转换为datetime.time对象进行比较
+                start_time_obj = pd.to_datetime(start_time).time()
+                end_time_obj = pd.to_datetime(end_time).time()
+                
+                # 筛选当前时间段的数据
+                mask = (group.index.time >= start_time_obj) & (group.index.time <= end_time_obj)
+                period_data = group[mask]
+                
+                if not period_data.empty:
+                    # 创建重采样K线
+                    new_row = {
+                    'date': pd.Timestamp.combine(date, pd.to_datetime(end_time).time()),
+                    'open': period_data['open'].iloc[0],
+                    'high': period_data['high'].max(),
+                    'low': period_data['low'].min(),
+                    'close': period_data['close'].iloc[-1],
+                    'volume': period_data['volume'].sum(),
+                    'money': period_data['money'].sum(),
+                    'trade_date': date
+                    }
+                    results.append(new_row)
+        
+        step4_time = time.time() - step4_start
+        if show_timing:
+            print(f"{self.code} | 步骤4-重采样计算耗时: {step4_time:.2f}秒")
+        
+        # 阶段5: 结果DataFrame创建
+        step5_start = time.time()
+        # 创建结果DataFrame
+        df_resample_60m = pd.DataFrame(results)
+        
+        # 将datetime设置为索引
+        if 'datetime' in df_resample_60m.columns:
+            df_resample_60m = df_resample_60m.set_index('datetime')
+
+        # 增加code列
+        df_resample_60m['code'] = self.code        # 丢弃trade_date列
+        if 'trade_date' in df_resample_60m.columns:
+            df_resample_60m = df_resample_60m.drop(columns=['trade_date'])
+            
+        step5_time = time.time() - step5_start
+        if show_timing:
+            print(f"{self.code} | 步骤5-DataFrame创建耗时: {step5_time:.2f}秒")
+        
+        # 阶段6: 数据库操作（如果需要）
+        if flash_to_database == True:    # 判断是否写回数据库
+            step6_start = time.time()
+            if show_timing:
+                print(f"{self.code} | 开始数据库操作...")
+            # 获取60m数据
+            df_60m = self.get_k_data()
+            
+            # 如果数据库中没有60m数据，则直接写入所有重采样数据
+            if df_60m.empty:
+                df_diff = df_resample_60m.copy()
+                print(f"{self.code} | 数据库中无60分钟K线数据，将写入全部重采样数据")
+            else:
+                # 比对差集
+                df_diff = df_resample_60m[~df_resample_60m['date'].isin(df_60m['date'])]
+            
+            # 检查差集数据，删除open=0的全部行
+            len_origin = len(df_diff)
+            df_diff = df_diff[df_diff['open'] != 0]
+            len_update = len(df_diff)
+            #print(df_diff)
+            # 将数据写回数据库
+            if not df_diff.empty:
+                df_diff.to_sql(
+                        name = 'akshare_60m',
+                        con = self.engine,
+                        index = False,
+                        if_exists = 'append')
+                if len_origin == len_update:
+                    print(f"{self.code} | 60分钟K线数据差集已写入数据库，总共{len_origin}条记录")
+                else:
+                    print(f"{self.code} | 60分钟K线数据差集含无效数据，扣除{len_origin - len_update}条后已写入数据库，总共{len_update}条记录")
+
+            else:
+                print(f"{self.code} | 60分钟K线数据无差集，无需写入数据库")
+            
+            step6_time = time.time() - step6_start
+            if show_timing:
+                print(f"{self.code} | 步骤6-数据库操作耗时: {step6_time:.2f}秒")
+        else:  # 不写回，跳过
+            pass       
+        
+        end_time = time.time()
+        if show_timing:
+            print(f"{self.code} | resample_1m_to_60m 执行完成，耗时: {end_time - func_start_time:.2f}秒")
+        return df_resample_60m[['code', 'date', 'open', 'high', 'low', 'close', 'volume', 'money']]
+
+    def resample_1m_to_5m(self, flash_to_database=False, show_timing=False):
+        """
+        将指定区间的1分钟K线重采样为5分钟K线
+        按照中国股市的交易时间规则，生成48根5分钟K线
+        
+        时间区间规则：
+        原始1m数据：上午09:30-11:30, 下午13:01-15:00（剔除09:30集合竞价）
+        上午：09:31-09:35→09:35, 09:36-09:40→09:40, ..., 11:26-11:30→11:30 (共24根)
+        下午：13:01-13:05→13:05, 13:06-13:10→13:10, ..., 14:56-15:00→15:00 (共24根)
+        总计：48根5分钟K线
+        
+        默认返回5m的dataframe数据
+        flash_to_database：将5m的差额数据写回数据库，默认不写入 为False
+        
+        参数:
+        flash_to_database: bool, 是否将数据写入数据库
+        show_timing: bool, 是否显示各步骤的耗时信息，默认为False
+        
+        返回:
+        DataFrame: 重采样后的5分钟K线数据
+        """
+        import time
+        func_start_time = time.time()
+        if show_timing:
+            print(f"{self.code} | 开始执行 resample_1m_to_5m...")
+        
+        # 设置复权方式和K线类型
+        self.fq = self.复权.不复权
+        self.ktype = '1m'
+        
+        # 阶段1: 获取1分钟数据
+        step1_start = time.time()
+        df_1m = self.get_k_data()  # 获取1分钟K线数据
+        #print(df_1m)
+        step1_time = time.time() - step1_start
+        if show_timing:
+            print(f"{self.code} | 步骤1-获取1m数据耗时: {step1_time:.2f}秒")
+        
+        # 如果1m数据为空，则跳过
+        if df_1m.empty:
+            print(f"{self.code} | 1分钟K线数据为空，无法进行重采样！")
+            return pd.DataFrame()
+            
+        # 重置K线类型为5分钟
+        self.ktype = '5m'
+        
+        # 阶段2: 数据预处理
+        step2_start = time.time()
+        # 确保date列为索引且为datetime类型
+        if 'date' in df_1m.columns:
+            df_1m['date'] = pd.to_datetime(df_1m['date'])
+            df_1m = df_1m.set_index('date')
+        
+        # 剔除每天09:30的1分钟数据，使逻辑更清晰
+        df_1m = df_1m[df_1m.index.time != pd.to_datetime('09:30:00').time()]
+        
+        # 创建交易日期列和时间列
+        df_1m['trade_date'] = df_1m.index.date
+        df_1m['time'] = df_1m.index.time
+        step2_time = time.time() - step2_start
+        if show_timing:
+            print(f"{self.code} | 步骤2-数据预处理耗时: {step2_time:.2f}秒")
+        
+        # 阶段3: 定义时间区间
+        step3_start = time.time()
+        # 定义5分钟时间段的明确区间
+        # 每个时间段定义为 (开始时间, 结束时间, 采样时间) 的元组
+        time_intervals = []
+        
+        # 上午时间段：09:31-09:35, 09:36-09:40, ..., 11:26-11:30 (24根K线)
+        # 09:31-09:35, 09:36-09:40, 09:41-09:45, 09:46-09:50, 09:51-09:55, 09:56-10:00
+        # 10:01-10:05, 10:06-10:10, 10:11-10:15, 10:16-10:20, 10:21-10:25, 10:26-10:30
+        # 10:31-10:35, 10:36-10:40, 10:41-10:45, 10:46-10:50, 10:51-10:55, 10:56-11:00
+        # 11:01-11:05, 11:06-11:10, 11:11-11:15, 11:16-11:20, 11:21-11:25, 11:26-11:30
+        morning_intervals = [
+            ('09:31:00', '09:35:00'), ('09:36:00', '09:40:00'), ('09:41:00', '09:45:00'), ('09:46:00', '09:50:00'), ('09:51:00', '09:55:00'), ('09:56:00', '10:00:00'),
+            ('10:01:00', '10:05:00'), ('10:06:00', '10:10:00'), ('10:11:00', '10:15:00'), ('10:16:00', '10:20:00'), ('10:21:00', '10:25:00'), ('10:26:00', '10:30:00'),
+            ('10:31:00', '10:35:00'), ('10:36:00', '10:40:00'), ('10:41:00', '10:45:00'), ('10:46:00', '10:50:00'), ('10:51:00', '10:55:00'), ('10:56:00', '11:00:00'),
+            ('11:01:00', '11:05:00'), ('11:06:00', '11:10:00'), ('11:11:00', '11:15:00'), ('11:16:00', '11:20:00'), ('11:21:00', '11:25:00'), ('11:26:00', '11:30:00')
+        ]
+        
+        for start, end in morning_intervals:
+            time_intervals.append((start, end, end))  # 采样时间为结束时间
+        
+        # 下午时间段：13:01-13:05, 13:06-13:10, ..., 14:56-15:00 (24根K线)
+        # 13:01-13:05, 13:06-13:10, 13:11-13:15, 13:16-13:20, 13:21-13:25, 13:26-13:30
+        # 13:31-13:35, 13:36-13:40, 13:41-13:45, 13:46-13:50, 13:51-13:55, 13:56-14:00
+        # 14:01-14:05, 14:06-14:10, 14:11-14:15, 14:16-14:20, 14:21-14:25, 14:26-14:30
+        # 14:31-14:35, 14:36-14:40, 14:41-14:45, 14:46-14:50, 14:51-14:55, 14:56-15:00
+        afternoon_intervals = [
+            ('13:01:00', '13:05:00'), ('13:06:00', '13:10:00'), ('13:11:00', '13:15:00'), ('13:16:00', '13:20:00'), ('13:21:00', '13:25:00'), ('13:26:00', '13:30:00'),
+            ('13:31:00', '13:35:00'), ('13:36:00', '13:40:00'), ('13:41:00', '13:45:00'), ('13:46:00', '13:50:00'), ('13:51:00', '13:55:00'), ('13:56:00', '14:00:00'),
+            ('14:01:00', '14:05:00'), ('14:06:00', '14:10:00'), ('14:11:00', '14:15:00'), ('14:16:00', '14:20:00'), ('14:21:00', '14:25:00'), ('14:26:00', '14:30:00'),
+            ('14:31:00', '14:35:00'), ('14:36:00', '14:40:00'), ('14:41:00', '14:45:00'), ('14:46:00', '14:50:00'), ('14:51:00', '14:55:00'), ('14:56:00', '15:00:00')
+        ]
+        
+        for start, end in afternoon_intervals:
+            time_intervals.append((start, end, end))  # 采样时间为结束时间
+        
+        step3_time = time.time() - step3_start
+        if show_timing:
+            print(f"{self.code} | 步骤3-时间区间定义耗时: {step3_time:.2f}秒")
+        
+        # 阶段4: 重采样计算（终极优化版本）
+        step4_start = time.time()
+        
+        # 预处理：转换时间区间为秒数，便于快速比较
+        time_intervals_seconds = []
+        for start_time, end_time, sample_time in time_intervals:
+            start_seconds = pd.to_datetime(start_time).hour * 3600 + pd.to_datetime(start_time).minute * 60 + pd.to_datetime(start_time).second
+            end_seconds = pd.to_datetime(end_time).hour * 3600 + pd.to_datetime(end_time).minute * 60 + pd.to_datetime(end_time).second
+            sample_time_obj = pd.to_datetime(sample_time).time()
+            time_intervals_seconds.append((start_seconds, end_seconds, sample_time_obj))
+        
+        # 使用列表推导式和向量化操作
+        results = []
+        
+        # 按交易日分组处理
+        for date, group in df_1m.groupby('trade_date'):
+            # 预先计算时间的秒数，避免重复计算
+            group_time_seconds = group.index.hour * 3600 + group.index.minute * 60 + group.index.second
+            
+            # 预先获取数据数组
+            group_open = group['open'].values
+            group_high = group['high'].values
+            group_low = group['low'].values
+            group_close = group['close'].values
+            group_volume = group['volume'].values
+            group_money = group['money'].values
+            
+            # 批量处理所有时间区间
+            for start_seconds, end_seconds, sample_time_obj in time_intervals_seconds:
+                # 使用numpy数组比较，速度更快
+                mask = (group_time_seconds >= start_seconds) & (group_time_seconds <= end_seconds)
+                
+                if np.any(mask):  # 如果有匹配的数据
+                    # 直接使用numpy数组操作
+                    masked_open = group_open[mask]
+                    masked_high = group_high[mask]
+                    masked_low = group_low[mask]
+                    masked_close = group_close[mask]
+                    masked_volume = group_volume[mask]
+                    masked_money = group_money[mask]
+                    
+                    results.append({
+                        'date': pd.Timestamp.combine(date, sample_time_obj),
+                        'open': masked_open[0],
+                        'high': masked_high.max(),
+                        'low': masked_low.min(),
+                        'close': masked_close[-1],
+                        'volume': masked_volume.sum(),
+                        'money': masked_money.sum(),
+                        'trade_date': date
+                    })
+        
+        step4_time = time.time() - step4_start
+        if show_timing:
+            print(f"{self.code} | 步骤4-重采样计算耗时: {step4_time:.2f}秒")
+        
+        # 阶段5: 结果DataFrame创建
+        step5_start = time.time()
+        # 创建结果DataFrame
+        df_resample_5m = pd.DataFrame(results)
+        
+        # 增加code列
+        if not df_resample_5m.empty:
+            df_resample_5m['code'] = self.code
+            
+            # 丢弃trade_date列
+            if 'trade_date' in df_resample_5m.columns:
+                df_resample_5m = df_resample_5m.drop(columns=['trade_date'])
+                
+        step5_time = time.time() - step5_start
+        if show_timing:
+            print(f"{self.code} | 步骤5-DataFrame创建耗时: {step5_time:.2f}秒")
+        
+        # 阶段6: 数据库操作（如果需要）
+        if flash_to_database == True:  # 判断是否写回数据库
+            step6_start = time.time()
+            if show_timing:
+                print(f"{self.code} | 开始数据库操作...")
+            # 获取5m数据
+            df_5m = self.get_k_data()
+            
+            # 如果数据库中没有5m数据，则直接写入所有重采样数据
+            if df_5m.empty:
+                df_diff = df_resample_5m.copy()
+                print(f"{self.code} | 数据库中无5分钟K线数据，将写入全部重采样数据")
+            else:
+                # 比对差集
+                df_diff = df_resample_5m[~df_resample_5m['date'].isin(df_5m['date'])]
+            
+            # 检查差集数据，删除open=0的全部行
+            len_origin = len(df_diff)
+            df_diff = df_diff[df_diff['open'] != 0]
+            len_update = len(df_diff)
+            
+            # 将数据写回数据库
+            if not df_diff.empty:
+                df_diff.to_sql('akshare_5m', self.engine, if_exists='append', index=False)
+                if len_origin == len_update:
+                    print(f"{self.code} | 5分钟K线数据差集已写入数据库，总共{len_origin}条记录")
+                else:
+                    print(f"{self.code} | 5分钟K线数据差集含无效数据，扣除{len_origin - len_update}条后已写入数据库，总共{len_update}条记录")
+            else:
+                print(f"{self.code} | 5分钟K线数据无差集，无需写入数据库")
+            
+            step6_time = time.time() - step6_start
+            if show_timing:
+                print(f"{self.code} | 步骤6-数据库操作耗时: {step6_time:.2f}秒")
+        
+        end_time = time.time()
+        if show_timing:
+            print(f"{self.code} | resample_1m_to_5m 执行完成，耗时: {end_time - func_start_time:.2f}秒")
+        return df_resample_5m[['code', 'date', 'open', 'high', 'low', 'close', 'volume', 'money']] if not df_resample_5m.empty else pd.DataFrame()
+
+    def test_resample_5m_accuracy(self):
+        """
+        单元测试：验证5分钟重采样的准确性
+        测试数据：300059.SZ 2025/7/1 - 2025/7/5
+        预期结果：192条记录，第一条money=431319139.000，最后一条money=240238925.000
+        """
+        print("\n=== 开始5分钟重采样准确性测试 ===")
+        
+        # 设置测试参数
+        original_code = self.code
+        original_start = self.start_date
+        original_end = self.end_date
+        original_ktype = self.ktype
+        
+        try:
+            # 设置测试数据
+            self.code = '300059.SZ'
+            self.start_date = datetime(2025, 7, 1)
+            self.end_date = datetime(2025, 7, 5)
+            
+            # 执行重采样
+            print(f"测试股票: {self.code}")
+            print(f"测试时间范围: {self.start_date.date()} 到 {self.end_date.date()}")
+            
+            df_5m = self.resample_1m_to_5m(flash_to_database=False, show_timing=True)
+            
+            if df_5m.empty:
+                print("❌ 测试失败：重采样结果为空")
+                return False
+            
+            # 验证记录数量
+            record_count = len(df_5m)
+            expected_count = 192
+            print(f"📊 实际记录数: {record_count}, 预期记录数: {expected_count}")
+            
+            if record_count != expected_count:
+                print(f"⚠️ 警告：记录数量不匹配 (实际: {record_count}, 预期: {expected_count})")
+            
+            # 验证第一条记录的money
+            if record_count > 0:
+                first_money = df_5m.iloc[0]['money']
+                expected_first_money = 431319139.000
+                print(f"💰 第一条记录money: {first_money}, 预期: {expected_first_money}")
+                
+                if abs(first_money - expected_first_money) < 0.001:
+                    print("✅ 第一条记录money验证通过")
+                    first_test_pass = True
+                else:
+                    print("❌ 第一条记录money验证失败")
+                    first_test_pass = False
+            else:
+                first_test_pass = False
+            
+            # 验证最后一条记录的money
+            if record_count > 0:
+                last_money = df_5m.iloc[-1]['money']
+                expected_last_money = 240238925.000
+                print(f"💰 最后一条记录money: {last_money}, 预期: {expected_last_money}")
+                
+                if abs(last_money - expected_last_money) < 0.001:
+                    print("✅ 最后一条记录money验证通过")
+                    last_test_pass = True
+                else:
+                    print("❌ 最后一条记录money验证失败")
+                    last_test_pass = False
+            else:
+                last_test_pass = False
+            
+            # 显示测试结果详情
+            print(f"\n📋 测试结果详情:")
+            print(f"   - 数据时间范围: {df_5m['date'].min()} 到 {df_5m['date'].max()}")
+            print(f"   - 总记录数: {record_count}")
+            print(f"   - 第一条记录: {df_5m.iloc[0].to_dict()}" if record_count > 0 else "   - 第一条记录: 无数据")
+            print(f"   - 最后一条记录: {df_5m.iloc[-1].to_dict()}" if record_count > 0 else "   - 最后一条记录: 无数据")
+            
+            # 综合测试结果
+            all_tests_pass = (
+                record_count == expected_count and 
+                first_test_pass and 
+                last_test_pass
+            )
+            
+            if all_tests_pass:
+                print("\n🎉 所有测试通过！5分钟重采样功能正常")
+                return True
+            else:
+                print("\n⚠️ 部分测试未通过，请检查重采样逻辑")
+                return False
+                
+        except Exception as e:
+            print(f"\n💥 测试过程中发生错误: {e}")
+            return False
+            
+        finally:
+            # 恢复原始设置
+            self.code = original_code
+            self.start_date = original_start
+            self.end_date = original_end
+            self.ktype = original_ktype
+            print(f"\n🔄 已恢复原始设置: {self.code}")
+
+    def test_resample_60m_accuracy(self):
+        """
+        单元测试：验证60分钟重采样的准确性
+        测试数据：300059.SZ 2025/7/1 - 2025/7/5
+        预期结果：16条记录，第一条money=3039734046.000，最后一条money=2206680278.000
+        """
+        print("\n=== 开始60分钟重采样准确性测试 ===")
+        
+        # 设置测试参数
+        original_code = self.code
+        original_start = self.start_date
+        original_end = self.end_date
+        original_ktype = self.ktype
+        
+        try:
+            # 设置测试数据
+            self.code = '300059.SZ'
+            self.start_date = datetime(2025, 7, 1)
+            self.end_date = datetime(2025, 7, 5)
+            
+            # 执行重采样
+            print(f"测试股票: {self.code}")
+            print(f"测试时间范围: {self.start_date.date()} 到 {self.end_date.date()}")
+            
+            df_60m = self.resample_1m_to_60m(flash_to_database=False, show_timing=True)
+            
+            if df_60m.empty:
+                print("❌ 测试失败：60分钟重采样结果为空")
+                return False
+            
+            # 验证记录数量
+            record_count = len(df_60m)
+            expected_count = 16
+            print(f"📊 实际记录数: {record_count}, 预期记录数: {expected_count}")
+            
+            if record_count != expected_count:
+                print(f"⚠️ 警告：记录数量不匹配 (实际: {record_count}, 预期: {expected_count})")
+            
+            # 验证第一条记录的money
+            if record_count > 0:
+                first_money = df_60m.iloc[0]['money']
+                expected_first_money = 3039734046.000
+                print(f"💰 第一条记录money: {first_money}, 预期: {expected_first_money}")
+                
+                if abs(first_money - expected_first_money) < 0.001:
+                    print("✅ 第一条记录money验证通过")
+                    first_test_pass = True
+                else:
+                    print("❌ 第一条记录money验证失败")
+                    first_test_pass = False
+            else:
+                first_test_pass = False
+            
+            # 验证最后一条记录的money
+            if record_count > 0:
+                last_money = df_60m.iloc[-1]['money']
+                expected_last_money = 2206680278.000
+                print(f"💰 最后一条记录money: {last_money}, 预期: {expected_last_money}")
+                
+                if abs(last_money - expected_last_money) < 0.001:
+                    print("✅ 最后一条记录money验证通过")
+                    last_test_pass = True
+                else:
+                    print("❌ 最后一条记录money验证失败")
+                    last_test_pass = False
+            else:
+                last_test_pass = False
+            
+            # 显示测试结果详情
+            print(f"\n📋 测试结果详情:")
+            print(f"   - 数据时间范围: {df_60m['date'].min()} 到 {df_60m['date'].max()}")
+            print(f"   - 总记录数: {record_count}")
+            print(f"   - 第一条记录: {df_60m.iloc[0].to_dict()}" if record_count > 0 else "   - 第一条记录: 无数据")
+            print(f"   - 最后一条记录: {df_60m.iloc[-1].to_dict()}" if record_count > 0 else "   - 最后一条记录: 无数据")
+            
+            # 综合测试结果
+            all_tests_pass = (
+                record_count == expected_count and 
+                first_test_pass and 
+                last_test_pass
+            )
+            
+            if all_tests_pass:
+                print("\n🎉 所有测试通过！60分钟重采样功能正常")
+                return True
+            else:
+                print("\n⚠️ 部分测试未通过，请检查60分钟重采样逻辑")
+                return False
+                
+        except Exception as e:
+            print(f"\n💥 测试过程中发生错误: {e}")
+            return False
+            
+        finally:
+            # 恢复原始设置
+            self.code = original_code
+            self.start_date = original_start
+            self.end_date = original_end
+            self.ktype = original_ktype
+            print(f"\n🔄 已恢复原始设置: {self.code}")
+
+    def run_all_tests(self):
+        """
+        运行所有单元测试
+        """
+        print("🚀 开始运行所有单元测试...")
+        
+        test_results = []
+        
+        # 测试1: 5分钟重采样准确性
+        result1 = self.test_resample_5m_accuracy()
+        test_results.append(("5分钟重采样准确性", result1))
+        
+        # 测试2: 60分钟重采样准确性
+        result2 = self.test_resample_60m_accuracy()
+        test_results.append(("60分钟重采样准确性", result2))
+        
+        # 汇总结果
+        print("\n" + "="*50)
+        print("📊 单元测试结果汇总:")
+        print("="*50)
+        
+        passed_count = 0
+        for test_name, result in test_results:
+            status = "✅ 通过" if result else "❌ 失败"
+            print(f"{test_name}: {status}")
+            if result:
+                passed_count += 1
+        
+        total_tests = len(test_results)
+        print(f"\n总计: {passed_count}/{total_tests} 个测试通过")
+        
+        if passed_count == total_tests:
+            print("🎉 所有测试通过！重采样功能正常运行")
+        else:
+            print("⚠️ 部分测试失败，建议检查相关功能")
+        
+        return passed_count == total_tests
+
+    def data_prepare_task101(self) -> pd.DataFrame:
+        """
+        task101: 数据预处理任务 akshare 1m->5m重采样
+        key: task101
+        存储方式：Redis List
+        数据类型："code": "300679.SZ", "start_date": "2025-07-10 08:00:00", "end_date": "2025-07-14 18:55:26"
+                
+        """
+        # 基础数据准备：获取全部证券代码
+        df_all_code = security.get_all_code(self)
+        # 仅留下code列
+        df_all_code = df_all_code[['code']]
+        # 增加开始时间和结束时间列
+        df_all_code['start_date'] = self.start_date
+        df_all_code['end_date'] = self.end_date
+        return df_all_code
+
+    def task_process_task101(self):
+        """
+        多任务处理，从redis读取task101键值，进行重采样任务
+        支持5线程同时处理
+        
+        线程安全说明：
+        - 每个线程创建独立的data实例，避免实例变量互相干扰
+        - 使用线程安全的queue进行任务分发
+        - 使用锁保护共享的统计变量
+        """
+        import threading
+        import queue
+        import traceback
+        import json
+        from datetime import datetime
+        
+        print("############正在处理task101重采样任务###########")
+
+        # 获取Redis连接
+        rds = redisClient()
+        rds_conn = rds.client  # 修复：client是属性，不是方法
+        
+        # 检查队列是否存在且有数据
+        if not rds_conn.exists('task101') or rds_conn.llen('task101') == 0:
+            print("task101队列不存在或为空，无任务需要处理")
+            return
+
+        # 获取队列长度
+        queue_length = rds_conn.llen('task101')
+        print(f"队列中共有{queue_length}个任务待处理")
+
+        # 创建线程安全的队列用于任务分发
+        task_queue = queue.Queue()
+        
+        # 方案1：一次性取出所有任务（当前方案 - 速度快但有风险）
+        # 优点：处理速度快，减少Redis访问
+        # 缺点：程序崩溃可能丢失任务
+        print("正在从Redis获取任务...")
+        while rds_conn.llen('task101') > 0:
+            task_data = rds_conn.lpop('task101')  # 消费性操作：取出并删除
+            if task_data is None:
+                break
+            task_queue.put(task_data)
+        
+        print(f"已从Redis获取{task_queue.qsize()}个任务，Redis队列现在为空（这是正常的）")
+        
+        # 统计变量（线程安全）
+        stats_lock = threading.Lock()
+        processed_count = 0
+        error_count = 0
+        
+        def worker_thread():
+            """
+            工作线程函数
+            每个线程创建独立的data实例，确保线程安全
+            """
+            nonlocal processed_count, error_count
+            
+            while True:
+                try:
+                    # 从队列获取任务（超时5秒）
+                    task_data = task_queue.get(timeout=5)
+                    if task_data is None:
+                        break
+                    
+                    # 解析任务数据
+                    if isinstance(task_data, bytes):
+                        task_json = json.loads(task_data.decode('utf-8'))
+                    else:
+                        task_json = json.loads(task_data)
+                    
+                    code = task_json['code']
+                    start_date = datetime.strptime(task_json['start_date'], '%Y-%m-%d %H:%M:%S')
+                    end_date = datetime.strptime(task_json['end_date'], '%Y-%m-%d %H:%M:%S')
+                    
+                    print(f"线程{threading.current_thread().name}: 正在处理任务 {code} ({start_date.date()} 到 {end_date.date()})")
+                    
+                    # 关键点：为每个线程创建独立的数据处理实例
+                    # 这确保了不同线程之间的code, start_date, end_date, ktype等变量不会互相干扰
+                    worker_instance = data(myauth=True)
+                    worker_instance.code = code
+                    worker_instance.start_date = start_date
+                    worker_instance.end_date = end_date
+                    
+                    # 执行1分钟到5分钟的重采样
+                    df_5m = worker_instance.resample_1m_to_5m(flash_to_database=True, show_timing=False)
+                    
+                    # 线程安全地更新统计
+                    with stats_lock:
+                        processed_count += 1
+                    
+                    print(f"线程{threading.current_thread().name}: 任务完成 {code} - 生成{len(df_5m)}条5分钟K线数据")
+                    
+                except Exception as e:
+                    # 线程安全地更新错误统计
+                    with stats_lock:
+                        error_count += 1
+                    print(f"线程{threading.current_thread().name}: 任务处理失败 {code if 'code' in locals() else '未知'} - 错误: {str(e)}")
+                    traceback.print_exc()
+                finally:
+                    # 标记任务完成
+                    task_queue.task_done()
+        
+        # 创建并启动5个工作线程
+        threads = []
+        for i in range(5):
+            thread = threading.Thread(target=worker_thread, name=f"Worker-{i+1}")
+            thread.daemon = True
+            thread.start()
+            threads.append(thread)
+        
+        print(f"已启动5个工作线程，开始处理{queue_length}个任务...")
+        
+        # 等待所有任务完成
+        task_queue.join()
+        
+        # 等待所有线程完成
+        for thread in threads:
+            thread.join()
+        
+        print(f"############task101重采样任务处理完成###########")
+        print(f"成功处理: {processed_count}个任务")
+        print(f"失败任务: {error_count}个")
+
+    def task_process_task101_safe(self):
+        """
+        更安全的任务处理方案：逐个消费Redis任务
+        优点：不会因程序崩溃而丢失任务
+        缺点：Redis访问频率较高
+        """
+        import threading
+        import traceback
+        import json
+        from datetime import datetime
+        
+        print("############正在处理task101重采样任务（安全模式）###########")
+
+        # 获取Redis连接
+        rds = redisClient()
+        rds_conn = rds.client
+        
+        # 检查队列是否存在且有数据
+        if not rds_conn.exists('task101') or rds_conn.llen('task101') == 0:
+            print("task101队列不存在或为空，无任务需要处理")
+            return
+
+        # 获取初始队列长度
+        initial_queue_length = rds_conn.llen('task101')
+        print(f"队列中共有{initial_queue_length}个任务待处理")
+
+        # 统计变量（线程安全）
+        stats_lock = threading.Lock()
+        processed_count = 0
+        error_count = 0
+        redis_lock = threading.Lock()  # Redis访问锁
+        
+        def worker_thread_safe():
+            """
+            安全的工作线程函数：直接从Redis消费任务
+            """
+            nonlocal processed_count, error_count
+            
+            while True:
+                task_data = None
+                try:
+                    # 线程安全地从Redis获取任务
+                    with redis_lock:
+                        if rds_conn.llen('task101') > 0:
+                            task_data = rds_conn.lpop('task101')
+                        else:
+                            break  # 队列为空，退出
+                    
+                    if task_data is None:
+                        break
+                    
+                    # 解析任务数据
+                    if isinstance(task_data, bytes):
+                        task_json = json.loads(task_data.decode('utf-8'))
+                    else:
+                        task_json = json.loads(task_data)
+                    
+                    code = task_json['code']
+                    start_date = datetime.strptime(task_json['start_date'], '%Y-%m-%d %H:%M:%S')
+                    end_date = datetime.strptime(task_json['end_date'], '%Y-%m-%d %H:%M:%S')
+                    
+                    print(f"线程{threading.current_thread().name}: 正在处理任务 {code} ({start_date.date()} 到 {end_date.date()})")
+                    
+                    # 为每个线程创建独立的数据处理实例
+                    worker_instance = data(myauth=True)
+                    worker_instance.code = code
+                    worker_instance.start_date = start_date
+                    worker_instance.end_date = end_date
+                    
+                    # 执行1分钟到5分钟的重采样
+                    df_5m = worker_instance.resample_1m_to_5m(flash_to_database=True, show_timing=False)
+                    
+                    # 线程安全地更新统计
+                    with stats_lock:
+                        processed_count += 1
+                    
+                    print(f"线程{threading.current_thread().name}: 任务完成 {code} - 生成{len(df_5m)}条5分钟K线数据")
+                    
+                except Exception as e:
+                    # 如果处理失败，将任务放回队列（可选）
+                    if task_data is not None:
+                        with redis_lock:
+                            rds_conn.rpush('task101_failed', task_data)  # 放入失败队列
+                    
+                    # 线程安全地更新错误统计
+                    with stats_lock:
+                        error_count += 1
+                    print(f"线程{threading.current_thread().name}: 任务处理失败 {code if 'code' in locals() else '未知'} - 错误: {str(e)}")
+                    traceback.print_exc()
+        
+        # 创建并启动5个工作线程
+        threads = []
+        for i in range(5):
+            thread = threading.Thread(target=worker_thread_safe, name=f"SafeWorker-{i+1}")
+            thread.daemon = True
+            thread.start()
+            threads.append(thread)
+        
+        print(f"已启动5个工作线程，开始处理{initial_queue_length}个任务...")
+        
+        # 等待所有线程完成
+        for thread in threads:
+            thread.join()
+        
+        print(f"############task101重采样任务处理完成（安全模式）###########")
+        print(f"成功处理: {processed_count}个任务")
+        print(f"失败任务: {error_count}个")
+        
+        # 检查是否有失败的任务
+        if rds_conn.exists('task101_failed'):
+            failed_count = rds_conn.llen('task101_failed')
+            print(f"失败任务已存储在task101_failed队列中，共{failed_count}个")
+        
+if __name__ == "__main__":
+    # 测试项目1：使用ak数据源，获取日线数据
+    akdata = data()  # 这里的data默认本地data源，是akdata
+    akdata.code = '601318.SH'
+    akdata.start_date = datetime(2025, 5, 6, 8)
+    akdata.end_date = datetime(2025, 7, 5, 18)
+    akdata.fq = akdata.复权.不复权
     akdata.ktype = '1d'
+    akdata.task_process_task101()  # 执行重采样任务处理
+    # 测试项目2：重采样功能测试
+    print("开始重采样功能测试...")
+    akdata.ktype = '1m'
+    df_1m = akdata.get_k_data()
+    
+    # 测试5分钟重采样
+    df_5m = akdata.resample_1m_to_5m(flash_to_database=True, show_timing=True)
+    print(f"5分钟重采样结果：{len(df_5m)}条记录")
+    
+    # 测试60分钟重采样
+    df_60m = akdata.resample_1m_to_60m(flash_to_database=True, show_timing=True)
+    print(f"60分钟重采样结果：{len(df_60m)}条记录")
+    
+    # 测试项目3：运行完整单元测试套件
+    print("\n" + "="*60)
+    print("开始运行单元测试套件...")
+    print("="*60)
+    akdata.run_all_tests()

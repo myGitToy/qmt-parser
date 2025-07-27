@@ -1,0 +1,408 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="zh-CN" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>myFund documentation &mdash; myFund v0.0.1 文档</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="_static/jquery.js?v=5d32c60e"></script>
+      <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="_static/documentation_options.js?v=7cf98a4c"></script>
+      <script src="_static/doctools.js?v=9bcbadda"></script>
+      <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="_static/translations.js?v=beaddf03"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="索引" href="genindex.html" />
+    <link rel="search" title="搜索" href="search.html" />
+    <link rel="next" title="apt.os.minio.MinioHandler.MinioClientWrapper" href="_autosummary/apt.os.minio.MinioHandler.MinioClientWrapper.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+            myFund
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="搜索文档" aria-label="搜索文档" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="导航菜单">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="_autosummary/apt.os.minio.MinioHandler.MinioClientWrapper.html">apt.os.minio.MinioHandler.MinioClientWrapper</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="移动版导航菜单" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">myFund</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="页面导航">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">myFund documentation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/index.rst.txt" rel="nofollow"> 查看页面源码</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="myfund-documentation">
+<h1>myFund documentation<a class="headerlink" href="#myfund-documentation" title="Link to this heading"></a></h1>
+<p>Add your content using <code class="docutils literal notranslate"><span class="pre">reStructuredText</span></code> syntax. See the
+<a class="reference external" href="https://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html">reStructuredText</a>
+documentation for details.</p>
+</section>
+<section id="module-apt.os.minio.MinioHandler">
+<span id="minio"></span><h1>Minio 模块<a class="headerlink" href="#module-apt.os.minio.MinioHandler" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="apt.os.minio.MinioHandler.MinioClientWrapper">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">apt.os.minio.MinioHandler.</span></span><span class="sig-name descname"><span class="pre">MinioClientWrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">endpoint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">access_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">secret_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">secure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#apt.os.minio.MinioHandler.MinioClientWrapper" title="Link to this definition"></a></dt>
+<dd><p>基类：<code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Minio客户端封装类</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apt.os.minio.MinioHandler.MinioClientWrapper.MINIO_CACHE_PATH">
+<span class="sig-name descname"><span class="pre">MINIO_CACHE_PATH</span></span><a class="headerlink" href="#apt.os.minio.MinioHandler.MinioClientWrapper.MINIO_CACHE_PATH" title="Link to this definition"></a></dt>
+<dd><p>本地缓存路径</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apt.os.minio.MinioHandler.MinioClientWrapper.client">
+<span class="sig-name descname"><span class="pre">client</span></span><a class="headerlink" href="#apt.os.minio.MinioHandler.MinioClientWrapper.client" title="Link to this definition"></a></dt>
+<dd><p>MinIO客户端对象</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="apt.os.minio.MinioHandler.MinioClientWrapper.create_bucket">
+<span class="sig-name descname"><span class="pre">create_bucket</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bucket_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#apt.os.minio.MinioHandler.MinioClientWrapper.create_bucket" title="Link to this definition"></a></dt>
+<dd><p>创建桶</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="apt.os.minio.MinioHandler.MinioClientWrapper.list_buckets">
+<span class="sig-name descname"><span class="pre">list_buckets</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#apt.os.minio.MinioHandler.MinioClientWrapper.list_buckets" title="Link to this definition"></a></dt>
+<dd><p>列出所有桶</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="apt.os.minio.MinioHandler.MinioClientWrapper.file_exists">
+<span class="sig-name descname"><span class="pre">file_exists</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bucket_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#apt.os.minio.MinioHandler.MinioClientWrapper.file_exists" title="Link to this definition"></a></dt>
+<dd><p>检查文件是否存在</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="apt.os.minio.MinioHandler.MinioClientWrapper.read_file">
+<span class="sig-name descname"><span class="pre">read_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bucket_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">encoding</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'utf-8'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#apt.os.minio.MinioHandler.MinioClientWrapper.read_file" title="Link to this definition"></a></dt>
+<dd><p>读取文件内容</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="apt.os.minio.MinioHandler.MinioClientWrapper.upload_file">
+<span class="sig-name descname"><span class="pre">upload_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bucket_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#apt.os.minio.MinioHandler.MinioClientWrapper.upload_file" title="Link to this definition"></a></dt>
+<dd><p>上传文件</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="apt.os.minio.MinioHandler.MinioClientWrapper.download_file">
+<span class="sig-name descname"><span class="pre">download_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bucket_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#apt.os.minio.MinioHandler.MinioClientWrapper.download_file" title="Link to this definition"></a></dt>
+<dd><p>下载文件</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="apt.os.minio.MinioHandler.MinioClientWrapper.remove_file">
+<span class="sig-name descname"><span class="pre">remove_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bucket_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#apt.os.minio.MinioHandler.MinioClientWrapper.remove_file" title="Link to this definition"></a></dt>
+<dd><p>删除文件</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="apt.os.minio.MinioHandler.MinioClientWrapper.list_files">
+<span class="sig-name descname"><span class="pre">list_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bucket_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#apt.os.minio.MinioHandler.MinioClientWrapper.list_files" title="Link to this definition"></a></dt>
+<dd><p>罗列文件</p>
+</dd></dl>
+
+<p>目前支持的功能有：
+1. 创建桶 create_bucket
+2. 列出所有桶 list_buckets
+3. 上传文件 upload_file
+4. 下载文件 download_file
+5. 删除文件 remove_file
+6. 列出桶中的所有文件 list_files
+7. 检查文件是否存在 file_exists
+8. 读取文件内容（二进制流） read_file
+9. 待增加
+备注：如果要对Minio文件系统中的hdf5进行操作，请使用专用接口os.MinioHDF5.py</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">create_bucket</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bucket_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#id0" title="Link to this definition"></a></dt>
+<dd><p>创建桶
+params:bucket_name: 桶名称</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="apt.os.minio.MinioHandler.MinioClientWrapper.create_local_file">
+<span class="sig-name descname"><span class="pre">create_local_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">content</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Hello</span> <span class="pre">MinIO!'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#apt.os.minio.MinioHandler.MinioClientWrapper.create_local_file" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">download_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bucket_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#id1" title="Link to this definition"></a></dt>
+<dd><p>下载文件</p>
+<dl class="simple">
+<dt>params:</dt><dd><p>bucket_name: 桶名称 例akshare
+object_name: 带路径的对象名称（不包括桶名称） 例akshare/data/1min/600000.SH.h5
+file_path: 文件路径 例c:data1min600000.SH.h5</p>
+</dd>
+</dl>
+<p>return: bool 是否下载成功</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">file_exists</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bucket_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">case_sensitive</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#id2" title="Link to this definition"></a></dt>
+<dd><p>检查文件是否存在</p>
+<dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bucket_name</strong> -- 桶名</p></li>
+<li><p><strong>object_name</strong> -- 文件名（带路径的，如akshare/data/1min/600000.SH.h5）</p></li>
+<li><p><strong>case_sensitive</strong> -- 是否区分大小写, 默认区分大小写</p></li>
+</ul>
+</dd>
+<dt class="field-even">返回<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if the file exists, False otherwise.</p>
+</dd>
+<dt class="field-odd">返回类型<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="apt.os.minio.MinioHandler.MinioClientWrapper.get_object">
+<span class="sig-name descname"><span class="pre">get_object</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bucket_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#apt.os.minio.MinioHandler.MinioClientWrapper.get_object" title="Link to this definition"></a></dt>
+<dd><p>获取对象，返回 Minio 客户端的对象数据
+如果hdf5文件，需要使用get_object读取二进制流，以避免HDF5文件的读取问题
+pandas.read_hdf() 无法直接读取二进制数据，需要将二进制数据包装为文件流</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">list_buckets</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">DataFrame</span></span></span><a class="headerlink" href="#id3" title="Link to this definition"></a></dt>
+<dd><p>列出所有桶
+params:
+return: pandas.DataFrame</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id4">
+<span class="sig-name descname"><span class="pre">list_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bucket_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#id4" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id5">
+<span class="sig-name descname"><span class="pre">read_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bucket_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">encoding</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'utf-8'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#id5" title="Link to this definition"></a></dt>
+<dd><p>读取文件内容(二进制流式传输)
+:param bucket_name: 桶名称
+:param object_name: 对象名称(文件路径)
+:param encoding: 文件编码,默认utf-8
+:return: 文件内容</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id6">
+<span class="sig-name descname"><span class="pre">remove_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bucket_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#id6" title="Link to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id7">
+<span class="sig-name descname"><span class="pre">upload_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bucket_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#id7" title="Link to this definition"></a></dt>
+<dd><p>上传文件
+params:</p>
+<blockquote>
+<div><p>bucket_name: 桶名称 例hdf5
+object_name: 带路径的对象名称（不包括桶名称） 例akshare/data/1min/600000.SH.h5</p>
+<blockquote>
+<div><p>备注：桶名称和路径如果填写错误，则会自动创建</p>
+</div></blockquote>
+<p>file_path: 文件路径 例c:data1min600000.SH.h5</p>
+</div></blockquote>
+</dd></dl>
+
+</dd></dl>
+
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#apt.os.minio.MinioHandler.MinioClientWrapper" title="apt.os.minio.MinioHandler.MinioClientWrapper"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MinioClientWrapper</span></code></a>([endpoint, access_key, ...])</p></td>
+<td><p>Minio客户端封装类</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="akshare">
+<h1>akshare 模块<a class="headerlink" href="#akshare" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">apt.vendor.akshare.base.</span></span><span class="sig-name descname"><span class="pre">base</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rds_host</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">myauth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span></dt>
+<dd><p>基类：<code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>akshare基类
+如果需要脱机使用，需初始化如下参数：
+dt = base(myauth = False)</p>
+<dl class="py class">
+<dt class="sig sig-object py">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">交易时段校验</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span></dt>
+<dd><p>基类：<code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></p>
+<p>检查当天日期是否是交易日和交易时段
+非交易时段 定义为 交易日的非交易时段</p>
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">交易时段</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">非交易日</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">非交易时段</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">数据源</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span></dt>
+<dd><p>基类：<code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></p>
+<p>设置tusharePro的数据源</p>
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">aliyun</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">aws</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">centos9</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></em></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">localhost</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">ubuntu186</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4</span></em></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">ubuntu191</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">5</span></em></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">apt.vendor.akshare.base.</span></span><span class="sig-name descname"><span class="pre">stock</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">code=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_date=datetime.datetime(2021</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">0)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_date=datetime.datetime(2025</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">7</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">268587)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ktype='1d'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fq=&lt;复权.动态复权:</span> <span class="pre">3&gt;</span></span></em><span class="sig-paren">)</span></dt>
+<dd><p>基类：<code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py class">
+<dt class="sig sig-object py">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">复权</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span></dt>
+<dd><p>基类：<code class="xref py py-class docutils literal notranslate"><span class="pre">Enum</span></code></p>
+<p>选择复权类型
+默认为动态复权</p>
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">不复权</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">前复权</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1</span></em></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">动态复权</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3</span></em></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">后复权</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></em></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</dd></dl>
+
+<div class="toctree-wrapper compound">
+</div>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="页脚">
+        <a href="_autosummary/apt.os.minio.MinioHandler.MinioClientWrapper.html" class="btn btn-neutral float-right" title="apt.os.minio.MinioHandler.MinioClientWrapper" accesskey="n" rel="next">下一页 <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; 版权所有 2025, Hui Qiao。</p>
+  </div>
+
+  利用 <a href="https://www.sphinx-doc.org/">Sphinx</a> 构建，使用的 
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">主题</a>
+    由 <a href="https://readthedocs.org">Read the Docs</a> 开发.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

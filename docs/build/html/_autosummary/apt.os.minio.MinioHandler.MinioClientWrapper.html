@@ -1,0 +1,283 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="zh-CN" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>apt.os.minio.MinioHandler.MinioClientWrapper &mdash; myFund v0.0.1 文档</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=7cf98a4c"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+      <script src="../_static/translations.js?v=beaddf03"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="索引" href="../genindex.html" />
+    <link rel="search" title="搜索" href="../search.html" />
+    <link rel="prev" title="myFund documentation" href="../index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            myFund
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="搜索文档" aria-label="搜索文档" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="导航菜单">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">apt.os.minio.MinioHandler.MinioClientWrapper</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#apt.os.minio.MinioHandler.MinioClientWrapper"><code class="docutils literal notranslate"><span class="pre">MinioClientWrapper</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#apt.os.minio.MinioHandler.MinioClientWrapper.MINIO_CACHE_PATH"><code class="docutils literal notranslate"><span class="pre">MinioClientWrapper.MINIO_CACHE_PATH</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#apt.os.minio.MinioHandler.MinioClientWrapper.client"><code class="docutils literal notranslate"><span class="pre">MinioClientWrapper.client</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#apt.os.minio.MinioHandler.MinioClientWrapper.create_bucket"><code class="docutils literal notranslate"><span class="pre">MinioClientWrapper.create_bucket()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#apt.os.minio.MinioHandler.MinioClientWrapper.list_buckets"><code class="docutils literal notranslate"><span class="pre">MinioClientWrapper.list_buckets()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#apt.os.minio.MinioHandler.MinioClientWrapper.file_exists"><code class="docutils literal notranslate"><span class="pre">MinioClientWrapper.file_exists()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#apt.os.minio.MinioHandler.MinioClientWrapper.read_file"><code class="docutils literal notranslate"><span class="pre">MinioClientWrapper.read_file()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#apt.os.minio.MinioHandler.MinioClientWrapper.upload_file"><code class="docutils literal notranslate"><span class="pre">MinioClientWrapper.upload_file()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#apt.os.minio.MinioHandler.MinioClientWrapper.download_file"><code class="docutils literal notranslate"><span class="pre">MinioClientWrapper.download_file()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#apt.os.minio.MinioHandler.MinioClientWrapper.remove_file"><code class="docutils literal notranslate"><span class="pre">MinioClientWrapper.remove_file()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#apt.os.minio.MinioHandler.MinioClientWrapper.list_files"><code class="docutils literal notranslate"><span class="pre">MinioClientWrapper.list_files()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#apt.os.minio.MinioHandler.MinioClientWrapper.__init__"><code class="docutils literal notranslate"><span class="pre">MinioClientWrapper.__init__()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="移动版导航菜单" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">myFund</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="页面导航">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">apt.os.minio.MinioHandler.MinioClientWrapper</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/_autosummary/apt.os.minio.MinioHandler.MinioClientWrapper.rst.txt" rel="nofollow"> 查看页面源码</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="apt-os-minio-miniohandler-minioclientwrapper">
+<h1>apt.os.minio.MinioHandler.MinioClientWrapper<a class="headerlink" href="#apt-os-minio-miniohandler-minioclientwrapper" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="apt.os.minio.MinioHandler.MinioClientWrapper">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">apt.os.minio.MinioHandler.</span></span><span class="sig-name descname"><span class="pre">MinioClientWrapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">endpoint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">access_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">secret_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">secure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#apt.os.minio.MinioHandler.MinioClientWrapper" title="Link to this definition"></a></dt>
+<dd><p>Minio客户端封装类</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apt.os.minio.MinioHandler.MinioClientWrapper.MINIO_CACHE_PATH">
+<span class="sig-name descname"><span class="pre">MINIO_CACHE_PATH</span></span><a class="headerlink" href="#apt.os.minio.MinioHandler.MinioClientWrapper.MINIO_CACHE_PATH" title="Link to this definition"></a></dt>
+<dd><p>本地缓存路径</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="apt.os.minio.MinioHandler.MinioClientWrapper.client">
+<span class="sig-name descname"><span class="pre">client</span></span><a class="headerlink" href="#apt.os.minio.MinioHandler.MinioClientWrapper.client" title="Link to this definition"></a></dt>
+<dd><p>MinIO客户端对象</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="apt.os.minio.MinioHandler.MinioClientWrapper.create_bucket">
+<span class="sig-name descname"><span class="pre">create_bucket</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bucket_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#apt.os.minio.MinioHandler.MinioClientWrapper.create_bucket" title="Link to this definition"></a></dt>
+<dd><p>创建桶</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="apt.os.minio.MinioHandler.MinioClientWrapper.list_buckets">
+<span class="sig-name descname"><span class="pre">list_buckets</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#apt.os.minio.MinioHandler.MinioClientWrapper.list_buckets" title="Link to this definition"></a></dt>
+<dd><p>列出所有桶</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="apt.os.minio.MinioHandler.MinioClientWrapper.file_exists">
+<span class="sig-name descname"><span class="pre">file_exists</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bucket_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#apt.os.minio.MinioHandler.MinioClientWrapper.file_exists" title="Link to this definition"></a></dt>
+<dd><p>检查文件是否存在</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="apt.os.minio.MinioHandler.MinioClientWrapper.read_file">
+<span class="sig-name descname"><span class="pre">read_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bucket_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">encoding</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'utf-8'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#apt.os.minio.MinioHandler.MinioClientWrapper.read_file" title="Link to this definition"></a></dt>
+<dd><p>读取文件内容</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="apt.os.minio.MinioHandler.MinioClientWrapper.upload_file">
+<span class="sig-name descname"><span class="pre">upload_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bucket_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#apt.os.minio.MinioHandler.MinioClientWrapper.upload_file" title="Link to this definition"></a></dt>
+<dd><p>上传文件</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="apt.os.minio.MinioHandler.MinioClientWrapper.download_file">
+<span class="sig-name descname"><span class="pre">download_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bucket_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#apt.os.minio.MinioHandler.MinioClientWrapper.download_file" title="Link to this definition"></a></dt>
+<dd><p>下载文件</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="apt.os.minio.MinioHandler.MinioClientWrapper.remove_file">
+<span class="sig-name descname"><span class="pre">remove_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bucket_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">object_name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#apt.os.minio.MinioHandler.MinioClientWrapper.remove_file" title="Link to this definition"></a></dt>
+<dd><p>删除文件</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="apt.os.minio.MinioHandler.MinioClientWrapper.list_files">
+<span class="sig-name descname"><span class="pre">list_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bucket_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">prefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#apt.os.minio.MinioHandler.MinioClientWrapper.list_files" title="Link to this definition"></a></dt>
+<dd><p>罗列文件</p>
+</dd></dl>
+
+<p>目前支持的功能有：
+1. 创建桶 create_bucket
+2. 列出所有桶 list_buckets
+3. 上传文件 upload_file
+4. 下载文件 download_file
+5. 删除文件 remove_file
+6. 列出桶中的所有文件 list_files
+7. 检查文件是否存在 file_exists
+8. 读取文件内容（二进制流） read_file
+9. 待增加
+备注：如果要对Minio文件系统中的hdf5进行操作，请使用专用接口os.MinioHDF5.py</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="apt.os.minio.MinioHandler.MinioClientWrapper.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">endpoint</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">access_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">secret_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">secure</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cache_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#apt.os.minio.MinioHandler.MinioClientWrapper.__init__" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">参数<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>endpoint</strong> -- MinIO服务端点</p></li>
+<li><p><strong>access_key</strong> -- MinIO访问密钥</p></li>
+<li><p><strong>secret_key</strong> -- MinIO访问密钥</p></li>
+<li><p><strong>secure</strong> -- 是否启用安全连接HTTPS</p></li>
+<li><p><strong>cache_path</strong> -- MinIO本地缓存路径</p></li>
+</ul>
+</dd>
+<dt class="field-even">返回<span class="colon">:</span></dt>
+<dd class="field-even"><p>N/A</p>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">对类属性进行说明。</span></span></dt>
+<dd></dd></dl>
+
+<dl class="field-list simple">
+<dt class="field-odd">生成器<span class="colon">:</span></dt>
+<dd class="field-odd"><p>用于生成器函数，描述 yield 的值。</p>
+</dd>
+</dl>
+<p class="rubric">示例</p>
+<p>给出使用示例。</p>
+<p class="rubric">备注</p>
+<p>对外参数：client: MinIO客户端对象（主接口）
+MINIO_CACHE_PATH: MinIO本地缓存路径</p>
+<div class="admonition seealso">
+<p class="admonition-title">参见</p>
+<p>引用相关资源或文档。</p>
+</div>
+<p class="rubric">引用</p>
+<p>（目前这些参数接口保留，但实际都是从本地的env环境变量配置文件中读取数据）</p>
+</dd></dl>
+
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#apt.os.minio.MinioHandler.MinioClientWrapper.__init__" title="apt.os.minio.MinioHandler.MinioClientWrapper.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>([endpoint, access_key, secret_key, ...])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../index.html#id0" title="apt.os.minio.MinioHandler.MinioClientWrapper.create_bucket"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_bucket</span></code></a>(bucket_name)</p></td>
+<td><p>创建桶 params:bucket_name: 桶名称</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../index.html#apt.os.minio.MinioHandler.MinioClientWrapper.create_local_file" title="apt.os.minio.MinioHandler.MinioClientWrapper.create_local_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_local_file</span></code></a>([content])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../index.html#id1" title="apt.os.minio.MinioHandler.MinioClientWrapper.download_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">download_file</span></code></a>(bucket_name, object_name, ...)</p></td>
+<td><p>下载文件</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../index.html#id2" title="apt.os.minio.MinioHandler.MinioClientWrapper.file_exists"><code class="xref py py-obj docutils literal notranslate"><span class="pre">file_exists</span></code></a>(bucket_name, object_name[, ...])</p></td>
+<td><p>检查文件是否存在</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../index.html#apt.os.minio.MinioHandler.MinioClientWrapper.get_object" title="apt.os.minio.MinioHandler.MinioClientWrapper.get_object"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_object</span></code></a>(bucket_name, object_name)</p></td>
+<td><p>获取对象，返回 Minio 客户端的对象数据 如果hdf5文件，需要使用get_object读取二进制流，以避免HDF5文件的读取问题 pandas.read_hdf() 无法直接读取二进制数据，需要将二进制数据包装为文件流</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../index.html#id3" title="apt.os.minio.MinioHandler.MinioClientWrapper.list_buckets"><code class="xref py py-obj docutils literal notranslate"><span class="pre">list_buckets</span></code></a>()</p></td>
+<td><p>列出所有桶 params: return: pandas.DataFrame</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../index.html#id4" title="apt.os.minio.MinioHandler.MinioClientWrapper.list_files"><code class="xref py py-obj docutils literal notranslate"><span class="pre">list_files</span></code></a>(bucket_name[, prefix])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../index.html#id5" title="apt.os.minio.MinioHandler.MinioClientWrapper.read_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_file</span></code></a>(bucket_name, object_name[, encoding])</p></td>
+<td><p>读取文件内容(二进制流式传输) :param bucket_name: 桶名称 :param object_name: 对象名称(文件路径) :param encoding: 文件编码,默认utf-8 :return: 文件内容</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="../index.html#id6" title="apt.os.minio.MinioHandler.MinioClientWrapper.remove_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_file</span></code></a>(bucket_name, object_name)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="../index.html#id7" title="apt.os.minio.MinioHandler.MinioClientWrapper.upload_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">upload_file</span></code></a>(bucket_name, object_name, file_path)</p></td>
+<td><p>上传文件 params:     bucket_name: 桶名称 例hdf5     object_name: 带路径的对象名称（不包括桶名称） 例akshare/data/1min/600000.SH.h5         备注：桶名称和路径如果填写错误，则会自动创建     file_path: 文件路径 例c:data1min600000.SH.h5</p></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="页脚">
+        <a href="../index.html" class="btn btn-neutral float-left" title="myFund documentation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> 上一页</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; 版权所有 2025, Hui Qiao。</p>
+  </div>
+
+  利用 <a href="https://www.sphinx-doc.org/">Sphinx</a> 构建，使用的 
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">主题</a>
+    由 <a href="https://readthedocs.org">Read the Docs</a> 开发.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

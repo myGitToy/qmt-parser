@@ -8,7 +8,6 @@ import time
 #import datetime
 from scipy import stats
 from datetime import datetime,timedelta
-from jqdatasdk import *
 #from apt.vendor.tspro.base import base as base
 from apt.vendor.tspro.data import data as tspro_data
 from apt.vendor.tspro.security import security as sec

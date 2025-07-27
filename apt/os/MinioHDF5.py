@@ -6,30 +6,39 @@ from apt.vendor.tspro.base import stock as stock
 from apt.vendor.tspro.data import data as data
 from apt.vendor.tspro.pro_api import pro_api
 from apt.vendor.akshare.data import data as ak_data
-from apt.os.minio.minio_test import MinioClientWrapper as MinioClient
+from apt.os.minio.MinioHandler import MinioClientWrapper as MinioClient
 import tushare as ts
 import pandas as pd
 import numpy as np
 import pandas as pd
-import h5py
+import h5py 
 import os.path
 import uuid
 import io
 class MinioHDF5Handler(data, MinioClient):
     """
     通过minio对hdf5文件的读取，加载，删除，更新的基类
+    默认返回的内容是符合pd.read_hdf的格式标准的dataframe
     """
-    def __init__(self , key = 'RawData'):
+    def __init__(self , bucket_name = "hdf5" , bucket_prefix = '/akshare/data/1min/' , cache_dir =None , key = 'RawData'):
+        """
+        初始化参数
+        param：
+            bucket_name: 桶名称 例如'hdf5'
+            bucket_prefix: 桶前缀 例如'/akshare/data/1min/
+            cache_dir: 缓存目录 从env文件中获取或者自定义
+            key: h5文件的key值 默认为'RawData'
+        """
+        super(data , self).__init__()  #支持多态继承，强制声明父类的init方法，注册api，用来对self.pro提供支持
+        super(MinioClient , self).__init__()  #支持多态继承，强制声明父类的init方法，注册minio客户端，用来对self.client提供支持
         #全局变量定义
         #关于如何调用，请参考task449
         #https://huiqiao.visualstudio.com/MyFunds/_sprints/taskboard/MyFunds%20Team/MyFunds/2023Q1?workitem=449
-        self.file_path = "C:\\Data\\hdf5\\1min"  #数据存盘的根目录
-        self.update_path = "C:\\Data\\hdf5" #更新列表的存盘目录（用于记录需要更新的数据）
         self.max_row = 8000  #单次更新的最大数据行（tspro的限制）
         self.key = key  #key值
         #self.minio_client = MinioClient(self)
-        super(data , self).__init__()  #支持多态继承，强制声明父类的init方法，注册api，用来对self.pro提供支持
-        super(MinioClient , self).__init__()  #支持多态继承，强制声明父类的init方法，注册minio客户端，用来对self.client提供支持
+        self.bucket_name = bucket_name
+        self.bucket_prefix = bucket_prefix
 
     def data_delete(self):
         """
@@ -37,6 +46,7 @@ class MinioHDF5Handler(data, MinioClient):
         删除hdf5文件中指定日期间的数据(代码无法运行)
 
         """
+        raise ValueError("MinioHDF5模块目前不支持数据删除")
         df = pd.read_hdf('test.h5', 'test')
         df = df.loc['2022-01-01':'2022-12-31']
         df.to_hdf('test.h5', 'test')
@@ -54,8 +64,18 @@ class MinioHDF5Handler(data, MinioClient):
 
     def data_query(self):
         """
+
+        数据查询 类似于get_k_data 【minio已测试】
+        # TODO 考虑是否改名get_k_data
+        param：
+            code: 证券代码（由基类提供参数）
+            start_date: 开始日期（由基类提供参数）
+            end_date: 结束日期（由基类提供参数）
+            key: h5文件的key值 默认为'RawData'
         【数据查询模块】
-        查询hdf5文件中指定日期间的数据
+        查询minio文件系统中指定日期间的数据
+        由于pd.read_hdf的特性，无法从内存流中读取，必须先存盘再读取
+        默认返回的内容是符合pd.read_hdf的格式标准的dataframe
         说明：
             1. 目前本模块仅从H5文件中读取数据，不对mysql库的数据进行合并整合操作
             2. 未复权数据，且不含复权因子
@@ -73,26 +93,57 @@ class MinioHDF5Handler(data, MinioClient):
             6   volume  6 non-null      float64
             7   money   6 non-null      float64
         """
-        df_db = pd.read_hdf(f'{self.file_path}\\{self.code}.h5', key=self.key, where=f"date >='{self.start_date}' and date <='{self.end_date}'")
-        # 对数据格式进行调整，date为时间+日期格式，其余为数值格式
-        df_db = df_db.reset_index()
-        df_db['date'] = pd.to_datetime(df_db['date'])
-        #对时间进行排序
-        df_db.sort_values(by=['date'], inplace=True, ascending=False)
-        #排序后再次重置索引，生成新的 0-n 索引
-        #df_db = df_db.reset_index(drop=True)          
-        return df_db
+        # 数据存盘
+        download_path = os.path.join(self.MINIO_CACHE_PATH,f"{self.code}.h5")
+        minio_file_path = os.path.join(self.bucket_prefix,f"{self.code}.h5")
+        if self.download_file(self.bucket_name, minio_file_path, download_path):
+            # 下载成功，
+            # 读取hdf5文件
+            df_db = pd.read_hdf(download_path, key=self.key, where=f"date >='{self.start_date}' and date <='{self.end_date}'")
+            # 对数据格式进行调整，date为时间+日期格式，其余为数值格式
+            df_db = df_db.reset_index()
+            df_db['date'] = pd.to_datetime(df_db['date'])
+            #对时间进行排序
+            df_db.sort_values(by=['date'], inplace=True, ascending=False)
+            #排序后再次重置索引，生成新的 0-n 索引
+            #df_db = df_db.reset_index(drop=True)          
+            return df_db
+        else:
+            # 下载未成功
+            raise ValueError(f"{self.code}下载失败")
 
     def data_query_by_count(self):
         """
-        查询hdf5文件中指定日期间，每天的数据量
+        【minio已测试】
+        查询Minio文件系统中，hdf5文件中指定日期间，每天的数据量
         一般用于数据校验，1分钟线数据，每天数据量超过241条，则表明存在重复数据，整个库就必须进行调整
+        返回：DataFrame格式
+            2023-03-28    239
+            2023-03-29    239
+            2023-03-30    239
+            2023-03-31    239        
         """                              
-        df_db = pd.read_hdf(f'{self.file_path}\\{self.code}.h5', key = self.key , where = f"date >='{self.start_date}' and date <='{self.end_date}'")
-        print(df_db.groupby(pd.Grouper(level = 'date', freq = 'D')).size())
+        # 数据存盘
+        download_path = os.path.join(self.MINIO_CACHE_PATH,f"{self.code}.h5")
+        minio_file_path = os.path.join(self.bucket_prefix,f"{self.code}.h5")
+        if self.download_file(self.bucket_name, minio_file_path, download_path):
+            # 下载成功，
+            # 读取hdf5文件
+            df_db = pd.read_hdf(download_path, key=self.key, where=f"date >='{self.start_date}' and date <='{self.end_date}'")
+            # 对数据格式进行调整，date为时间+日期格式，其余为数值格式
+            df_db = df_db.reset_index()
+            df_db['date'] = pd.to_datetime(df_db['date'])      
+            df_db = df_db.set_index('date')
+            df_db = df_db.groupby(pd.Grouper(freq='D')).size()
+            return df_db
+        else:
+            # 下载未成功
+            raise ValueError(f"{self.code}下载失败")
+        
 
     def data_update(self):
         """
+        【代码从hdf5移植，未兼容minio操作】
         更新指定日期间的所有数据（目前只支持1分钟线）
         遵循 API数据读取->H5数据读取->差集更新->写回文件 的顺序
         重要提示：本模块的更新为临时存在，hdf5模块为OS类操作，未来会将数据更新模块移走
@@ -155,6 +206,7 @@ class MinioHDF5Handler(data, MinioClient):
 
     def update_sequence_add(self , code_list = None , myclass = 'stock' , type = '60m'  , priority = 0 ):
         '''
+        【代码从hdf5移植，未兼容minio操作】
         task346更改了分时线数据更新的逻辑，拆分成add和launch两部分
         H5 DataFrame格式如下：
         uuid|code|start_date|end_date|type|priority
@@ -230,6 +282,7 @@ class MinioHDF5Handler(data, MinioClient):
 
     def update_sequence_launch(self , priority = 0 ):
         '''
+        【代码从hdf5移植，未兼容minio操作】
         task346更改了分时线数据更新的逻辑，拆分成add和launch两部分
         launch模块主要进行数据更新任务，支持点断续传
         priority 是否优先更新 默认为0 目前H5文件在priority不写入索引的情况下，无法做到区分是否优先更新
@@ -338,6 +391,7 @@ class MinioHDF5Handler(data, MinioClient):
 
     def print_hdf5_structure(self , file_path):
         """
+        【代码从hdf5移植，未兼容minio操作】
         读取并打印 HDF5 文件的结构,显示所有表和键值
         """
         def print_attrs(name, obj):
@@ -365,11 +419,19 @@ class MinioHDF5Handler(data, MinioClient):
             print(f"读取文件时出错: {str(e)}")
 
 
-    def read_hdf5(self, bucket_name, object_name, key='RawData'):
+    def get_hdf5(self, bucket_name, object_name, cache_path ,key='RawData'):
         """
+        【代码从hdf5移植，未兼容minio操作】
         从MinIO读取HDF5文件并转为DataFrame
+        params:
+            bucket_name: MinIO桶名称
+            object_name: MinIO对象名称（带路径的）
+            cache_path: 本地路径
+            key: HDF5文件中的键
         COPILOT 代码 未经测试
         """
+        # 第一步 将HDF5文件下载到本地  
+
         try:
             # 读取二进制内容
             content = self.read_file(bucket_name, object_name, encoding=None)
@@ -382,6 +444,7 @@ class MinioHDF5Handler(data, MinioClient):
             raise
     def update_hdf5(self, df, bucket_name, object_name, key='RawData'):
         """
+        【代码从hdf5移植，未兼容minio操作】
         更新DataFrame并上传到MinIO
         COPILOT 代码 未经测试
         """
@@ -403,13 +466,18 @@ class MinioHDF5Handler(data, MinioClient):
             raise
 
 if __name__ == '__main__':
-    #2014年数据 2600条 全部更新完毕约7小时
-    #2016年数据已更新完毕
     a = MinioHDF5Handler()
+    print(a.MINIO_CACHE_PATH)
     a.start_date = datetime(2020,1,7,9,0)
-    a.end_date = datetime(2020,1,7,10,30)    
-    a.code = '000002.SZ'
+    a.end_date = datetime(2025,1,7,10,30)    
+    a.code = '000001.SZ'
     a.ktype = '1m'
+    # 测试文件结构
+    file_structure = a.print_hdf5_structure(os.path.join(a.MINIO_CACHE_PATH,'000002.SZ.h5'))
+    print(file_structure)
+    db = a.data_query_by_count()
+
+    print(db)
     file = a.read_hdf5('hdf5', 'akshare/data/1min/000002.SZ.h5')
     print(file)
     c = ak_data()   #初始化ak_data类，从a模块获取类的属性数据

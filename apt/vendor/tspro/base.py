@@ -50,14 +50,15 @@ class base():
         # 进行数据源的选择和映射
         if rds_host is None:    #数据源为空时进行映射
             # 从.env中读取DB_NAME，默认值可以设为"localhost"
-            db_name = os.getenv("DB_NAME", "localhost").strip().lower()
+            db_name = os.getenv("DB_NAME", "UBUNTU186_DB_CONN").strip()
             mapping = {
                 "aliyun": self.数据源.aliyun,
-                "aws": self.数据源.aws,
+                "AWS_DB_CONN": self.数据源.aws,
                 "localhost": self.数据源.localhost,
                 "centos9": self.数据源.centos9,
                 "ubuntu186": self.数据源.ubuntu186,
                 "ubuntu191": self.数据源.ubuntu191,
+                "UBUNTU186_DB_CONN": self.数据源.ubuntu186,
             }      
             rds_host = mapping.get(db_name, self.数据源.localhost)        
         self.myauth = myauth
@@ -87,6 +88,20 @@ class base():
                 #初始化ts接口
                 self.pro = ts.pro_api(os.getenv('TUSHARE_TOKEN'))
                 self.token = os.getenv('TUSHARE_TOKEN')
+        elif rds_host == self.数据源.ubuntu186:
+            self.engine = sqlalchemy.create_engine(os.getenv('UBUNTU186_DB_CONN'))
+            #本地数据源支持脱机访问，其他数据源则不支持脱机
+            if self.myauth == True:
+                #初始化ts接口
+                self.pro = ts.pro_api(os.getenv('TUSHARE_TOKEN'))
+                self.token = os.getenv('TUSHARE_TOKEN')
+        elif rds_host == self.数据源.ubuntu191:
+            self.engine = sqlalchemy.create_engine(os.getenv('UBUNTU191_DB_CONN'))
+            #本地数据源支持脱机访问，其他数据源则不支持脱机
+            if self.myauth == True:
+                #初始化ts接口
+                self.pro = ts.pro_api(os.getenv('TUSHARE_TOKEN'))
+                self.token = os.getenv('TUSHARE_TOKEN')                
         else:
             print("不支持的数据源，授权无效")
         super(base , self).__init__()  #支持多态继承

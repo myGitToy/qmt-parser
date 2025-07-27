@@ -48,6 +48,88 @@ class pro_api(data):
         #df.query(f'list_date <= {self.end_date} or delist_date >= {self.end_date}')    #测试未通过
         df = df.loc[(df['list_date'] <= self.end_date) & (df['delist_date'] >= self.end_date)]
         return df
+    
+    def get_index_daily(self , index_code = '000001.SH') -> pd.DataFrame:
+        """
+        获取指数日线行情（单一指数指定日期间）
+        【输入】
+            index_code:指数代码
+        备注：此处返回指数OHLC数据
+        https://tushare.pro/document/2?doc_id=95
+
+        输入参数：
+            名称	类型	必选	描述
+            ts_code	str	Y	指数代码，来源指数基础信息接口
+            trade_date	str	N	交易日期 （日期格式：YYYYMMDD，下同）
+            start_date	str	N	开始日期
+            end_date	str	N	结束日期
+
+        输出参数
+            名称	类型	描述
+            ts_code	str	TS指数代码
+            trade_date	str	交易日
+            close	float	收盘点位
+            open	float	开盘点位
+            high	float	最高点位
+            low	float	最低点位
+            pre_close	float	昨日收盘点
+            change	float	涨跌点
+            pct_chg	float	涨跌幅（%）
+            vol	float	成交量（手）
+            amount	float	成交额（千元）      
+        """
+        #index_code校验（暂不实装）
+        df = self.pro.index_daily(ts_code = index_code , start_date = self.start_date.strftime('%Y%m%d') , end_date = self.end_date.strftime('%Y%m%d'))
+        # 日期格式化
+        df.rename(columns={"ts_code": "code" ,"trade_date" : "date"} , errors="raise" , inplace = True)
+        df["date"] = pd.to_datetime(df["date"])
+        df = df.sort_values(by='date', ascending=True)
+        return df
+
+    def get_index_dailybasic(self , index_code = '000001.SH') -> pd.DataFrame:
+        """
+        获取大盘指数数据PE 流通市值等（单一指数指定日期间）
+        备注：此处不含指数OHLC数据，主要是获取大盘指数的每日指标数据
+        https://tushare.pro/document/2?doc_id=128
+        此处：调用pro_api方法，仅可在线访问
+        目前只提供上证综指，深证成指，上证50，中证500，中小板指，创业板指的每日指标数据
+        
+        index_code数据示例
+            ts_code  trade_date  turnover_rate     pe
+        0  000001.SH   20181018           0.38  11.92
+        1  000300.SH   20181018           0.27  11.17
+        2  000905.SH   20181018           0.82  18.03
+        3  399001.SZ   20181018           0.88  17.48
+        4  399005.SZ   20181018           0.85  21.43
+        5  399006.SZ   20181018           1.50  29.56
+        6  399016.SZ   20181018           1.06  18.86
+        7  399300.SZ   20181018           0.27  11.17
+        
+        输出参数：
+            名称	类型	默认显示	描述
+            ts_code	str	Y	TS代码
+            trade_date	str	Y	交易日期
+            total_mv	float	Y	当日总市值（元）
+            float_mv	float	Y	当日流通市值（元）
+            total_share	float	Y	当日总股本（股）
+            float_share	float	Y	当日流通股本（股）
+            free_share	float	Y	当日自由流通股本（股）
+            turnover_rate	float	Y	换手率
+            turnover_rate_f	float	Y	换手率(基于自由流通股本)
+            pe	float	Y	市盈率
+            pe_ttm	float	Y	市盈率TTM
+            pb	float	Y	市净率
+        """
+        #index_code校验
+        if index_code not in ['000001.SH','000300.SH','000905.SH','399001.SZ','399005.SZ','399006.SZ','399016.SZ','399300.SZ']:
+            raise Exception(f'index_code参数错误，请检查！')
+        # 获取单一指数指定区间的数据
+        df = self.pro.index_dailybasic(ts_code = index_code , start_date = self.start_date.strftime('%Y%m%d') , end_date = self.end_date.strftime('%Y%m%d'))
+        # 日期格式化
+        df.rename(columns={"ts_code": "code" ,"trade_date" : "date"} , errors="raise" , inplace = True)
+        df["date"] = pd.to_datetime(df["date"])
+        df = df.sort_values(by='date', ascending=True)
+        return df
 
     def suspend_k(self ,  suspend_type = 'S') -> pd.DataFrame:
         """
@@ -169,11 +251,11 @@ class pro_api(data):
         return df_tspro
 if __name__ == '__main__':
     a = pro_api()
-    a.start_date = datetime(2020,3,1,8)
-    a.end_date = datetime(2024,3,20,16)
+    a.start_date = datetime(2024,1,1,8)
+    a.end_date = datetime.now()
     a.code = '300224.SZ'
     a.ktype = '1d'
-    print(a.stk_holdertrade())
+    print(a.get_index_basic())
 
 
 

@@ -13,21 +13,27 @@ import pandas as pd
 import h5py
 import os.path
 import uuid
+import os   #用于读取文件目录
+from dotenv import load_dotenv #用于读取.env文件
 class hdf5(data):
     """
-    hdf5文件的读取，加载，删除，更新的基类
+    hdf5文件的读取，加载，删除，更新的基类（本地操作）
     备注：
         这里默认使用pd.to_hdf和pd.read_hdf来读取和写入数据
     差异之处：
         h5py 直接以 HDF5 的原始层面进行读写，而 pandas 的to_hdf使用了 PyTables 库来管理 DataFrame 元数据，因此两者并不完全兼容。
         h5py 保存的数据集需要自行处理列名、索引等信息，而to_hdf则会将这些信息一起存储，方便后续用read_hdf直接恢复为 DataFrame。
+        pd.read_hdf 无法对二进制内存流进行操作，必须要保存本地后再进行读取
     """
     def __init__(self , key = 'RawData'):
         #全局变量定义
         #关于如何调用，请参考task449
         #https://huiqiao.visualstudio.com/MyFunds/_sprints/taskboard/MyFunds%20Team/MyFunds/2023Q1?workitem=449
-        self.file_path = "C:\\Data\\hdf5\\1min"  #数据存盘的根目录
-        self.update_path = "C:\\Data\\hdf5" #更新列表的存盘目录（用于记录需要更新的数据）
+        #读取.env文件
+        load_dotenv()
+        # TODO: 这里未经过严格测试，不一定能够正常运行，返回的格式是C:\Data\hdf5\1min，不一定能用
+        self.update_path = os.getenv('HDF5_PATH') #更新列表的存盘目录（用于记录需要更新的数据）
+        self.file_path = os.path.join(self.update_path,"1min")  #数据存盘的根目录
         self.max_row = 8000  #单次更新的最大数据行（tspro的限制）
         self.key = key  #key值
         super(data , self).__init__()  #支持多态继承，强制声明父类的init方法，注册api，用来对self.pro提供支持
@@ -373,6 +379,10 @@ if __name__ == '__main__':
     a.code = '000002.SZ'
     a.ktype = '1m'
     c = ak_data()   #初始化ak_data类，从a模块获取类的属性数据
+    
+    # 将更新内容写入update_sequence.h5
+    a.update_sequence_add(myclass='stock', type='1m', priority=1)
+    a.update_sequence_add(myclass='etf', type='1m', priority=1)
 
     ####读取并打印 HDF5 文件的结构
     #a.file_path = "C:\\Data\\hdf5\\1min"

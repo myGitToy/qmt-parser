@@ -1,0 +1,18 @@
+# Streamlit配置文件
+
+[global]
+developmentMode = false
+
+[server]
+port = 8501
+enableCORS = false
+enableWebsocketCompression = false
+
+[browser]
+gatherUsageStats = false
+
+[theme]
+primaryColor = "#ff6600"
+backgroundColor = "#1a1a1a"
+secondaryBackgroundColor = "#2d2d2d"
+textColor = "#ffffff"
