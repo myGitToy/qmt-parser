@@ -1,21 +1,72 @@
 # MyFunds 项目依赖包列表
 
-# 基础依赖
-numpy==1.21.4
-pandas==1.2.3
-tushare==1.2.71
-akshare==1.6.13
-jqdatasdk==1.8.10
-backtrader==1.9.76.123
+##############################
+# 数据分析与科学计算
+numpy==2.3.2
+pandas==2.3.1
+scipy
+openpyxl==3.1.5
+xlrd==2.0.2
+tqdm==4.67.1
+tabulate==0.9.0
 
+##############################
+# 金融/行情数据
+akshare==1.17.32
+tushare==1.4.23
 
-# 证券分析和图表相关
-mpl-finance==0.10.1
-matplotlib==3.2.2
-TA-Lib==0.4.21
-talib==3.1.0
-numba==0.56.4
+##############################
+# Web开发与API
+fastapi==0.116.1
+flask==3.0.3
+flask-compress==1.17
+uvicorn==0.35.0
+starlette==0.47.2
+werkzeug==3.0.6
+jinja2==3.1.6
+itsdangerous==2.2.0
+python-multipart==0.0.20
 
-# HDF5支持
-tables>=3.8.0  # HDF5文件操作
-h5py==3.8.0
+##############################
+# 网络与爬虫
+requests==2.32.4
+httpx==0.28.1
+aiohttp==3.12.15
+aiofiles==24.1.0
+beautifulsoup4==4.13.4
+bs4==0.0.2
+lxml==6.0.0
+html5lib==1.1
+soupsieve==2.7
+websocket-client==1.8.0
+websockets==15.0.1
+
+##############################
+# 机器学习/AI/模型
+gradio==5.42.0
+gradio-client==1.11.1
+huggingface-hub==0.34.4
+
+##############################
+# 数据库
+pymysql==1.1.1
+redis==6.4.0
+sqlalchemy==2.0.43
+simplejson==3.20.1
+
+##############################
+# 工具/其他
+python-dotenv==1.1.1
+pyyaml==6.0.2
+setuptools==78.1.1
+wheel==0.45.1
+pip==25.1
+packaging==25.0
+filelock==3.18.0
+retrying==1.3.3
+
+##############################
+# 可选/调试/开发
+ruff==0.12.8
+rich==14.1.0
+pygments==2.19.2
