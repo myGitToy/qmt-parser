@@ -6,8 +6,15 @@ import sys
 from datetime import datetime, timedelta
 from apt.vendor.tspro.security import security as security
 from apt.vendor.akshare.data import data as data
+import platform
+import os
 
-import winsound  # 用于语音提醒（Windows）
+# 根据操作系统导入不同的音频库
+if platform.system() == "Windows":
+    import winsound
+else:
+    # Ubuntu/Linux 使用 os.system 调用 beep 命令
+    pass
 
 def run_script():
     # 1. 更新序列
