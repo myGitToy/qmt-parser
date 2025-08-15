@@ -19,7 +19,7 @@ else:
 def run_script():
     # 1. 更新序列
     a = data()
-    a.start_date = datetime(2025, 6, 20)
+    a.start_date = datetime(2025, 7, 20)
     a.end_date = datetime.now()
     # a.update_etf_day()
     # 优先更新高权限序列 

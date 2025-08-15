@@ -1,5 +1,97 @@
 # MyFunds 项目依赖包列表
 
+<<<<<<< HEAD
+# 基础数据处理依赖
+numpy>=1.21.4
+pandas>=1.5.0
+scipy>=1.9.0
+
+# 金融数据源
+tushare>=1.2.71
+akshare>=1.9.66
+jqdatasdk>=1.8.10
+
+# 量化交易框架
+backtrader>=1.9.76.123
+
+# Web应用框架
+dash>=2.14.0
+dash-core-components>=2.0.0
+dash-html-components>=2.0.0
+dash-table>=5.0.0
+streamlit>=1.28.0
+flask>=2.3.0
+
+# 数据可视化
+plotly>=5.15.0
+matplotlib>=3.5.0
+seaborn>=0.11.0
+mpl-finance>=0.10.1
+
+# 技术分析
+TA-Lib>=0.4.21
+talib>=3.1.0
+numba>=0.56.4
+
+# 机器学习
+scikit-learn>=1.1.0
+xgboost>=1.6.0
+lightgbm>=3.3.0
+
+# 数据库和存储
+sqlalchemy>=1.4.0
+pymysql>=1.0.0
+redis>=4.0.0
+tables>=3.8.0  # HDF5文件操作
+h5py>=3.8.0
+
+# Excel和文档处理
+openpyxl>=3.0.0
+xlrd>=2.0.0
+python-docx>=0.8.11
+
+# Google Sheets集成
+gspread>=5.10.0
+google-auth>=2.20.0
+google-auth-oauthlib>=1.0.0
+google-auth-httplib2>=0.1.0
+
+# 网络请求
+requests>=2.28.0
+urllib3>=1.26.0
+beautifulsoup4>=4.11.0
+
+# 异步处理
+asyncio-mqtt>=0.11.0
+aiohttp>=3.8.0
+
+# 系统工具
+python-dotenv>=1.0.0
+schedule>=1.2.0
+psutil>=5.9.0
+tqdm>=4.64.0
+
+# 日志和监控
+loguru>=0.7.0
+
+# 开发工具
+pytest>=7.0.0
+black>=22.0.0
+flake8>=5.0.0
+mypy>=1.0.0
+
+# 图像处理
+Pillow>=9.0.0
+opencv-python>=4.6.0
+
+# 语音提醒 (Windows)
+# winsound  # 内置模块，无需安装
+
+# 其他工具
+python-dateutil>=2.8.0
+pytz>=2022.1
+lxml>=4.9.0
+=======
 ##############################
 # 数据分析与科学计算
 numpy==2.3.2
@@ -70,3 +162,4 @@ retrying==1.3.3
 ruff==0.12.8
 rich==14.1.0
 pygments==2.19.2
+>>>>>>> 67225f7847a86c415c25606a7a92edbe243a0aff
