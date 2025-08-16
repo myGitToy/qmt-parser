@@ -20,8 +20,8 @@ class DatabaseSync:
                  datatable_name, code=None , 
                  start_date=None, end_date=None , 
                  dual_sync = True , 
-                 engine_A = "LOCAL_DB_CONN" ,
-                 engine_B = "UBUNTU186_DB_CONN"):
+                 engine_A = "UBUNTU186_DB_CONN" ,
+                 engine_B = "LOCAL_DB_CONN"):
         """
         初始化同步类
         :param datatable_name: 数据表名称
@@ -134,13 +134,13 @@ class DatabaseSync:
 
 if __name__ == "__main__":
     start_date = datetime(2025, 4, 1)
-    end_date = datetime(2025, 5, 11)
+    end_date = datetime(2025, 8, 16)
     code = None
-    datatable_name = 'akshare_60m'
+    datatable_name = 'akshare_1m'
     dual_sync = True
     syncer = DatabaseSync(datatable_name=datatable_name, 
                           start_date=start_date, end_date=end_date, 
-                          code=code, dual_sync=dual_sync,
+                          code=code, dual_sync=False,
                           )#engine_B="docker_201_DB_CONN",
     syncer.sync()
 
