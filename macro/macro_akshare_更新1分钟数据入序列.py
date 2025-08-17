@@ -8,8 +8,8 @@ from apt.vendor.akshare.data import data as data
 #1. 初始化
 a = data(myauth = True)
 a.code ='600038.sh'
-a.start_date= datetime(2021,12,1,1) #1998/10/20日开始有ETF数据    ETF日线数据2000/13/30 ETF复权因子2000/13/32
-a.end_date = datetime(2022,1,1,1)
+a.start_date= datetime(2025,8,1,1) #1998/10/20日开始有ETF数据    ETF日线数据2000/13/30 ETF复权因子2000/13/32
+a.end_date = datetime.now()
 #现在更新2021年的1分钟线数据
 #备注 2020年数据centos9数据库是没有的
 """
