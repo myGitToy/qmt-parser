@@ -27,21 +27,11 @@ from datetime import datetime, timedelta
 import akshare as ak
 import tushare as ts
 import os
-from dotenv import load_dotenv
-
-# 加载环境变量
-load_dotenv()
 
 # 配置 tushare token
-# 请在.env文件中设置您的token，或者直接替换下面的字符串
-TUSHARE_TOKEN = os.getenv('TUSHARE_TOKEN', '')
-if TUSHARE_TOKEN:
-    ts.set_token(TUSHARE_TOKEN)
-    pro = ts.pro_api()
-    print("✅ TuShare Pro API已配置")
-else:
-    pro = None
-    print("⚠️ TuShare token未配置，将仅使用AKShare数据源")
+# 请替换为您自己的 token
+ts.set_token(os.environ.get('TUSHARE_TOKEN', ''))
+pro = ts.pro_api()
 
 # 初始化 Dash 应用
 app = dash.Dash(__name__, title="资金流向分析")
@@ -95,7 +85,7 @@ app.layout = html.Div([
                     {'label': '60分钟线', 'value': '60m'},
                     {'label': '日线', 'value': '1d'}
                 ],
-                value='1d'  # 默认选择日线
+                value='daily'
             ),
         ], style={'width': '20%', 'display': 'inline-block', 'paddingRight': '15px'}),
         
@@ -152,105 +142,61 @@ def calculate_money_flow(df):
 
 # 获取股票数据
 def get_stock_data(code, start_date, end_date, kline_type):
-    """
-    获取股票数据
-    支持多种数据源和K线类型
-    """
-    # 清理股票代码
-    if '.' in code:
-        code = code.split('.')[0]
+    # 转换股票代码格式
+    if code.startswith('6'):
+        formatted_code = f"{code}.SH"
+    else:
+        formatted_code = f"{code}.SZ"
     
     try:
         # 根据 K 线类型选择不同的数据源和接口
-        if kline_type == '1d' and pro is not None:
+        if kline_type == 'daily':
             # 使用 tushare 获取日线数据
-            if code.startswith('6'):
-                formatted_code = f"{code}.SH"
-            else:
-                formatted_code = f"{code}.SZ"
-                
-            df = pro.daily(
-                ts_code=formatted_code, 
-                start_date=start_date.replace('-', ''), 
-                end_date=end_date.replace('-', '')
-            )
-            
-            if df.empty:
-                raise Exception("TuShare返回空数据")
-                
+            df = pro.daily(ts_code=formatted_code, start_date=start_date.replace('-', ''), 
+                          end_date=end_date.replace('-', ''))
             # 调整列名和排序
             df = df.rename(columns={
                 'trade_date': 'date', 
+                'open': 'open', 
+                'high': 'high', 
+                'low': 'low', 
+                'close': 'close', 
                 'vol': 'volume'
             })
             df['date'] = pd.to_datetime(df['date'], format='%Y%m%d')
-            
         else:
-            # 使用 akshare 获取数据
-            # akshare 的股票代码格式
-            if code.startswith('6'):
+            # 使用 akshare 获取分钟线数据
+            # akshare 的股票代码格式需要调整
+            if formatted_code.endswith('.SH'):
                 ak_code = f"sh{code}"
-            elif code.startswith('0') or code.startswith('3'):
-                ak_code = f"sz{code}"
             else:
-                ak_code = code
+                ak_code = f"sz{code}"
             
-            # 根据不同的K线类型调用不同的函数
-            if kline_type == '1m':
-                df = ak.stock_zh_a_hist_min_em(symbol=ak_code, period='1', adjust='qfq')
-            elif kline_type == '5m':
-                df = ak.stock_zh_a_hist_min_em(symbol=ak_code, period='5', adjust='qfq')
-            elif kline_type == '60m':
-                df = ak.stock_zh_a_hist_min_em(symbol=ak_code, period='60', adjust='qfq')
-            else:  # 默认日线
-                df = ak.stock_zh_a_hist(symbol=ak_code, period="daily", adjust="qfq")
+            # 根据不同的分钟线类型调用不同的函数
+            if kline_type == '1min':
+                df = ak.stock_zh_a_minute(symbol=ak_code, period='1', adjust='qfq')
+            elif kline_type == '5min':
+                df = ak.stock_zh_a_minute(symbol=ak_code, period='5', adjust='qfq')
+            elif kline_type == '60min':
+                df = ak.stock_zh_a_minute(symbol=ak_code, period='60', adjust='qfq')
             
-            if df.empty:
-                raise Exception("AKShare返回空数据")
-            
-            # 统一列名
-            if '时间' in df.columns:
-                df = df.rename(columns={'时间': 'date'})
-            elif 'datetime' in df.columns:
-                df = df.rename(columns={'datetime': 'date'})
-            elif '日期' in df.columns:
-                df = df.rename(columns={'日期': 'date'})
-                
-            # 统一其他列名
-            column_mapping = {
-                '开盘': 'open',
-                '最高': 'high', 
-                '最低': 'low',
-                '收盘': 'close',
-                '成交量': 'volume',
-                '成交额': 'amount'
-            }
-            df = df.rename(columns=column_mapping)
-            
-            # 确保date列是datetime类型
-            if not pd.api.types.is_datetime64_any_dtype(df['date']):
-                df['date'] = pd.to_datetime(df['date'])
+            # 调整列名
+            df = df.rename(columns={
+                'datetime': 'date', 
+                'open': 'open', 
+                'high': 'high', 
+                'low': 'low', 
+                'close': 'close', 
+                'volume': 'volume'
+            })
         
         # 按日期排序
-        df = df.sort_values('date').reset_index(drop=True)
-        
-        # 确保数值列是数值类型
-        numeric_columns = ['open', 'high', 'low', 'close', 'volume']
-        for col in numeric_columns:
-            if col in df.columns:
-                df[col] = pd.to_numeric(df[col], errors='coerce')
-        
+        df = df.sort_values('date')
         # 计算资金流向
         df = calculate_money_flow(df)
-        
-        print(f"✅ 成功获取 {code} 的 {len(df)} 条{kline_type}数据")
         return df
-        
     except Exception as e:
-        print(f"❌ 获取数据出错: {str(e)}")
-        print(f"   股票代码: {code}")
-        print(f"   时间范围: {start_date} 到 {end_date}")
-        print(f"   K线类型: {kline_type}")
+        print(f"获取数据出错: {str(e)}")
         return pd.DataFrame()
 
 # 更新图表和表格的回调
