@@ -6,6 +6,24 @@
 4. 可视化展示资金流向与指数变化
 我设计了一个公式，每天最高价-最低价作为100%，作为分母，收盘价-开盘价为分子，计算比率，
 用这个比率乘以成交金额作为资金流入流出的数据，你觉得合理吗？背后的数学逻辑是什么
+
+波动比率 = (收盘价 - 前收盘价) / (最高价 - 最低价)
+
+这个比率反映了当天价格变动的方向和强度。收盘价高于前收盘价，说明资金偏流入，反之则偏流出。
+分母用当天的最高-最低价，代表当天的价格波动区间，归一化处理，避免不同股票或不同天的绝对价格影响。
+成交金额
+
+代表当天市场实际交易的资金总量，是资金流动的“体积”。
+两者相乘
+
+波动比率体现了资金流向的“方向和强度”，成交金额体现了“规模”。
+相乘后，得到的“净资金流向”就是当天资金流入或流出的估算值，单位为资金（如万元、百万元等）。
+数学逻辑：
+
+如果当天收盘价大幅高于前收盘价，且成交金额大，说明有大量资金流入；
+如果收盘价低于前收盘价，且成交金额大，说明有大量资金流出；
+用波动比率归一化后，可以比较不同股票或不同时间的资金流向强度。
+本质上，这是一种用价格变动方向和成交金额结合，估算市场资金流入/流出的简化模型。它不能完全反映真实资金流动，但能反映市场情绪和资金活跃度的变化趋势。
 """
 import pandas as pd
 import numpy as np
@@ -70,7 +88,7 @@ def analyze_stock_capital_flow(stock_code):
         # 创建分析器实例
         analyzer = CapitalFlowAnalyzer()
         analyzer.code = stock_code.strip()  # 去除可能的空格
-        analyzer.start_date = datetime(2023, 1, 1)  # 起始日期，可调整
+        analyzer.start_date = datetime(2025, 1, 1)  # 起始日期，可调整
         analyzer.end_date = datetime.now()  # 结束日期
         analyzer.ktype = '1d'  # 日线数据
         
@@ -90,7 +108,7 @@ def analyze_stock_capital_flow(stock_code):
         
         # 获取可视化所需数据
         result_df = flow_data[['date', 'open', 'close', 'high', 'low', 'money', '净资金流向', '波动比率']]
-        result_df = result_df.tail(60)  # 最近60个交易日，可调整
+        result_df = result_df.tail(120)  # 最近60个交易日，可调整
         
         # 确保列名和数据格式正确
         print(f"处理后数据行数: {len(result_df)}")
@@ -128,7 +146,8 @@ def create_single_stock_figure(data, stock_code):
         fig = make_subplots(rows=3, cols=1, 
                            shared_xaxes=True, 
                            vertical_spacing=0.05, 
-                           row_heights=[0.5, 0.2, 0.3])
+                           row_heights=[0.5, 0.2, 0.3],
+                           specs=[[{"secondary_y": True}], [{}], [{}]])
         
         # 添加K线图
         fig.add_trace(
@@ -196,26 +215,20 @@ def create_single_stock_figure(data, stock_code):
                     row=1, col=1
                 )
         
-        # 添加成交量柱状图到主图（K线图下方但同一子图）
-        # 计算成交量归一化比例，使其不会占据K线图太多空间
-        price_range = data['high'].max() - data['low'].min()
-        # 将成交量最高点约为价格区间的5%，原来是20%太大了
-        volume_scale = price_range * 0.05 / data['money'].max()  
-        
-        # 根据收盘价相对于开盘价的涨跌设置颜色
+        # 添加成交额柱状图作为主图的副Y轴显示（以亿元为单位）
         volume_colors = ['red' if close >= open else 'green' 
                          for close, open in zip(data['close'], data['open'])]
-        
+
         fig.add_trace(
             go.Bar(
                 x=data['date'],
-                y=data['money'] * volume_scale + data['low'].min(),  # 将成交量放在价格区间下方
-                name='成交额',
+                y=(data['money'] / 100000000),  # 转换为亿元
+                name='成交额(亿元)',
                 marker_color=volume_colors,
-                opacity=0.3,  # 设置透明度，避免遮挡K线
+                opacity=0.4,
                 marker_line_width=0
             ),
-            row=1, col=1
+            row=1, col=1, secondary_y=True
         )
         
         # 添加日资金流向柱状图
@@ -311,11 +324,13 @@ def create_single_stock_figure(data, stock_code):
                 fig.update_xaxes(rangebreaks=breaks, row=3, col=1)
         
         # 更新坐标轴标题
-        fig.update_yaxes(title_text="价格", row=1, col=1)
+        fig.update_yaxes(title_text="价格", row=1, col=1, secondary_y=False)
+        # 更新第一行的副Y轴（成交额）标题
+        fig.update_yaxes(title_text="成交额(亿元)", row=1, col=1, secondary_y=True)
         fig.update_yaxes(title_text="波动比率", row=2, col=1)
         fig.update_yaxes(title_text="资金流向(亿元)", row=3, col=1)
         fig.update_xaxes(title_text="日期", row=3, col=1)
-        
+
         # 添加波动比率的注释
         fig.add_annotation(
             x=data['date'].iloc[-1],
@@ -337,7 +352,7 @@ def create_single_stock_figure(data, stock_code):
             row=2, col=1,
             font=dict(size=10, color="green")
         )
-        
+
         return fig
     except Exception as e:
         print(f"创建图表时发生错误: {str(e)}")
