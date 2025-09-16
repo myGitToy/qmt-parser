@@ -165,6 +165,7 @@ class money_flow(tspro_data):
             #输出EXCEL
             df.to_excel(f'.\\data\\测试数据\\资金流向{self.code}.xlsx', sheet_name = f'sheet1' ,  header=True, index=False)
         return df
+    
     def get_cal_k(self , rolling_list = [3,5,10,20,30,60,120] , to_csv = False):
         """
         获取计算后的K线数据

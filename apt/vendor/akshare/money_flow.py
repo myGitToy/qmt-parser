@@ -35,7 +35,7 @@ class money_flow(akdata):
 
     def get_money_flow_1min(self , rolling_list = [3,5,10,20,30,60,120] , to_excel = False):
         """
-        从akshare 1分钟线价格 成交量转换过来的资金流向
+        从akshare 1分钟线价格 成交量转换过来的资金流向（这里使用的简单逻辑流，1分钟线收盘上涨代表全部资金流入，反之亦然）
         【输入】
             self.code 证券代码
             day 日期
@@ -87,17 +87,90 @@ class money_flow(akdata):
         #print(df_flow)
         return df_flow
 
+    def calculate_money_flow_min(self , stock_data = None , date = None):
+        """
+        计算基于分时线的资金流向(使用akshare分时数据，默认为1分钟线) 
+        【输入】
+            stock_data 传入的DataFrame数据 默认为None 如果为None，则自行获取
+            date 日期 默认为None 如果为None，则使用self.start_date和self.end_date区间
+            code 证券代码 使用self.code
+        【返回】
+            返回值 非聚合的1m数据+波动比率和净资金流向           
+        """
+        ###  数据校验部分  ###
+        if self.ktype is None or self.ktype == '1d':
+            self.ktype = '1m' #默认使用1分钟线
+        if stock_data is None:
+            #无原始传入的数据：获取1m数据          
+            self.stock_data = self.get_k_data()
+        else:
+            # 检查数据：查看是否包含open, high, low, close, money列
+            required_columns = {'open', 'high', 'low', 'close', 'money'}
+            if not required_columns.issubset(stock_data.columns):
+                raise ValueError(f"传入的数据必须包含以下列: {required_columns}")
+            # 有原始传入的数据：复制数据以避免修改原始数据
+            self.stock_data = stock_data.copy()
+        # 检查数据的有效性（self.stock_data的open列任意行不能为0）
+        if self.stock_data['open'].eq(0).any():
+            raise ValueError("数据中包含开盘价为0的行，无法计算资金流向。请检查数据的有效性。")
 
+        ###  逻辑计算部分  ###
+        # 计算波动比率：(收盘价-开盘价)/(最高价-最低价)
+        # 【重要备注】：这里不采用前收的数据，仅计算盘中的情绪和资金走势。因此如果分时的第一根数据，也就是开盘9：30的数据为高开，随后低走，则认为是资金流出
+        self.stock_data['波动比率'] = self.stock_data.apply(
+            lambda row: (row['close'] - row['open']) / (row['high'] - row['low'])
+            if (row['high'] != row['low'] and pd.notnull(row['open'])) else 0, axis=1
+        )
+        # 计算资金流向：波动比率 * 成交金额
+        self.stock_data['净资金流向'] = self.stock_data['波动比率'] * self.stock_data['money']
+        
+        # 转换单位和保留小数点位数
+        self.stock_data['净资金流向'] = (self.stock_data['净资金流向']).round(2)  # 保留2位小数（单位 元）
+        self.stock_data['波动比率'] = self.stock_data['波动比率'].round(4)  # 波动比率保留4位小数
+        
+        return self.stock_data
+        # 计算聚合数据
+        total_money = self.stock_data['money'].sum()
+        total_net_flow = self.stock_data['净资金流向'].sum()
+        
+        # 计算聚合波动比率 = 当天净资金流向/总money
+        aggregated_volatility_ratio = (total_net_flow / total_money) if total_money != 0 else 0
+        # 返回包含聚合结果的Series
+        result = {
+            '波动比率': aggregated_volatility_ratio,
+            '净资金流向': total_net_flow
+        }
+
+        return pd.Series([result['波动比率'], result['净资金流向']], index=['波动比率', '净资金流向'])
+        # 返回聚合后的json，包含波动比率，净资金流向
+        json_result = {
+            '波动比率': aggregated_volatility_ratio,
+            '净资金流向': total_net_flow,
+        }
+        return json_result
+
+        # 计算资金流向：波动比率 * 成交金额
+        df['净资金流向'] = df['波动比率'] * df['money']
+        
+        # 转换单位和保留小数点位数
+        df['净资金流向'] = (df['净资金流向'] / 1000000).round(1)  # 转换为百万并保留1位小数
+        df['波动比率'] = df['波动比率'].round(2)  # 波动比率保留2位小数
+        
+        # 为了保持与之前代码的一致性，还可以计算积极流入和消极流出
+        df['积极流入'] = df['净资金流向'].apply(lambda x: x if x > 0 else 0)
+        df['消极流出'] = df['净资金流向'].apply(lambda x: -x if x < 0 else 0)
+        
+        return df        
+        pass
                
 if __name__=="__main__":
     #测试资金流向
     money = money_flow()
     money.code = '688349.sh'
-    money.start_date = datetime(2021,1,1)
-    money.end_date = datetime(2023,8,5)
-    money.daily_update()
+    money.start_date = datetime(2025,9,1)
+    money.end_date = datetime.now()
     money.ktype = '1d'
-    df = money.get_money_flow_1min(to_excel = True ,rolling_list = [10,20])
-    print(df)
-
-    
+    df_1d = money.get_k_data()
+    print(df_1d)
+    df_result = money.calculate_money_flow_min()
+    print(df_result)
