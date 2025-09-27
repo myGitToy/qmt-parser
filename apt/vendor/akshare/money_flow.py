@@ -36,6 +36,7 @@ class money_flow(akdata):
     def get_money_flow_1min(self , rolling_list = [3,5,10,20,30,60,120] , to_excel = False):
         """
         从akshare 1分钟线价格 成交量转换过来的资金流向（这里使用的简单逻辑流，1分钟线收盘上涨代表全部资金流入，反之亦然）
+        备注：这部分是老逻辑和老代码，尽量不要使用
         【输入】
             self.code 证券代码
             day 日期
@@ -87,7 +88,7 @@ class money_flow(akdata):
         #print(df_flow)
         return df_flow
 
-    def calculate_money_flow_min(self , stock_data = None , date = None):
+    def calculate_money_flow_min(self , stock_data = None , date = None , to_excel = False):
         """
         计算基于分时线的资金流向(使用akshare分时数据，默认为1分钟线) 
         【输入】
@@ -95,7 +96,8 @@ class money_flow(akdata):
             date 日期 默认为None 如果为None，则使用self.start_date和self.end_date区间
             code 证券代码 使用self.code
         【返回】
-            返回值 非聚合的1m数据+波动比率和净资金流向           
+            返回值 非聚合的分时数据+波动比率和净资金流向
+            dataframe 数据结构：传统的分时线DataFrame数据+波动比率和净资金流向两列        
         """
         ###  数据校验部分  ###
         if self.ktype is None or self.ktype == '1d':
@@ -127,6 +129,10 @@ class money_flow(akdata):
         # 转换单位和保留小数点位数
         self.stock_data['净资金流向'] = (self.stock_data['净资金流向']).round(2)  # 保留2位小数（单位 元）
         self.stock_data['波动比率'] = self.stock_data['波动比率'].round(4)  # 波动比率保留4位小数
+        
+        if to_excel ==True:
+            #输出EXCEL
+            self.stock_data.to_excel(f'.\\data\\测试数据\\资金流向_{self.ktype}_{self.code}.xlsx', sheet_name = f'sheet1' ,  header = True, index = True)
         
         return self.stock_data
         # 计算聚合数据
@@ -172,5 +178,6 @@ if __name__=="__main__":
     money.ktype = '1d'
     df_1d = money.get_k_data()
     print(df_1d)
+    money.ktype = '5m'
     df_result = money.calculate_money_flow_min()
     print(df_result)
