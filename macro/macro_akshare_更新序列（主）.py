@@ -5,7 +5,7 @@ from datetime import datetime,timedelta
 from apt.vendor.tspro.security import security  as security
 from apt.vendor.akshare.data import data as ak_data
 from apt.vendor.tspro.data import data as tspro_data
-from apt.vendor.tspro.money_flow import money_flow as money
+from apt.vendor.akshare.money_flow import money_flow as money
 from apt.vendor.tspro.cumulative_turnover import cum_turnover as ct
 from apt.os.redis.redisHandler import RedisClientWrapper as redisClient
 """
