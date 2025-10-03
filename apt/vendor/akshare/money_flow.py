@@ -54,7 +54,7 @@ class money_flow(akdata):
     """
     def daily_update(self , sleep = 0.2):
         """
-        每日资金流向更新（按日更新）
+        tspro中的每日资金流向更新（按日更新）
         此处实际调用vendor.tspro下面的方法
         """
         #获取更新列表（按交易日）
@@ -203,15 +203,108 @@ class money_flow(akdata):
         return df        
         pass
 
+    def update_money_flow_min(self , sleep = 0.2):
+        """
+        更新基于分时线的资金流向(使用akshare分时数据，默认为1分钟线) 
+        【输入】
+            默认无需输入 self.code 证券代码
+            默认无需输入 self.start_date 起始日期
+            默认无需输入 self.end_date 结束日期
+            默认无需输入 self.ktype 分钟线类型 1m/5m/60m
+        【更新逻辑】
+            1. 批量获取tspro_1d中的数据，差集写入stock_money_flow（source使用ak）
+
+        """
+        ######## 基于tspro_1d 进行差集更新
+        # 查询日线数据 
+        # 备注 2025/1/1-2025/9/30 数据获取大概需要3.3秒
+        sql_1d = f"select code,date from tspro_1d where date >= '{self.start_date.date()}' and date <= '{self.end_date.date()}'"
+        # 查询money_flow表的数据
+        sql_flow = f"select code,date from stock_money_flow where source = 'ak' and ktype = '{self.ktype}' and date >= '{self.start_date.date()}' and date <= '{self.end_date.date()}'"
+        # 检查差集数据
+        df_1d = pd.read_sql(sql_1d , self.engine)
+        df_flow = pd.read_sql(sql_flow , self.engine)
+        if df_1d.empty:
+            print(f'tspro_1d在{self.start_date.date()}到{self.end_date.date()}区间无日线数据，无法差集写入')
+            return None
+        if df_flow.empty:
+            df_diff = df_1d #stock_money_flow表中对应日期区间无数据，全部插入
+        else:
+            df_diff = pd.merge(df_1d, df_flow, on=['code', 'date'], how='left', indicator=True)
+            df_diff = df_diff[df_diff['_merge'] == 'left_only'].drop(columns=['_merge'])
+        # 增加其他有效数据列 source=ak ktype=self.ktype，其中需要对ktype进行校验
+        df_diff['source'] = 'ak'
+        if self.ktype is None or self.ktype == '1d':
+            self.ktype = '1m' #默认使用1分钟线
+        df_diff['ktype'] = self.ktype
+        # 展示差集数据
+        print(df_diff)
+        if df_diff.empty:
+            print(f'stock_money_flow在{self.start_date.date()}到{self.end_date.date()}区间无差集数据，无需更新')
+        else:
+            # 有差集数据，整个df_diff表写入数据库
+            df_diff.to_sql(
+                    name = f'stock_money_flow',
+                    con = self.engine,
+                    index = False,
+                    if_exists = 'append')
+            print(f"资金流向表 stock_money_flow 已差集更新完成，新增数据{df_diff.shape[0]}")
 
 
+
+
+        # 查询数据
+        df_1d = pd.read_sql(sql_1d , self.engine)
+        if df_1d.empty:
+            print(f'{self.code}在{self.start_date.date()}到{self.end_date.date()}区间无日线数据，无需计算资金流向')
+            return None
+        print(df_1d)
+        # 遍历每个交易日，计算资金流向
+        all_days_flow = []
+        for day in df_1d['date']:
+            print(f'计算{self.code}在{day.date()}的资金流向')
+            # 获取当天的分时数据
+            start_dt = datetime.combine(day.date(), datetime.min.time())
+            end_dt = datetime.combine(day.date(), datetime.max.time())
+            self.start_date = start_dt
+            self.end_date = end_dt
+            df_min = self.get_k_data()
+            if df_min.empty:
+                print(f'{self.code}在{day.date()}无分时数据，跳过')
+                continue
+            # 计算资金流向
+            df_flow = self.calculate_money_flow_min(stock_data = df_min , to_excel = False)
+            if df_flow is None or df_flow.empty:
+                print(f'{self.code}在{day.date()}计算资金流向失败，跳过')
+                continue
+            # 提取当天的聚合结果
+            total_money = df_flow['money'].sum()
+            total_net_flow = df_flow['净资金流向'].sum()
+            aggregated_volatility_ratio = (total_net_flow / total_money) if total_money != 0 else 0
+            day_result = {
+                'code': self.code,
+                'date': day.date(),
+                'source': 'ak',
+                'ktype': self.ktype,
+                'volatility': round(aggregated_volatility_ratio * 100, 6), # 转换为百分比并保留6位小数
+                'money_flow': round(total_net_flow, 2), # 保留2位小数
+                'is_error': 0
+            }
+            all_days_flow.append(day_result)
+            # 暂停以避免过于频繁的请求
+            if sleep > 0:
+                import time
+                time.sleep(sleep)
 if __name__=="__main__":
     #测试资金流向
     money = money_flow()
     money.code = '688349.sh'
-    money.start_date = datetime(2025,9,1)
+    money.start_date = datetime(2025,1,1)
     money.end_date = datetime.now()
     money.ktype = '1d'
+    # 测试update_money_flow_min方法
+    df_test = money.update_money_flow_min()
+    print(df_test)
     df_1d = money.get_k_data()
     print(df_1d)
     money.ktype = '5m'
