@@ -131,7 +131,7 @@ class money_flow(akdata):
             code 证券代码 使用self.code
         【返回】
             返回值 非聚合的分时数据+波动比率和净资金流向
-            dataframe 数据结构：传统的分时线DataFrame数据+波动比率和净资金流向两列        
+            dataframe 数据结构：传统的分时线DataFrame数据+波动比率和净资金流向两列(注意：数据未聚合)        
         """
         ###  数据校验部分  ###
         if self.ktype is None or self.ktype == '1d':
@@ -215,12 +215,18 @@ class money_flow(akdata):
             1. 批量获取tspro_1d中的数据，差集写入stock_money_flow（source使用ak）
 
         """
+        # 全局设置
+        my_source = 'ak'
+        # 对ktype进行校验
+        if self.ktype is None or self.ktype == '1d':
+            self.ktype = '1m' #默认使用1分钟线
+
         ######## 基于tspro_1d 进行差集更新
         # 查询日线数据 
         # 备注 2025/1/1-2025/9/30 数据获取大概需要3.3秒
         sql_1d = f"select code,date from tspro_1d where date >= '{self.start_date.date()}' and date <= '{self.end_date.date()}'"
         # 查询money_flow表的数据
-        sql_flow = f"select code,date from stock_money_flow where source = 'ak' and ktype = '{self.ktype}' and date >= '{self.start_date.date()}' and date <= '{self.end_date.date()}'"
+        sql_flow = f"select code,date from stock_money_flow where source = '{my_source}' and ktype = '{self.ktype}' and date >= '{self.start_date.date()}' and date <= '{self.end_date.date()}'"
         # 检查差集数据
         df_1d = pd.read_sql(sql_1d , self.engine)
         df_flow = pd.read_sql(sql_flow , self.engine)
@@ -230,27 +236,83 @@ class money_flow(akdata):
         if df_flow.empty:
             df_diff = df_1d #stock_money_flow表中对应日期区间无数据，全部插入
         else:
+            # 数据统一格式
+            df_1d['date'] = pd.to_datetime(df_1d['date'])
+            df_flow['date'] = pd.to_datetime(df_flow['date'])
             df_diff = pd.merge(df_1d, df_flow, on=['code', 'date'], how='left', indicator=True)
             df_diff = df_diff[df_diff['_merge'] == 'left_only'].drop(columns=['_merge'])
-        # 增加其他有效数据列 source=ak ktype=self.ktype，其中需要对ktype进行校验
-        df_diff['source'] = 'ak'
-        if self.ktype is None or self.ktype == '1d':
-            self.ktype = '1m' #默认使用1分钟线
+        # 增加其他有效数据列 source=ak ktype=self.ktype
+        df_diff['source'] = my_source
         df_diff['ktype'] = self.ktype
         # 展示差集数据
-        print(df_diff)
+        #print(df_diff)
         if df_diff.empty:
             print(f'stock_money_flow在{self.start_date.date()}到{self.end_date.date()}区间无差集数据，无需更新')
         else:
             # 有差集数据，整个df_diff表写入数据库
             df_diff.to_sql(
-                    name = f'stock_money_flow',
-                    con = self.engine,
-                    index = False,
-                    if_exists = 'append')
-            print(f"资金流向表 stock_money_flow 已差集更新完成，新增数据{df_diff.shape[0]}")
+                name=f'stock_money_flow',
+                con=self.engine,
+                index=False,
+                if_exists='append'
+            )
+            print(f"资金流向表 stock_money_flow 差集更新完成，新增数据{df_diff.shape[0]}")
+
+        ###### 开始从stock_money_flow中获取数据，逐日计算分时资金流向
+        # 取出区间内全部is_error为空的数据
+        sql_flow = f"select id,code,date from stock_money_flow where source = '{my_source}' and ktype = '{self.ktype}' and date >= '{self.start_date.date()}' and date <= '{self.end_date.date()}'  and is_error is null"
+        df_under_update = pd.read_sql(sql_flow , self.engine)
+        if df_under_update.empty:
+            print(f'stock_money_flow在{self.start_date.date()}到{self.end_date.date()}区间无待更新数据，无需计算资金流向')
+            return None
+        else:
+            #### 获取非空数据成功，开始逐日更新
+            for idx, row in df_under_update.iterrows():
+                # 初始化并赋值
+                m_money = money_flow()
+                id = row['id']
+                m_money.code = row['code']
+                m_money.date = row['date']
+                # 设定当天的开始和结束时间，模拟早上8点到下午16点，以获取分时数据并且兼容分时的格式
+                m_money.start_date = datetime.combine(pd.to_datetime(row['date']).date(), datetime.strptime("08:00", "%H:%M").time())
+                m_money.end_date = datetime.combine(pd.to_datetime(row['date']).date(), datetime.strptime("16:00", "%H:%M").time())
+                m_money.ktype = self.ktype #这里ktype无需校验，如果后续逻辑拆开，分别进行插入和计算操作，则这里还需要进行校验
+                df_min = m_money.calculate_money_flow_min()
+                print(df_min   )
+                flow = df_min['净资金流向']
+                volatility =  df_min['波动比率']
+                print(flow)
+                print(df_min)   
 
 
+                if df_min.empty:
+                    print(f'{code}在{day.date()}无分时数据，更新is_error=1')
+                    # 更新is_error=1
+                    sql_update = f"update stock_money_flow set is_error = 1 where code = '{code}' and date = '{day.date()}' and source = 'ak' and ktype = '{self.ktype}'"
+                    with self.engine.connect() as conn:
+                        conn.execute(sqlalchemy.text(sql_update))
+                        conn.commit()
+                    continue
+                # 计算资金流向
+                df_flow = self.calculate_money_flow_min(stock_data = df_min , to_excel = False)
+                if df_flow is None or df_flow.empty:
+                    print(f'{code}在{day.date()}计算资金流向失败，更新is_error=1')
+                    # 更新is_error=1
+                    sql_update = f"update stock_money_flow set is_error = 1 where code = '{code}' and date = '{day.date()}' and source = 'ak' and ktype = '{self.ktype}'"
+                    with self.engine.connect() as conn:
+                        conn.execute(sqlalchemy.text(sql_update))
+                        conn.commit()
+                    continue
+                # 提取当天的聚合结果
+                total_money = df_flow['money'].sum()
+                total_net_flow = df_flow['净资金流向'].sum()
+                aggregated_volatility_ratio = (total_net_flow / total_money) if total_money != 0 else 0
+                # 更新数据库
+                sql_update = f"""update stock_money_flow 
+                                set volatility = {round(aggregated_volatility_ratio * 100, 6)} , 
+                                    money_flow = {round(total_net_flow, 2)} , 
+                                    is_error = 0 
+                                where code = '{code}' and date = '{day.date()}' and source = 'ak' and ktype = '{self.ktype}'"""
 
 
         # 查询数据
