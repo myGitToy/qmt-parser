@@ -307,6 +307,19 @@ class money_flow(akdata):
                 with self.engine.begin() as conn:
                     conn.execute(sqlalchemy.text(sql_update))
 
+    def test_money_flow_1min(self ):
+        """
+        测试类函数，指定区间内单日资金流向和后续T日大盘涨跌的关联
+        【逻辑】
+            1. 需要做证券列表的筛选，默认需要剔除ETF和LOF类
+            2. 最好可以合并加入市值类数据
+            3. 列出指定日期区间所有符合条件的证券代码
+            4. 列出基准指数的k线数据
+            5. 证券列表中的每一个日期都对应T日基准指数的日期
+            6. 列出证券区间的涨跌情况
+            7. 插入基准指数在同一区间的涨跌情况
+        """
+
 
 if __name__=="__main__":
     #测试资金流向
