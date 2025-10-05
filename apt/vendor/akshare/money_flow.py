@@ -125,6 +125,7 @@ class money_flow(akdata):
     def calculate_money_flow_min(self , stock_data = None , date = None , to_excel = False):
         """
         计算基于分时线的资金流向(使用akshare分时数据，默认为1分钟线) 
+        指定代码和日期区间，获取get_k_data后进行本地计算，无需通过stock_money_flow表
         【输入】
             stock_data 传入的DataFrame数据 默认为None 如果为None，则自行获取
             date 日期 默认为None 如果为None，则使用self.start_date和self.end_date区间
@@ -209,6 +210,7 @@ class money_flow(akdata):
     def update_money_flow_min(self):
         """
         更新基于分时线的资金流向(使用akshare分时数据，默认为1分钟线) 
+        全量更新，无法单独选择某个code
         【输入】
             默认无需输入 self.code 证券代码
             默认无需输入 self.start_date 起始日期
@@ -216,6 +218,7 @@ class money_flow(akdata):
             默认无需输入 self.ktype 分钟线类型 1m/5m/60m
         【更新逻辑】
             1. 批量获取tspro_1d中的数据，差集写入stock_money_flow（source使用ak）
+            2. 从stock_money_flow中获取待更新的数据（is_error为空），逐日计算分时资金流向
 
         """
         # 全局设置
