@@ -139,6 +139,9 @@ class money_flow(akdata):
         if stock_data is None:
             #无原始传入的数据：获取1m数据          
             self.stock_data = self.get_k_data()
+            # 是否有分时数据的校验
+            if self.stock_data.empty:
+                return pd.DataFrame() #无数据则返回空的DataFrame
         else:
             # 检查数据：查看是否包含open, high, low, close, money列
             required_columns = {'open', 'high', 'low', 'close', 'money'}
@@ -203,7 +206,7 @@ class money_flow(akdata):
         return df        
         pass
 
-    def update_money_flow_min(self , sleep = 0.2):
+    def update_money_flow_min(self):
         """
         更新基于分时线的资金流向(使用akshare分时数据，默认为1分钟线) 
         【输入】
@@ -277,91 +280,36 @@ class money_flow(akdata):
                 m_money.start_date = datetime.combine(pd.to_datetime(row['date']).date(), datetime.strptime("08:00", "%H:%M").time())
                 m_money.end_date = datetime.combine(pd.to_datetime(row['date']).date(), datetime.strptime("16:00", "%H:%M").time())
                 m_money.ktype = self.ktype #这里ktype无需校验，如果后续逻辑拆开，分别进行插入和计算操作，则这里还需要进行校验
+                # 得到非聚合的当日分时数据
                 df_min = m_money.calculate_money_flow_min()
-                print(df_min   )
-                flow = df_min['净资金流向']
-                volatility =  df_min['波动比率']
-                print(flow)
-                print(df_min)   
-
-
                 if df_min.empty:
-                    print(f'{code}在{day.date()}无分时数据，更新is_error=1')
-                    # 更新is_error=1
-                    sql_update = f"update stock_money_flow set is_error = 1 where code = '{code}' and date = '{day.date()}' and source = 'ak' and ktype = '{self.ktype}'"
-                    with self.engine.connect() as conn:
-                        conn.execute(sqlalchemy.text(sql_update))
-                        conn.commit()
-                    continue
-                # 计算资金流向
-                df_flow = self.calculate_money_flow_min(stock_data = df_min , to_excel = False)
-                if df_flow is None or df_flow.empty:
-                    print(f'{code}在{day.date()}计算资金流向失败，更新is_error=1')
-                    # 更新is_error=1
-                    sql_update = f"update stock_money_flow set is_error = 1 where code = '{code}' and date = '{day.date()}' and source = 'ak' and ktype = '{self.ktype}'"
-                    with self.engine.connect() as conn:
-                        conn.execute(sqlalchemy.text(sql_update))
-                        conn.commit()
-                    continue
-                # 提取当天的聚合结果
-                total_money = df_flow['money'].sum()
-                total_net_flow = df_flow['净资金流向'].sum()
-                aggregated_volatility_ratio = (total_net_flow / total_money) if total_money != 0 else 0
-                # 更新数据库
-                sql_update = f"""update stock_money_flow 
-                                set volatility = {round(aggregated_volatility_ratio * 100, 6)} , 
-                                    money_flow = {round(total_net_flow, 2)} , 
+                    # 当日无数据
+                    sql_update = f"update stock_money_flow set is_error = 1 where id = {id} "
+                    print(f"资金流向表 stock_money_flow 计算完成 {m_money.code} {m_money.date} 无分时数据，无法计算资金流向 ")
+                else:
+                    # 有数据
+                    # 计算聚合数据
+                    total_money = df_min['money'].sum()
+                    total_net_flow = df_min['净资金流向'].sum()
+                    total_volatility  = total_net_flow/total_money if total_money != 0 else 0
+                    sql_update = f"""update stock_money_flow 
+                                    set volatility = {total_volatility} , 
+                                    money_flow = {total_net_flow} , 
                                     is_error = 0 
-                                where code = '{code}' and date = '{day.date()}' and source = 'ak' and ktype = '{self.ktype}'"""
+                                    where id = {id}"""
+                    print(f"资金流向表 stock_money_flow 计算完成 {m_money.code} {m_money.date} 资金流向 {total_net_flow} 元 波动比率 {total_volatility} ")        
+                
+                # 根据是否有数据，执行不同的sql_update
+                with self.engine.connect() as conn:
+                        conn.execute(sqlalchemy.text(sql_update))
+                        conn.commit()
 
 
-        # 查询数据
-        df_1d = pd.read_sql(sql_1d , self.engine)
-        if df_1d.empty:
-            print(f'{self.code}在{self.start_date.date()}到{self.end_date.date()}区间无日线数据，无需计算资金流向')
-            return None
-        print(df_1d)
-        # 遍历每个交易日，计算资金流向
-        all_days_flow = []
-        for day in df_1d['date']:
-            print(f'计算{self.code}在{day.date()}的资金流向')
-            # 获取当天的分时数据
-            start_dt = datetime.combine(day.date(), datetime.min.time())
-            end_dt = datetime.combine(day.date(), datetime.max.time())
-            self.start_date = start_dt
-            self.end_date = end_dt
-            df_min = self.get_k_data()
-            if df_min.empty:
-                print(f'{self.code}在{day.date()}无分时数据，跳过')
-                continue
-            # 计算资金流向
-            df_flow = self.calculate_money_flow_min(stock_data = df_min , to_excel = False)
-            if df_flow is None or df_flow.empty:
-                print(f'{self.code}在{day.date()}计算资金流向失败，跳过')
-                continue
-            # 提取当天的聚合结果
-            total_money = df_flow['money'].sum()
-            total_net_flow = df_flow['净资金流向'].sum()
-            aggregated_volatility_ratio = (total_net_flow / total_money) if total_money != 0 else 0
-            day_result = {
-                'code': self.code,
-                'date': day.date(),
-                'source': 'ak',
-                'ktype': self.ktype,
-                'volatility': round(aggregated_volatility_ratio * 100, 6), # 转换为百分比并保留6位小数
-                'money_flow': round(total_net_flow, 2), # 保留2位小数
-                'is_error': 0
-            }
-            all_days_flow.append(day_result)
-            # 暂停以避免过于频繁的请求
-            if sleep > 0:
-                import time
-                time.sleep(sleep)
 if __name__=="__main__":
     #测试资金流向
     money = money_flow()
     money.code = '688349.sh'
-    money.start_date = datetime(2025,1,1)
+    money.start_date = datetime(2025,4,10)
     money.end_date = datetime.now()
     money.ktype = '1d'
     # 测试update_money_flow_min方法
