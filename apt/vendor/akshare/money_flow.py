@@ -300,16 +300,16 @@ class money_flow(akdata):
                     print(f"资金流向表 stock_money_flow 计算完成 {m_money.code} {m_money.date} 资金流向 {total_net_flow} 元 波动比率 {total_volatility} ")        
                 
                 # 根据是否有数据，执行不同的sql_update
-                with self.engine.connect() as conn:
-                        conn.execute(sqlalchemy.text(sql_update))
-                        conn.commit()
+                # 使用事务上下文管理器，确保连接在每次执行后被正确提交并关闭，避免连接泄漏
+                with self.engine.begin() as conn:
+                    conn.execute(sqlalchemy.text(sql_update))
 
 
 if __name__=="__main__":
     #测试资金流向
     money = money_flow()
     money.code = '688349.sh'
-    money.start_date = datetime(2025,4,10)
+    money.start_date = datetime(2025,9,4)
     money.end_date = datetime.now()
     money.ktype = '1d'
     # 测试update_money_flow_min方法
