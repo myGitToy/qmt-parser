@@ -165,13 +165,16 @@ def create_single_stock_figure(data, stock_code):
     
     print(f"绘图数据样本:\n{data[['date', 'open', 'close', 'high', 'low']].head()}")
     
-    # 创建包含三个子图的图表，为波动比率预留单独的区域
+    # 创建包含四个子图的图表，将成交额单独拆分为子图
     try:
-        fig = make_subplots(rows=3, cols=1, 
-                           shared_xaxes=True, 
-                           vertical_spacing=0.05, 
-                           row_heights=[0.5, 0.2, 0.3],
-                           specs=[[{"secondary_y": True}], [{}], [{}]])
+        fig = make_subplots(
+            rows=4,
+            cols=1,
+            shared_xaxes=True,
+            vertical_spacing=0.04,
+            row_heights=[0.45, 0.2, 0.15, 0.2],
+            specs=[[{}], [{}], [{}], [{}]]
+        )
         
         # 添加K线图
         fig.add_trace(
@@ -188,38 +191,6 @@ def create_single_stock_figure(data, stock_code):
                 decreasing_fillcolor='green'  # 下跌K线填充色
             ),
             row=1, col=1
-        )
-        
-        # 添加波动比率柱状图作为中间图表
-        colors_ratio = ['red' if x > 0 else 'green' for x in data['波动比率']]
-        fig.add_trace(
-            go.Bar(
-                x=data['date'], 
-                y=data['波动比率'],
-                name='波动比率', 
-                marker_color=colors_ratio
-            ),
-            row=2, col=1
-        )
-        
-        # 添加参考线表示±0.5和0
-        fig.add_shape(
-            type="line", line=dict(dash="dash", color="gray"),
-            x0=data['date'].iloc[0], y0=0, 
-            x1=data['date'].iloc[-1], y1=0,
-            row=2, col=1
-        )
-        fig.add_shape(
-            type="line", line=dict(dash="dot", color="red", width=1),
-            x0=data['date'].iloc[0], y0=0.25, 
-            x1=data['date'].iloc[-1], y1=0.25,
-            row=2, col=1
-        )
-        fig.add_shape(
-            type="line", line=dict(dash="dot", color="green", width=1),
-            x0=data['date'].iloc[0], y0=-0.25, 
-            x1=data['date'].iloc[-1], y1=-0.25,
-            row=2, col=1
         )
         
         # 计算EMA均线
@@ -239,8 +210,8 @@ def create_single_stock_figure(data, stock_code):
                     row=1, col=1
                 )
         
-        # 添加成交额柱状图作为主图的副Y轴显示（以亿元为单位）
-        volume_colors = ['red' if close >= open else 'green' 
+        # 添加成交额柱状图（以亿元为单位）
+        volume_colors = ['red' if close >= open else 'green'
                          for close, open in zip(data['close'], data['open'])]
 
         fig.add_trace(
@@ -252,7 +223,39 @@ def create_single_stock_figure(data, stock_code):
                 opacity=0.4,
                 marker_line_width=0
             ),
-            row=1, col=1, secondary_y=True
+            row=2, col=1
+        )
+
+        # 添加波动比率柱状图
+        colors_ratio = ['red' if x > 0 else 'green' for x in data['波动比率']]
+        fig.add_trace(
+            go.Bar(
+                x=data['date'],
+                y=data['波动比率'],
+                name='波动比率',
+                marker_color=colors_ratio
+            ),
+            row=3, col=1
+        )
+
+        # 添加参考线表示±0.25和0
+        fig.add_shape(
+            type="line", line=dict(dash="dash", color="gray"),
+            x0=data['date'].iloc[0], y0=0,
+            x1=data['date'].iloc[-1], y1=0,
+            row=3, col=1
+        )
+        fig.add_shape(
+            type="line", line=dict(dash="dot", color="red", width=1),
+            x0=data['date'].iloc[0], y0=0.25,
+            x1=data['date'].iloc[-1], y1=0.25,
+            row=3, col=1
+        )
+        fig.add_shape(
+            type="line", line=dict(dash="dot", color="green", width=1),
+            x0=data['date'].iloc[0], y0=-0.25,
+            x1=data['date'].iloc[-1], y1=-0.25,
+            row=3, col=1
         )
         
         # 添加日资金流向柱状图
@@ -264,7 +267,7 @@ def create_single_stock_figure(data, stock_code):
                 name='日资金流向(亿元)', 
                 marker_color=colors_flow
             ),
-            row=3, col=1
+            row=4, col=1
         )
         
         # 累计资金流向
@@ -276,13 +279,13 @@ def create_single_stock_figure(data, stock_code):
                 name='累计资金流向(亿元)', 
                 line=dict(color='black')
             ),
-            row=3, col=1
+            row=4, col=1
         )
         
         # 更新布局
         fig.update_layout(
             title=f'{stock_code} 股票资金流向与波动比率分析',
-            height=900,  # 增加高度以适应三个子图
+            height=1000,  # 增加高度以适应四个子图
             template="plotly_white",
             xaxis_rangeslider_visible=False
         )
@@ -342,18 +345,18 @@ def create_single_stock_figure(data, stock_code):
                     if (end - start).days > 0:  # 确保区间有效
                         breaks.append(dict(values=[start.strftime('%Y-%m-%d'), end.strftime('%Y-%m-%d')]))
                 
-                # 应用到所有三个子图的X轴
+                # 应用到所有子图的X轴
                 fig.update_xaxes(rangebreaks=breaks, row=1, col=1)
                 fig.update_xaxes(rangebreaks=breaks, row=2, col=1)
                 fig.update_xaxes(rangebreaks=breaks, row=3, col=1)
+                fig.update_xaxes(rangebreaks=breaks, row=4, col=1)
         
         # 更新坐标轴标题
-        fig.update_yaxes(title_text="价格", row=1, col=1, secondary_y=False)
-        # 更新第一行的副Y轴（成交额）标题
-        fig.update_yaxes(title_text="成交额(亿元)", row=1, col=1, secondary_y=True)
-        fig.update_yaxes(title_text="波动比率", row=2, col=1)
-        fig.update_yaxes(title_text="资金流向(亿元)", row=3, col=1)
-        fig.update_xaxes(title_text="日期", row=3, col=1)
+        fig.update_yaxes(title_text="价格", row=1, col=1)
+        fig.update_yaxes(title_text="成交额(亿元)", row=2, col=1)
+        fig.update_yaxes(title_text="波动比率", row=3, col=1)
+        fig.update_yaxes(title_text="资金流向(亿元)", row=4, col=1)
+        fig.update_xaxes(title_text="日期", row=4, col=1)
 
         # 添加波动比率的注释
         fig.add_annotation(
@@ -363,7 +366,7 @@ def create_single_stock_figure(data, stock_code):
             showarrow=False,
             xanchor="right",
             yanchor="bottom",
-            row=2, col=1,
+            row=3, col=1,
             font=dict(size=10, color="red")
         )
         fig.add_annotation(
@@ -373,7 +376,7 @@ def create_single_stock_figure(data, stock_code):
             showarrow=False,
             xanchor="right",
             yanchor="top",
-            row=2, col=1,
+            row=3, col=1,
             font=dict(size=10, color="green")
         )
 
