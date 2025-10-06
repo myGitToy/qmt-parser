@@ -157,16 +157,17 @@ class money_flow(akdata):
         ###  逻辑计算部分  ###
         # 计算波动比率：(收盘价-开盘价)/(最高价-最低价)
         # 【重要备注】：这里不采用前收的数据，仅计算盘中的情绪和资金走势。因此如果分时的第一根数据，也就是开盘9：30的数据为高开，随后低走，则认为是资金流出
-        self.stock_data['波动比率'] = self.stock_data.apply(
+        self.stock_data['分时股价波动比率'] = self.stock_data.apply(
             lambda row: (row['close'] - row['open']) / (row['high'] - row['low'])
             if (row['high'] != row['low'] and pd.notnull(row['open'])) else 0, axis=1
         )
         # 计算资金流向：波动比率 * 成交金额
-        self.stock_data['净资金流向'] = self.stock_data['波动比率'] * self.stock_data['money']
+        self.stock_data['净资金流向'] = self.stock_data['分时股价波动比率'] * self.stock_data['money']
         
         # 转换单位和保留小数点位数
         self.stock_data['净资金流向'] = (self.stock_data['净资金流向']).round(2)  # 保留2位小数（单位 元）
-        self.stock_data['波动比率'] = self.stock_data['波动比率'].round(4)  # 波动比率保留4位小数
+        # 备注：此处的波动比例是针对股价波动而言的，与后续计算的资金流向比率无关
+        self.stock_data['分时股价波动比率'] = self.stock_data['分时股价波动比率'].round(4)  # 波动比率保留4位小数
         
         if to_excel ==True:
             #输出EXCEL
@@ -294,6 +295,7 @@ class money_flow(akdata):
                     # 计算聚合数据
                     total_money = df_min['money'].sum()
                     total_net_flow = df_min['净资金流向'].sum()
+                    # 这里的波动比率是准确的。即净资金流向占总成交金额的比例
                     total_volatility  = total_net_flow/total_money if total_money != 0 else 0
                     sql_update = f"""update stock_money_flow 
                                     set volatility = {total_volatility} , 
