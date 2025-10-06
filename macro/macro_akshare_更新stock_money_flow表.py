@@ -1,7 +1,7 @@
 from apt.vendor.akshare.money_flow import money_flow as money
 from datetime import datetime
 money = money()
-money.start_date = datetime(2025,9,7)
+money.start_date = datetime(2023,12,4)
 money.end_date = datetime.now()
 money.ktype = '1m'
 # 更新基于1分钟数据的资金流向表
