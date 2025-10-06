@@ -319,13 +319,16 @@ class money_flow(akdata):
             6. 列出证券区间的涨跌情况
             7. 插入基准指数在同一区间的涨跌情况
         """
+        # 获取基准指数信息(akshare的指数数据也是从tspro中获取)
+        
+
 
 
 if __name__=="__main__":
     #测试资金流向
     money = money_flow()
     money.code = '688349.sh'
-    money.start_date = datetime(2025,9,4)
+    money.start_date = datetime(2023,12,4)
     money.end_date = datetime.now()
     money.ktype = '1d'
     # 测试update_money_flow_min方法
