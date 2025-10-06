@@ -295,11 +295,22 @@ class money_flow(akdata):
                     # 计算聚合数据
                     total_money = df_min['money'].sum()
                     total_net_flow = df_min['净资金流向'].sum()
+                    total_positive_flow = df_min[df_min['净资金流向'] > 0 ]['净资金流向'].sum()
+                    total_negative_flow = df_min[df_min['净资金流向'] < 0 ]['净资金流向'].sum()
+                    """
+                    # 备注，这里还有其他几个没有计算的公式，因为不需要写入数据库
+                    Money Flow Ratio, MFR = (Positive Money Flow / Negative Money Flow)
+                    资金流指数MFI = 100 - (100 / (1 + MFR))
+                    以上数据典型值可采用14天滚动窗口
+                    """
+                    
                     # 这里的波动比率是准确的。即净资金流向占总成交金额的比例
                     total_volatility  = total_net_flow/total_money if total_money != 0 else 0
                     sql_update = f"""update stock_money_flow 
                                     set volatility = {total_volatility} , 
-                                    money_flow = {total_net_flow} , 
+                                    net_money_flow = {total_net_flow} , 
+                                    positive_money_flow = {total_positive_flow} ,
+                                    negative_money_flow = {total_negative_flow} ,
                                     is_error = 0 
                                     where id = {id}"""
                     print(f"资金流向表 stock_money_flow 计算完成 {m_money.code} {m_money.date} 资金流向 {total_net_flow} 元 波动比率 {total_volatility} ")        
