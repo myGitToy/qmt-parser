@@ -1120,7 +1120,67 @@ class data(base,stock):
                                 connection.rollback()
                                 print(f"{day}|{code} 修正失败，回滚数据")
             print("1分钟线修正完毕")
-            
+
+    def fix_1min_error_by_code_v3(self, day = datetime(2023,12,1)):
+            """
+            第三版的更新逻辑（对指定的代码进行修正）
+            详见bug616：https://huiqiao.visualstudio.com/MyFunds/_workitems/edit/616
+            【输入】
+                start_date 默认无需输入
+                end_date 默认无需输入
+                code 默认无需输入
+
+            """  
+            code = self.code
+            # 对指定代码和区间的数据进行修复
+            df_code_day_string = f"select date,open from akshare_1m where code = '{code}' and date between '{self.start_date}' and '{self.end_date}'"
+            # 初始化1m并赋值
+            df_1m = pd.DataFrame()
+            df_1m = pd.read_sql_query(df_code_day_string, self.engine)
+            if df_1m.empty:
+                print(f"代码 {code} 在指定日期范围内没有1分钟线数据，跳过修复")
+                return
+            # 收集开盘价为0的日期，聚合到日期
+            df_open_zero_date = df_1m.query('open == 0')
+            #print(f"代码 {code} 开盘价为0的日期：{df_open_zero_date['date'].dt.date.unique()}")
+            # 3.2 按日进行修复
+            for day in df_open_zero_date['date'].dt.date.unique():
+                # 获取当天1d的开盘价
+                open_price = pd.read_sql_query(f"select open from tspro_1d where code = '{code}' and date(date) = '{day}'", self.engine)
+                # open_price有数据则修复，否则报错
+                if open_price.empty or open_price['open'].values[0] == 0:
+                    raise ValueError(f"{code} {day} 无法修复，开盘价无数据或为0")
+                else:
+                    #print(f"正在修复代码 {code} 日期 {day} 的开盘价为0的数据，当日收盘价为{open_price['open'].values[0]}")
+                    # 获取1m需要修复的当天数据
+                    df_1m_today = pd.DataFrame()
+                    df_1m_today = pd.read_sql_query(f"select id,code,date,open,close from akshare_1m where code = '{code}' and date(date) = '{day}' order by date asc", self.engine)
+                    #print("##########修复前数据如下")
+                    #print(df_1m_today)
+                    # 3.3 修复逻辑
+                    # 当天第一条open价格直接用1d的开盘价，其余open价格为前一根K线的close价格
+                    df_1m_today.loc[df_1m_today.index[0], 'open'] = open_price['open'].values[0]
+                    df_1m_today.loc[df_1m_today['open'] == 0, 'open'] = df_1m_today['close'].shift(1).fillna(df_1m_today['close'])
+                    # 将修复后的数据更新回数据库
+                    #通过mysql事务的方式，一次性更新全部need_fix = 1 的数据
+                    #print("##########修复后数据如下")
+                    #print(df_1m_today)
+                    try:
+                        with self.engine.begin() as connection:
+                            #connection.begin()
+                            for index, row in df_1m_today.iterrows():
+                                id = row['id']
+                                open_price = row['open']
+                                sql_update= text(f"update akshare_1m set open = {open_price} where id = {id}")
+                                connection.execute(sql_update)
+                            connection.commit()
+                            print(f"{day}|{code} 修正成功")
+                    except:
+                        with self.engine.begin() as connection:
+                            connection.rollback()
+                            print(f"{day}|{code} 修正失败，回滚数据")
+            print(f"{code} 1分钟线修正完毕")
+
     def fix_1min_error_v2(self, day = datetime(2023,12,1)):
         """
         目前采用第二版的更新逻辑
@@ -2212,10 +2272,11 @@ class data(base,stock):
 if __name__ == "__main__":
     # 测试项目1：使用ak数据源，获取日线数据
     akdata = data()  # 这里的data默认本地data源，是akdata
-    akdata.code = '601318.SH'
-    akdata.start_date = datetime(2025, 5, 6, 8)
-    akdata.end_date = datetime(2025, 7, 5, 18)
+    akdata.code = '000584.SZ'
+    akdata.start_date = datetime(2025, 7, 1, 8)
+    akdata.end_date = datetime(2025, 7, 15, 18)
     akdata.fq = akdata.复权.不复权
+    akdata.fix_1min_error_by_code_v3()
     akdata.ktype = '1d'
     akdata.task_process_task101()  # 执行重采样任务处理
     # 测试项目2：重采样功能测试
