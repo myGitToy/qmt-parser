@@ -9,7 +9,6 @@ from typing import Any, Type
 from apt.qsp_universal.base import base
 from apt.vendor.akshare.money_flow import money_flow as ak_money_flow
 from apt.vendor.tspro.money_flow import money_flow as ts_money_flow
-from apt.qsp_universal.mra import MRA as MRA
 
 
 class money_flow(base):
