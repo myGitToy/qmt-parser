@@ -1,3 +1,7 @@
+"""
+本模块用于批量导入和更新stock_money_flow表
+警告：更新前请确保akshare的1分钟数据已更新完毕
+"""
 from apt.vendor.akshare.money_flow import money_flow as money
 from datetime import datetime
 money = money()
