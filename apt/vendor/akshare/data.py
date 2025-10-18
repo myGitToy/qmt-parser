@@ -17,6 +17,9 @@ from apt.vendor.tspro.security import security as security
 from apt.vendor.tspro.data import data as tspro_data
 #加入tqdm支持
 from tqdm import tqdm
+# 新增：Eastmoney cookies 确保与修复版接口
+from apt.vendor.akshare.cookies import ensure_eastmoney_cookies_browser
+from apt.vendor.akshare.fixes import fixed_stock_zh_a_hist_min_em
 #from apt.vendor.tspro.security import get_calendar
 
 #加入redis和json支持
@@ -335,6 +338,12 @@ class data(base,stock):
         priority 是否优先更新 默认为0
         sleep 每条数据更新的间隔时间 默认0.05 需要流出一定的间隔，否则会被服务器强制下线
         '''
+        # 先确保 Eastmoney cookies（浏览器方式，若失败则继续无 cookies 模式）
+        try:
+            ensure_eastmoney_cookies_browser(force_refresh=False)
+        except Exception:
+            print("Eastmoney cookies 失败，继续无 cookies 模式进行数据更新")
+
         #处理是否优先更新
         if priority == 1:
             #优先更新
@@ -369,7 +378,7 @@ class data(base,stock):
                     #print(self.dict[type])
                     try:
                         df_ak = pd.DataFrame()
-                        df_ak =  ak.stock_zh_a_hist_min_em(symbol = symbol , start_date = start_date.strftime('%Y%m%d %H:%M:%S'), end_date = end_date.strftime('%Y%m%d %H:%M:%S'), period = self.dict[type], adjust = '')
+                        df_ak =  fixed_stock_zh_a_hist_min_em(symbol = symbol , start_date = start_date.strftime('%Y%m%d %H:%M:%S'), end_date = end_date.strftime('%Y%m%d %H:%M:%S'), period = self.dict[type], adjust = '')
                     except:
                         print("网络连接失败！")
                         df_ak = pd.DataFrame()  # 修复：网络失败时清空df_ak，防止写入错误数据
@@ -378,7 +387,8 @@ class data(base,stock):
                 elif myclass == 'etf':
                     #df_ak = ts.pro_bar(api = self.api , ts_code = code, freq = self.dict[type] , adj = None , start_date = start_date.strftime('%Y%m%d') , end_date = (end_date + timedelta(days = 1)).strftime('%Y%m%d') , adjfactor = True , asset = 'FD')
                     try:
-                        df_ak =  ak.fund_etf_hist_min_em(symbol = symbol , start_date = start_date.strftime('%Y%m%d %H:%M:%S'), end_date = end_date.strftime('%Y%m%d %H:%M:%S'), period = self.dict[type], adjust = '')                
+                        from apt.vendor.akshare.fixes import fixed_fund_etf_hist_min_em
+                        df_ak =  fixed_fund_etf_hist_min_em(symbol = symbol , start_date = start_date.strftime('%Y%m%d %H:%M:%S'), end_date = end_date.strftime('%Y%m%d %H:%M:%S'), period = self.dict[type], adjust = '')                
                     except :
                         df_ak = pd.DataFrame()
                         print(f"{code} akshare ETF/LOF数据更新错误！！")
@@ -412,9 +422,15 @@ class data(base,stock):
                     if df_ak.shape[0] != 0:
                         if myclass == 'stock':  
                             #print(df_ak)
-                            df_ak.drop(columns = ['均价']  , inplace = True)    #针对1.14版本进行修复
+                            # 容错：只删除存在的列
+                            cols_to_drop = [col for col in ['均价', '最新价'] if col in df_ak.columns]
+                            if cols_to_drop:
+                                df_ak.drop(columns=cols_to_drop, inplace=True)
                         elif myclass == 'etf':
-                            df_ak.drop(columns = ['均价']  , inplace = True)    #针对1.14版本进行修复
+                            # 容错：只删除存在的列
+                            cols_to_drop = [col for col in ['均价', '最新价'] if col in df_ak.columns]
+                            if cols_to_drop:
+                                df_ak.drop(columns=cols_to_drop, inplace=True)
                         else:
                             pass
                     else:
@@ -422,7 +438,10 @@ class data(base,stock):
                     #df_ak.rename(columns={"日期": "时间"} , errors="raise" , inplace = True)
                 elif type in ['60m','30m','5m'] and net_connection == True:
                     if df_ak.shape[0] != 0:
-                        df_ak.drop(columns = ['涨跌幅','涨跌额','振幅','换手率'] , inplace = True)
+                        # 容错：只删除存在的列
+                        cols_to_drop = [col for col in ['涨跌幅','涨跌额','振幅','换手率'] if col in df_ak.columns]
+                        if cols_to_drop:
+                            df_ak.drop(columns=cols_to_drop, inplace=True)
                 else:
                     print('无法识别的类型')
                 #数据适配2：增加证券代码列
@@ -2272,9 +2291,9 @@ class data(base,stock):
 if __name__ == "__main__":
     # 测试项目1：使用ak数据源，获取日线数据
     akdata = data()  # 这里的data默认本地data源，是akdata
-    akdata.code = '000584.SZ'
-    akdata.start_date = datetime(2025, 7, 1, 8)
-    akdata.end_date = datetime(2025, 7, 15, 18)
+    akdata.code = '516520.SH'
+    akdata.start_date = datetime(2024, 11, 4, 8)
+    akdata.end_date = datetime(2025,12 , 15, 18)
     akdata.fq = akdata.复权.不复权
     akdata.fix_1min_error_by_code_v3()
     akdata.ktype = '1d'
