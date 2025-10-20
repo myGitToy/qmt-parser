@@ -18,7 +18,7 @@ from apt.vendor.tspro.data import data as tspro_data
 #加入tqdm支持
 from tqdm import tqdm
 # 新增：Eastmoney cookies 确保与修复版接口
-from apt.vendor.akshare.cookies import ensure_eastmoney_cookies_browser
+# cookies模块将直接在需要时导入
 from apt.vendor.akshare.fixes import fixed_stock_zh_a_hist_min_em
 #from apt.vendor.tspro.security import get_calendar
 
@@ -338,11 +338,16 @@ class data(base,stock):
         priority 是否优先更新 默认为0
         sleep 每条数据更新的间隔时间 默认0.05 需要流出一定的间隔，否则会被服务器强制下线
         '''
-        # 先确保 Eastmoney cookies（浏览器方式，若失败则继续无 cookies 模式）
+        # 先确保 Eastmoney cookies（会自动处理缓存和过期逻辑）
         try:
-            ensure_eastmoney_cookies_browser(force_refresh=False)
-        except Exception:
-            print("Eastmoney cookies 失败，继续无 cookies 模式进行数据更新")
+            from apt.vendor.akshare.cookies import get_em_cookie
+            cookies = get_em_cookie(force_refresh=False, save_to_env_file=False)
+            if cookies:
+                print("已获取Eastmoney cookies，将用于数据请求")
+            else:
+                print("未能获取Eastmoney cookies，继续无cookies模式进行数据更新")
+        except Exception as e:
+            print(f"Eastmoney cookies 获取失败: {e}，继续无 cookies 模式进行数据更新")
 
         #处理是否优先更新
         if priority == 1:
@@ -2291,7 +2296,7 @@ class data(base,stock):
 if __name__ == "__main__":
     # 测试项目1：使用ak数据源，获取日线数据
     akdata = data()  # 这里的data默认本地data源，是akdata
-    akdata.code = '516520.SH'
+    akdata.code = '502010.SH'
     akdata.start_date = datetime(2024, 11, 4, 8)
     akdata.end_date = datetime(2025,12 , 15, 18)
     akdata.fq = akdata.复权.不复权

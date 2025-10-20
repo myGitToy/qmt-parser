@@ -81,6 +81,10 @@ else:
     def __dir__():
         return sorted(list(globals().keys()) + list(_import_structure.keys()))
 
-# 可选：若你希望将某些核心函数直接放到包顶层并且它们很轻量，可在此显式导入
-# from .core import fetch_data as fetch_data
-# __all__.append("fetch_data")
+# 将常用函数直接放到包顶层导出
+# 导出cookies中的工具函数
+try:
+    from .cookies import get_em_cookie
+    __all__.append("get_em_cookie")
+except ImportError:
+    logger.debug("cookies.get_em_cookie not available for direct import")

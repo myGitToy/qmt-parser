@@ -1,6 +1,7 @@
 """
 Akshare 修复版接口集合
 主要用来修复ak频繁封接口的问题，现在通过环境变量 EASTMONEY_COOKIES 传入 cookies来尝试绕过封禁
+相当于最新版akshare源码上的一个外挂插件
 """
 
 
@@ -15,15 +16,15 @@ import requests
 
 def _env_cookies_dict(env_var: str = "EASTMONEY_COOKIES") -> Optional[dict]:
     """
-    从 cookies.py 强制获取 cookies 并转换为字典
+    从 cookies.py 获取 cookies 并转换为字典
     按照 fixed_stock_zh_a_hist 的思路处理 cookies
     """
     cookies_str = ""
     
-    # 强制从 cookies.py 获取 cookies
+    # 从cookies.py获取cookies (会自动处理缓存和过期逻辑)
     try:
-        from apt.vendor.akshare.cookies import ensure_eastmoney_cookies_from_stock_page
-        cookies_str = ensure_eastmoney_cookies_from_stock_page(force_refresh=False)
+        from apt.vendor.akshare.cookies import get_em_cookie
+        cookies_str = get_em_cookie(force_refresh=False, save_to_env_file=False)
     except Exception:
         # 如果获取失败，返回 None
         return None
@@ -60,7 +61,7 @@ def fixed_stock_zh_a_hist_min_em(
     alias = {"1m": "1", "5m": "5", "15m": "15", "30m": "30", "60m": "60"}
     klt = alias.get(period, period)
 
-    cookies = _env_cookies_dict()
+    cookies_dict = _env_cookies_dict()
 
     if klt == "1":
         url = "https://push2his.eastmoney.com/api/qt/stock/trends2/get"
@@ -73,7 +74,7 @@ def fixed_stock_zh_a_hist_min_em(
             "secid": f"{market_code}.{symbol}",
             "_": "1623766962675",
         }
-        r = requests.get(url, params=params, timeout=timeout, cookies=cookies)
+        r = requests.get(url, params=params, timeout=timeout, cookies=cookies_dict)
         data_json = r.json()
         if not (data_json.get("data") and data_json["data"].get("trends")):
             return pd.DataFrame()
@@ -102,7 +103,7 @@ def fixed_stock_zh_a_hist_min_em(
             "end": "20500000",
             "_": "1630930917857",
         }
-        r = requests.get(url, params=params, timeout=timeout, cookies=cookies)
+        r = requests.get(url, params=params, timeout=timeout, cookies=cookies_dict)
         data_json = r.json()
         if not (data_json.get("data") and data_json["data"].get("klines")):
             return pd.DataFrame()
@@ -153,7 +154,7 @@ def fixed_fund_etf_hist_min_em(
     alias = {"1m": "1", "5m": "5", "15m": "15", "30m": "30", "60m": "60"}
     klt = alias.get(period, period)
 
-    cookies = _env_cookies_dict()
+    cookies_dict = _env_cookies_dict()
 
     if klt == "1":
         url = "https://push2his.eastmoney.com/api/qt/stock/trends2/get"
@@ -166,7 +167,7 @@ def fixed_fund_etf_hist_min_em(
             "secid": f"{market_code}.{symbol}",
             "_": "1623766962675",
         }
-        r = requests.get(url, params=params, timeout=timeout, cookies=cookies)
+        r = requests.get(url, params=params, timeout=timeout, cookies=cookies_dict)
         data_json = r.json()
         if not (data_json.get("data") and data_json["data"].get("trends")):
             return pd.DataFrame()
@@ -195,7 +196,7 @@ def fixed_fund_etf_hist_min_em(
             "end": "20500000",
             "_": "1630930917857",
         }
-        r = requests.get(url, params=params, timeout=timeout, cookies=cookies)
+        r = requests.get(url, params=params, timeout=timeout, cookies=cookies_dict)
         data_json = r.json()
         if not (data_json.get("data") and data_json["data"].get("klines")):
             return pd.DataFrame()
@@ -231,5 +232,7 @@ if __name__ == "__main__":
     
     
     
-    df = fixed_stock_zh_a_hist_min_em(symbol="000001", period="1", start_date="2025-10-01 09:30:00", end_date="2025-10-18 15:00:00")
+    df = fixed_stock_zh_a_hist_min_em(symbol="000001", period="1", start_date="2025-10-01 09:30:00", end_date="2025-10-20 15:00:00")
+    df2 = fixed_stock_zh_a_hist_min_em(symbol="601318", period="1", start_date="2025-10-01 09:30:00", end_date="2025-10-20 15:00:00")
     print(df)
+    print(df2)
