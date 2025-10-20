@@ -296,7 +296,7 @@ class money_flow(akdata):
                     total_money = df_min['money'].sum()
                     total_net_flow = df_min['净资金流向'].sum()
                     total_positive_flow = df_min[df_min['净资金流向'] > 0 ]['净资金流向'].sum()
-                    total_negative_flow = df_min[df_min['净资金流向'] < 0 ]['净资金流向'].sum()
+                    total_negative_flow = - df_min[df_min['净资金流向'] < 0 ]['净资金流向'].sum()
                     """
                     # 备注，这里还有其他几个没有计算的公式，因为不需要写入数据库
                     Money Flow Ratio, MFR = (Positive Money Flow / Negative Money Flow)
@@ -340,7 +340,7 @@ class money_flow(akdata):
 if __name__=="__main__":
     #测试资金流向
     money = money_flow()
-    money.code = '688349.sh'
+    money.code = '300280.sz'
     money.start_date = datetime(2023,12,4)
     money.end_date = datetime.now()
     money.ktype = '1d'
