@@ -12,11 +12,12 @@ from apt.vendor.tspro.money_flow import money_flow as ts_money_flow
 from apt.qsp_universal.mra import MRA as MRA
 
 
-class money_flow(base):
+class money_flow(base,MRA):
     def __init__(self, *, vendor: base.vendor = base.vendor.tusharePro, **kwargs):
         """简化版资金流向适配器，直接复用 `base` 的初始化参数。"""
 
         super().__init__(vendor=vendor, **kwargs)
+        MRA.__init__(self)
         self._vendor_adapter = None
 
     def _resolve_vendor_cls(self) -> Type:
@@ -92,5 +93,3 @@ if __name__ == "__main__":
     demo.start_date = datetime(2025,10,4)
     demo.end_date = datetime.now()
     demo.code = "688349.sh"
-    df = demo.update_money_flow_min()
-    print(df)
