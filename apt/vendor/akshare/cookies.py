@@ -13,7 +13,12 @@
 注意：本模块不强制安装依赖，若运行时报 ImportError，请安装相应库并完成浏览器/驱动初始化：
   - Playwright: pip install playwright; playwright install
   - undetected-chromedriver: pip install undetected-chromedriver
-  - Selenium: pip install selenium; 并安装 ChromeDriver 或对应浏览器驱动
+  - Selenium: pip install selenium
+  - webdriver-manager（推荐，自动解决ChromeDriver版本匹配问题）: pip install webdriver-manager
+  
+自动ChromeDriver管理（推荐）：
+  安装 webdriver-manager 后，会自动下载与当前Chrome版本匹配的ChromeDriver，
+  解决 "This version of ChromeDriver only supports Chrome version X" 错误。
 """
 
 from __future__ import annotations
@@ -25,6 +30,10 @@ from importlib import import_module
 from datetime import datetime, timezone, timedelta
 from dotenv import set_key, load_dotenv  # 确保python-dotenv已安装
 
+# Cookie 使用计数器：使用环境变量存储，确保跨进程/模块一致性
+_cookie_initial_count: int = 50  # 默认初始计数值，可通过环境变量配置
+_COOKIE_COUNT_ENV_KEY = "EASTMONEY_COOKIE_USAGE_COUNT"
+
 def _format_cookie_list_to_dict(cookie_list: list[dict]) -> Dict[str, str]:
     cookies: Dict[str, str] = {}
     for c in cookie_list:
@@ -33,6 +42,73 @@ def _format_cookie_list_to_dict(cookie_list: list[dict]) -> Dict[str, str]:
         if name and value is not None:
             cookies[name] = value
     return cookies
+
+
+def _get_cookie_initial_count() -> int:
+    """从环境变量获取初始计数值，默认为50"""
+    try:
+        count = int(os.environ.get("EASTMONEY_COOKIE_INITIAL_COUNT", "50"))
+        return max(1, count)  # 至少为1
+    except (ValueError, TypeError):
+        return 50
+
+
+def _get_current_counter() -> int:
+    """从环境变量获取当前计数器值"""
+    try:
+        return int(os.environ.get(_COOKIE_COUNT_ENV_KEY, "0"))
+    except (ValueError, TypeError):
+        return 0
+
+
+def _set_counter(value: int) -> None:
+    """设置计数器值到环境变量"""
+    os.environ[_COOKIE_COUNT_ENV_KEY] = str(value)
+
+
+def _reset_cookie_counter() -> None:
+    """重置 cookie 使用计数器"""
+    initial_count = _get_cookie_initial_count()
+    _set_counter(initial_count)
+    print(f"重置 cookie 计数器为: {initial_count}")
+
+
+def _decrement_cookie_counter() -> int:
+    """递减 cookie 使用计数器并返回当前值"""
+    current = _get_current_counter()
+    new_value = current - 1
+    _set_counter(new_value)
+    return new_value
+
+
+def _should_force_refresh_by_counter() -> bool:
+    """检查是否应该根据计数器强制刷新 cookie"""
+    current_counter = _get_current_counter()
+    
+    # 如果计数器未初始化（第一次调用），初始化它
+    if current_counter == 0:
+        _reset_cookie_counter()
+        return False  # 第一次调用不强制刷新
+    
+    if current_counter <= 0:
+        print(f"Cookie 使用计数器已耗尽 ({current_counter})，强制重新获取")
+        return True
+    return False
+
+
+def get_cookie_counter_status() -> dict:
+    """
+    获取当前 cookie 计数器状态信息
+    
+    返回:
+        包含计数器状态的字典
+    """
+    return {
+        "current_count": _get_current_counter(),
+        "initial_count": _get_cookie_initial_count(),
+        "env_key": _COOKIE_COUNT_ENV_KEY,
+        "is_initialized": _get_current_counter() > 0
+    }
 
 
 def fetch_eastmoney_cookies_browser(
@@ -94,7 +170,19 @@ def fetch_eastmoney_cookies_browser(
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--lang=zh-CN")
 
-        driver = uc.Chrome(options=options)
+        # 尝试使用 webdriver-manager 自动获取匹配的 ChromeDriver
+        driver_path = None
+        try:
+            from webdriver_manager.chrome import ChromeDriverManager
+            driver_path = ChromeDriverManager().install()
+            print(f"使用自动管理的 ChromeDriver: {driver_path}")
+            driver = uc.Chrome(driver_executable_path=driver_path, options=options)
+        except ImportError:
+            print("webdriver-manager 未安装，使用默认 ChromeDriver 路径...")
+            driver = uc.Chrome(options=options)
+        except Exception as e:
+            print(f"自动管理 ChromeDriver 失败: {e}，回退到默认方式...")
+            driver = uc.Chrome(options=options)
         try:
             print(f"正在访问: {url}")
             driver.get(url)
@@ -121,8 +209,19 @@ def fetch_eastmoney_cookies_browser(
         options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--lang=zh-CN")
 
-        # 实例化 Chrome 驱动
-        driver = getattr(webdriver_pkg, "Chrome")(options=options)
+        # 尝试使用 webdriver-manager 自动获取匹配的 ChromeDriver
+        try:
+            from webdriver_manager.chrome import ChromeDriverManager
+            from selenium.webdriver.chrome.service import Service
+            service = Service(ChromeDriverManager().install())
+            print("使用自动管理的 ChromeDriver...")
+            driver = getattr(webdriver_pkg, "Chrome")(service=service, options=options)
+        except ImportError:
+            print("webdriver-manager 未安装，使用默认 ChromeDriver 路径...")
+            driver = getattr(webdriver_pkg, "Chrome")(options=options)
+        except Exception as e:
+            print(f"自动管理 ChromeDriver 失败: {e}，回退到默认方式...")
+            driver = getattr(webdriver_pkg, "Chrome")(options=options)
         try:
             driver.get(url)
             import time
@@ -382,10 +481,11 @@ def get_em_cookie(
     method: Literal["auto", "browser", "request"] = "auto",
     backend: Literal["auto", "uc", "playwright", "selenium"] = "auto",
     stock_code: str = "sh601026",
-    max_age_minutes: int = 5
+    max_age_minutes: int = 1
 ) -> str:
     """
     统一的 Eastmoney cookie 获取函数，支持多种获取方式和保存选项。
+    新增功能：cookie 使用计数器，每次调用递减，计数器耗尽时强制刷新。
     
     参数:
         force_refresh: 是否强制刷新 cookie，不使用环境变量中的缓存
@@ -397,12 +497,30 @@ def get_em_cookie(
         
     返回:
         获取的 cookie 字符串
+        
+    注意：
+        - 首次调用时会设置计数器为默认值（可通过环境变量 EASTMONEY_COOKIE_INITIAL_COUNT 配置，默认50）
+        - 每次调用都会递减计数器，计数器 <= 0 时强制重新获取 cookie
+        - 强制刷新 cookie 时会重置计数器
+        - 计数器存储在环境变量中，确保跨进程/跨模块调用时状态一致
     """
+    
+    # 检查计数器是否需要强制刷新
+    counter_force_refresh = _should_force_refresh_by_counter()
+    
+    # 递减计数器（仅在非强制刷新时）
+    if not force_refresh and not counter_force_refresh:
+        current_count = _decrement_cookie_counter()
+        print(f"Cookie 计数器递减至: {current_count}")
+    
+    # 合并强制刷新条件
+    effective_force_refresh = force_refresh or counter_force_refresh
+    
     # 第1步: 从环境变量或.env文件加载cookie
     cookies, update_time = _load_cookies_from_env()
     
     # 如果没有强制刷新，且有cookie和更新时间，检查是否过期
-    if not force_refresh and cookies and update_time:
+    if not effective_force_refresh and cookies and update_time:
         # 检查cookie是否过期
         if not _check_cookie_expired(update_time, max_age_minutes):
             print(f"使用缓存的cookie，更新时间: {update_time}")
@@ -450,7 +568,10 @@ def get_em_cookie(
         print("所有方式均未获取到有效 cookie")
         return ""
     
-    # 第3步: 将获取的 cookie 保存到环境变量
+    # 第3步: 成功获取 cookie 后重置计数器
+    _reset_cookie_counter()
+    
+    # 第4步: 将获取的 cookie 保存到环境变量
     os.environ["EASTMONEY_COOKIES"] = cookies
     
     # 保存更新时间
