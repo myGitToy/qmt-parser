@@ -14,10 +14,11 @@ import pandas as pd
 import requests
 
 
-def _env_cookies_dict(env_var: str = "EASTMONEY_COOKIES") -> Optional[dict]:
+def _env_cookies_dict(env_var: str = "EASTMONEY_COOKIES") -> tuple[Optional[dict], Optional[str]]:
     """
     从 cookies.py 获取 cookies 并转换为字典
     按照 fixed_stock_zh_a_hist 的思路处理 cookies
+    返回 (cookies_dict, cookies_str)
     """
     cookies_str = ""
     
@@ -26,11 +27,11 @@ def _env_cookies_dict(env_var: str = "EASTMONEY_COOKIES") -> Optional[dict]:
         from apt.vendor.akshare.cookies import get_em_cookie
         cookies_str = get_em_cookie(force_refresh=False, save_to_env_file=False)
     except Exception:
-        # 如果获取失败，返回 None
-        return None
+        # 如果获取失败，返回 (None, None)
+        return None, None
     
     if not cookies_str:
-        return None
+        return None, None
     
     # 将 cookies 字符串转换为字典（与 fixed_stock_zh_a_hist 保持一致）
     cookies_dict: dict[str, str] = {}
@@ -39,7 +40,7 @@ def _env_cookies_dict(env_var: str = "EASTMONEY_COOKIES") -> Optional[dict]:
             key, value = cookie.strip().split('=', 1)
             cookies_dict[key] = value
     
-    return cookies_dict if cookies_dict else None
+    return (cookies_dict if cookies_dict else None, cookies_str)
 
 
 def fixed_stock_zh_a_hist_min_em(
@@ -61,7 +62,8 @@ def fixed_stock_zh_a_hist_min_em(
     alias = {"1m": "1", "5m": "5", "15m": "15", "30m": "30", "60m": "60"}
     klt = alias.get(period, period)
 
-    cookies_dict = _env_cookies_dict()
+    cookies_dict, cookies_str = _env_cookies_dict()
+    headers = {"Cookie": cookies_str} if cookies_str else None
 
     if klt == "1":
         url = "https://push2his.eastmoney.com/api/qt/stock/trends2/get"
@@ -74,7 +76,7 @@ def fixed_stock_zh_a_hist_min_em(
             "secid": f"{market_code}.{symbol}",
             "_": "1623766962675",
         }
-        r = requests.get(url, params=params, timeout=timeout, cookies=cookies_dict)
+        r = requests.get(url, params=params, timeout=timeout, cookies=cookies_dict, headers=headers)
         data_json = r.json()
         if not (data_json.get("data") and data_json["data"].get("trends")):
             return pd.DataFrame()
@@ -103,7 +105,7 @@ def fixed_stock_zh_a_hist_min_em(
             "end": "20500000",
             "_": "1630930917857",
         }
-        r = requests.get(url, params=params, timeout=timeout, cookies=cookies_dict)
+        r = requests.get(url, params=params, timeout=timeout, cookies=cookies_dict, headers=headers)
         data_json = r.json()
         if not (data_json.get("data") and data_json["data"].get("klines")):
             return pd.DataFrame()
@@ -154,7 +156,8 @@ def fixed_fund_etf_hist_min_em(
     alias = {"1m": "1", "5m": "5", "15m": "15", "30m": "30", "60m": "60"}
     klt = alias.get(period, period)
 
-    cookies_dict = _env_cookies_dict()
+    cookies_dict, cookies_str = _env_cookies_dict()
+    headers = {"Cookie": cookies_str} if cookies_str else None
 
     if klt == "1":
         url = "https://push2his.eastmoney.com/api/qt/stock/trends2/get"
@@ -167,7 +170,7 @@ def fixed_fund_etf_hist_min_em(
             "secid": f"{market_code}.{symbol}",
             "_": "1623766962675",
         }
-        r = requests.get(url, params=params, timeout=timeout, cookies=cookies_dict)
+        r = requests.get(url, params=params, timeout=timeout, cookies=cookies_dict, headers=headers)
         data_json = r.json()
         if not (data_json.get("data") and data_json["data"].get("trends")):
             return pd.DataFrame()
@@ -196,7 +199,7 @@ def fixed_fund_etf_hist_min_em(
             "end": "20500000",
             "_": "1630930917857",
         }
-        r = requests.get(url, params=params, timeout=timeout, cookies=cookies_dict)
+        r = requests.get(url, params=params, timeout=timeout, cookies=cookies_dict, headers=headers)
         data_json = r.json()
         if not (data_json.get("data") and data_json["data"].get("klines")):
             return pd.DataFrame()

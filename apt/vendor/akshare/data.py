@@ -20,6 +20,7 @@ from tqdm import tqdm
 # 新增：Eastmoney cookies 确保与修复版接口
 # cookies模块将直接在需要时导入
 from apt.vendor.akshare.fixes import fixed_stock_zh_a_hist_min_em
+from apt.vendor.akshare.fixes import fixed_fund_etf_hist_min_em
 #from apt.vendor.tspro.security import get_calendar
 
 #加入redis和json支持
@@ -391,12 +392,14 @@ class data(base,stock):
                     #print(df_ak)
                 elif myclass == 'etf':
                     #df_ak = ts.pro_bar(api = self.api , ts_code = code, freq = self.dict[type] , adj = None , start_date = start_date.strftime('%Y%m%d') , end_date = (end_date + timedelta(days = 1)).strftime('%Y%m%d') , adjfactor = True , asset = 'FD')
+
+                    
                     try:
-                        from apt.vendor.akshare.fixes import fixed_fund_etf_hist_min_em
                         df_ak =  fixed_fund_etf_hist_min_em(symbol = symbol , start_date = start_date.strftime('%Y%m%d %H:%M:%S'), end_date = end_date.strftime('%Y%m%d %H:%M:%S'), period = self.dict[type], adjust = '')                
-                    except :
+                    except Exception as e:
                         df_ak = pd.DataFrame()
-                        print(f"{code} akshare ETF/LOF数据更新错误！！")
+                        print(f"{code} akshare ETF/LOF数据更新错误: {e}")
+                        traceback.print_exc()
                 #print(df_ak)
                 #最大数据量校验
                 if df_ak.shape[0] >= max_row:
