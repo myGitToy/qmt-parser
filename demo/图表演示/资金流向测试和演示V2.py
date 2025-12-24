@@ -86,7 +86,7 @@ class CapitalFlowAnalyzer(ak_money):
         
         return df
 
-def analyze_stock_capital_flow(stock_code):
+def analyze_stock_capital_flow(stock_code, ktype):
     """分析单只股票的资金流向并返回结果用于Gradio界面"""
     try:
         # 创建分析器实例
@@ -94,7 +94,9 @@ def analyze_stock_capital_flow(stock_code):
         analyzer.code = stock_code.strip()  # 去除可能的空格
         analyzer.start_date = datetime(2025, 1, 1)  # 起始日期，可调整
         analyzer.end_date = datetime.now()  # 结束日期
-        analyzer.ktype = '1m'  # 1分钟数据
+        analyzer.ktype = ktype.strip().lower() if isinstance(ktype, str) else '1m'
+        if analyzer.ktype not in {'1m', '5m', '60m', '1d'}:
+            analyzer.ktype = '1m'
         
         # 获取股票数据
         analyzer.stock_data = analyzer.calculate_money_flow_min()
@@ -107,15 +109,25 @@ def analyze_stock_capital_flow(stock_code):
             print("警告：未获取到任何数据")
             return pd.DataFrame({'错误': ['未获取到任何交易数据']}), go.Figure()
         
-        # 聚合分时线至日线
-        flow_data = analyzer.stock_data.resample('1D', on='date').agg({
-            'open': 'first',
-            'high': 'max',
-            'low': 'min',
-            'close': 'last',
-            'money': 'sum',
-            '净资金流向': 'sum'
-        }).dropna().reset_index()
+        # 根据数据源类型决定聚合方式
+        stock_df = analyzer.stock_data.copy()
+        if analyzer.ktype in {'1m', '5m', '60m'}:
+            flow_data = stock_df.resample('1D', on='date').agg({
+                'open': 'first',
+                'high': 'max',
+                'low': 'min',
+                'close': 'last',
+                'money': 'sum',
+                '净资金流向': 'sum'
+            }).dropna().reset_index()
+        else:
+            # 1d 数据无需再聚合，确保字段齐全并排序
+            flow_data = stock_df.sort_values('date').reset_index(drop=True)
+            # 对于日线数据，若缺少净资金流向字段，则计算一次
+            if '净资金流向' not in flow_data.columns:
+                flow_data['净资金流向'] = (flow_data['close'] - flow_data['open']) / (
+                    flow_data['high'] - flow_data['low']
+                ).replace([np.inf, -np.inf], 0).fillna(0) * flow_data['money']
 
         # 按要求：聚合后重新计算波动比率 = 聚合后的净资金流向 / money
         # 避免除以0并处理无穷大/空值，最终保留两位小数
@@ -133,13 +145,13 @@ def analyze_stock_capital_flow(stock_code):
         # 获取可视化所需数据
         result_df = flow_data[['date', 'open', 'close', 'high', 'low', 'money', '净资金流向', '波动比率']]
         result_df = result_df.tail(120)  # 最近60个交易日，可调整
-        
+
         # 确保列名和数据格式正确
         print(f"处理后数据行数: {len(result_df)}")
-        
+
         # 创建图表 - 只针对单一股票，不需要基准指数比较
         fig = create_single_stock_figure(result_df, stock_code)
-        
+
         # 返回数据表格和图表
         return result_df, fig
         
@@ -400,6 +412,9 @@ def create_gradio_interface():
         
         with gr.Row():
             stock_input = gr.Textbox(label="股票代码", placeholder="输入格式如: 000001.SZ", value="000001.SZ")
+            ktype_input = gr.Radio(
+                label="数据源周期", choices=["1d", "1m", "5m", "60m"], value="1m", interactive=True
+            )
             submit_btn = gr.Button("分析", variant="primary", size="sm")
         
         with gr.Row():
@@ -414,7 +429,7 @@ def create_gradio_interface():
         
         submit_btn.click(
             fn=analyze_stock_capital_flow,
-            inputs=stock_input,
+            inputs=[stock_input, ktype_input],
             outputs=[df_output, plot_output]
         )
     
