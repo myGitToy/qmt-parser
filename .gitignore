@@ -347,3 +347,6 @@ trade/
 
 #添加.env文件
 .env
+
+# conda环境文件
+.conda
