@@ -23,7 +23,7 @@ def run_script():
     a.end_date = datetime.now()
     # a.update_etf_day()
     # 优先更新高权限序列 
-    a.update_sequence_launch(priority=1, sleep=0.15)
+    a.update_sequence_launch(priority=1, sleep=0)
     a.update_sequence_launch(priority=0, sleep=0.15)  # 0.35秒间隔
     #a.fix_1min_error_v3()  # 修复1分钟线数据错误
     #a.update_ak_resample()  # 更新分时线数据（5m和60m重采样）

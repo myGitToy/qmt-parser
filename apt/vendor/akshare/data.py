@@ -17,6 +17,9 @@ from apt.vendor.tspro.security import security as security
 from apt.vendor.tspro.data import data as tspro_data
 #加入tqdm支持
 from tqdm import tqdm
+# 新增：Eastmoney cookies 确保与修复版接口
+# cookies模块将直接在需要时导入
+from apt.vendor.akshare.fixes import fixed_stock_zh_a_hist_min_em
 #from apt.vendor.tspro.security import get_calendar
 
 #加入redis和json支持
@@ -335,6 +338,17 @@ class data(base,stock):
         priority 是否优先更新 默认为0
         sleep 每条数据更新的间隔时间 默认0.05 需要流出一定的间隔，否则会被服务器强制下线
         '''
+        # 先确保 Eastmoney cookies（会自动处理缓存和过期逻辑）
+        try:
+            from apt.vendor.akshare.cookies import get_em_cookie
+            cookies = get_em_cookie(force_refresh=False, save_to_env_file=False)
+            if cookies:
+                print("已获取Eastmoney cookies，将用于数据请求")
+            else:
+                print("未能获取Eastmoney cookies，继续无cookies模式进行数据更新")
+        except Exception as e:
+            print(f"Eastmoney cookies 获取失败: {e}，继续无 cookies 模式进行数据更新")
+
         #处理是否优先更新
         if priority == 1:
             #优先更新
@@ -369,7 +383,7 @@ class data(base,stock):
                     #print(self.dict[type])
                     try:
                         df_ak = pd.DataFrame()
-                        df_ak =  ak.stock_zh_a_hist_min_em(symbol = symbol , start_date = start_date.strftime('%Y%m%d %H:%M:%S'), end_date = end_date.strftime('%Y%m%d %H:%M:%S'), period = self.dict[type], adjust = '')
+                        df_ak =  fixed_stock_zh_a_hist_min_em(symbol = symbol , start_date = start_date.strftime('%Y%m%d %H:%M:%S'), end_date = end_date.strftime('%Y%m%d %H:%M:%S'), period = self.dict[type], adjust = '')
                     except:
                         print("网络连接失败！")
                         df_ak = pd.DataFrame()  # 修复：网络失败时清空df_ak，防止写入错误数据
@@ -378,7 +392,8 @@ class data(base,stock):
                 elif myclass == 'etf':
                     #df_ak = ts.pro_bar(api = self.api , ts_code = code, freq = self.dict[type] , adj = None , start_date = start_date.strftime('%Y%m%d') , end_date = (end_date + timedelta(days = 1)).strftime('%Y%m%d') , adjfactor = True , asset = 'FD')
                     try:
-                        df_ak =  ak.fund_etf_hist_min_em(symbol = symbol , start_date = start_date.strftime('%Y%m%d %H:%M:%S'), end_date = end_date.strftime('%Y%m%d %H:%M:%S'), period = self.dict[type], adjust = '')                
+                        from apt.vendor.akshare.fixes import fixed_fund_etf_hist_min_em
+                        df_ak =  fixed_fund_etf_hist_min_em(symbol = symbol , start_date = start_date.strftime('%Y%m%d %H:%M:%S'), end_date = end_date.strftime('%Y%m%d %H:%M:%S'), period = self.dict[type], adjust = '')                
                     except :
                         df_ak = pd.DataFrame()
                         print(f"{code} akshare ETF/LOF数据更新错误！！")
@@ -412,9 +427,15 @@ class data(base,stock):
                     if df_ak.shape[0] != 0:
                         if myclass == 'stock':  
                             #print(df_ak)
-                            df_ak.drop(columns = ['均价']  , inplace = True)    #针对1.14版本进行修复
+                            # 容错：只删除存在的列
+                            cols_to_drop = [col for col in ['均价', '最新价'] if col in df_ak.columns]
+                            if cols_to_drop:
+                                df_ak.drop(columns=cols_to_drop, inplace=True)
                         elif myclass == 'etf':
-                            df_ak.drop(columns = ['均价']  , inplace = True)    #针对1.14版本进行修复
+                            # 容错：只删除存在的列
+                            cols_to_drop = [col for col in ['均价', '最新价'] if col in df_ak.columns]
+                            if cols_to_drop:
+                                df_ak.drop(columns=cols_to_drop, inplace=True)
                         else:
                             pass
                     else:
@@ -422,7 +443,10 @@ class data(base,stock):
                     #df_ak.rename(columns={"日期": "时间"} , errors="raise" , inplace = True)
                 elif type in ['60m','30m','5m'] and net_connection == True:
                     if df_ak.shape[0] != 0:
-                        df_ak.drop(columns = ['涨跌幅','涨跌额','振幅','换手率'] , inplace = True)
+                        # 容错：只删除存在的列
+                        cols_to_drop = [col for col in ['涨跌幅','涨跌额','振幅','换手率'] if col in df_ak.columns]
+                        if cols_to_drop:
+                            df_ak.drop(columns=cols_to_drop, inplace=True)
                 else:
                     print('无法识别的类型')
                 #数据适配2：增加证券代码列
@@ -1019,6 +1043,26 @@ class data(base,stock):
                 start_date
                 end_date
 
+                
+            【处理逻辑】
+                重采样：1m线重新采样60m的规则为采样成4根K线
+                9:30:00-10:30:00 采样定义为10:30:00
+                10:31:00-11:30:00 采样定义为11:30:00
+                13:00:00-14:00:00 采样定义为14:00:00
+                14:01:00-15:00:00 采样定义为15:00:00
+
+
+                重采样：1m线重新采样5m的规则为采样成48根K线
+                9:30:00-09:35:00 采样定义为09:35:00
+                09:36:00-09:40:00 采样定义为09:40:00
+                ...
+                11:26:00-11:30:00 采样定义为11:30:00
+                11:31:00-12:59:00 为午休时间，不需要任何采样
+                13:00:00-13:05:00 采样定义为13:05:00
+                13:06:00-13:10:00 采样定义为13:10:00
+                ...
+                14:56:00-15:00:00 采样定义为15:00:00
+
             """  
             # 基础数据准备：获取全部证券代码
             df_all_code = security.get_all_code(self)
@@ -1100,7 +1144,67 @@ class data(base,stock):
                                 connection.rollback()
                                 print(f"{day}|{code} 修正失败，回滚数据")
             print("1分钟线修正完毕")
-            
+
+    def fix_1min_error_by_code_v3(self, day = datetime(2023,12,1)):
+            """
+            第三版的更新逻辑（对指定的代码进行修正）
+            详见bug616：https://huiqiao.visualstudio.com/MyFunds/_workitems/edit/616
+            【输入】
+                start_date 默认无需输入
+                end_date 默认无需输入
+                code 默认无需输入
+
+            """  
+            code = self.code
+            # 对指定代码和区间的数据进行修复
+            df_code_day_string = f"select date,open from akshare_1m where code = '{code}' and date between '{self.start_date}' and '{self.end_date}'"
+            # 初始化1m并赋值
+            df_1m = pd.DataFrame()
+            df_1m = pd.read_sql_query(df_code_day_string, self.engine)
+            if df_1m.empty:
+                print(f"代码 {code} 在指定日期范围内没有1分钟线数据，跳过修复")
+                return
+            # 收集开盘价为0的日期，聚合到日期
+            df_open_zero_date = df_1m.query('open == 0')
+            #print(f"代码 {code} 开盘价为0的日期：{df_open_zero_date['date'].dt.date.unique()}")
+            # 3.2 按日进行修复
+            for day in df_open_zero_date['date'].dt.date.unique():
+                # 获取当天1d的开盘价
+                open_price = pd.read_sql_query(f"select open from tspro_1d where code = '{code}' and date(date) = '{day}'", self.engine)
+                # open_price有数据则修复，否则报错
+                if open_price.empty or open_price['open'].values[0] == 0:
+                    raise ValueError(f"{code} {day} 无法修复，开盘价无数据或为0")
+                else:
+                    #print(f"正在修复代码 {code} 日期 {day} 的开盘价为0的数据，当日收盘价为{open_price['open'].values[0]}")
+                    # 获取1m需要修复的当天数据
+                    df_1m_today = pd.DataFrame()
+                    df_1m_today = pd.read_sql_query(f"select id,code,date,open,close from akshare_1m where code = '{code}' and date(date) = '{day}' order by date asc", self.engine)
+                    #print("##########修复前数据如下")
+                    #print(df_1m_today)
+                    # 3.3 修复逻辑
+                    # 当天第一条open价格直接用1d的开盘价，其余open价格为前一根K线的close价格
+                    df_1m_today.loc[df_1m_today.index[0], 'open'] = open_price['open'].values[0]
+                    df_1m_today.loc[df_1m_today['open'] == 0, 'open'] = df_1m_today['close'].shift(1).fillna(df_1m_today['close'])
+                    # 将修复后的数据更新回数据库
+                    #通过mysql事务的方式，一次性更新全部need_fix = 1 的数据
+                    #print("##########修复后数据如下")
+                    #print(df_1m_today)
+                    try:
+                        with self.engine.begin() as connection:
+                            #connection.begin()
+                            for index, row in df_1m_today.iterrows():
+                                id = row['id']
+                                open_price = row['open']
+                                sql_update= text(f"update akshare_1m set open = {open_price} where id = {id}")
+                                connection.execute(sql_update)
+                            connection.commit()
+                            print(f"{day}|{code} 修正成功")
+                    except:
+                        with self.engine.begin() as connection:
+                            connection.rollback()
+                            print(f"{day}|{code} 修正失败，回滚数据")
+            print(f"{code} 1分钟线修正完毕")
+
     def fix_1min_error_v2(self, day = datetime(2023,12,1)):
         """
         目前采用第二版的更新逻辑
@@ -2192,10 +2296,11 @@ class data(base,stock):
 if __name__ == "__main__":
     # 测试项目1：使用ak数据源，获取日线数据
     akdata = data()  # 这里的data默认本地data源，是akdata
-    akdata.code = '601318.SH'
-    akdata.start_date = datetime(2025, 5, 6, 8)
-    akdata.end_date = datetime(2025, 7, 5, 18)
+    akdata.code = '502010.SH'
+    akdata.start_date = datetime(2024, 11, 4, 8)
+    akdata.end_date = datetime(2025,12 , 15, 18)
     akdata.fq = akdata.复权.不复权
+    akdata.fix_1min_error_by_code_v3()
     akdata.ktype = '1d'
     akdata.task_process_task101()  # 执行重采样任务处理
     # 测试项目2：重采样功能测试

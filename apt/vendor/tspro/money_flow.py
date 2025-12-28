@@ -11,7 +11,41 @@ from datetime import datetime,timedelta
 #from apt.vendor.tspro.base import base as base
 from apt.vendor.tspro.data import data as tspro_data
 from apt.vendor.tspro.security import security as sec
+"""
+数据词典：
+表名：stock_money_flow
+id	int			True	False	1	
+code	varchar	10		False	False		证券代码
+date	date			False	False		日期
+source	varchar	6		False	False		数据来源（ak/tspro）
+ktype	varchar	6		False	False		数据类型（1m/5m/60m/1d）
+volatility	decimal	10	6	False	False		波动比率（单位 百分比 正代表流入 负代表流出 存储时保留小数点后6位）
+money_flow	decimal	18	2	False	False		资金流向（单位 元 正代表流入 负代表流出 ）
+is_error	smallint			False	False		是否错误 0/1（1代表无数据，即有1d数据但是无分时数据，无法计算出资金流向）
 
+表名：tspro_money_flow（使用tspro的资金流向数据，通过API获取并保存本地，非本地分时线计算）
+date	date			True	False	1	日期
+code	varchar	12		True	False	2	股票代码
+buy_sm_vol	int			False	False		小单买入量（手）
+buy_sm_amount	decimal	12	4	False	False		小单买入金额（万元）
+sell_sm_vol	int			False	False		小单卖出量（手）
+sell_sm_amount	decimal	12	4	False	False		小单卖出金额（万元）
+buy_md_vol	int			False	False		中单买入量（手）
+buy_md_amount	decimal	12	4	False	False		中单买入金额（万元）
+sell_md_vol	int			False	False		中单卖出量（手）
+sell_md_amount	decimal	12	4	False	False		中单卖出金额（万元）
+buy_lg_vol	int			False	False		大单买入量（手）
+buy_lg_amount	decimal	12	4	False	False		大单买入金额（万元）
+sell_lg_vol	int			False	False		大单卖出量（手）
+sell_lg_amount	decimal	12	4	False	False		大单卖出金额（万元）
+buy_elg_vol	int			False	False		特大单买入量（手）
+buy_elg_amount	decimal	12	4	False	False		特大单买入金额（万元）
+sell_elg_vol	int			False	False		特大单卖出量（手）
+sell_elg_amount	decimal	12	4	False	False		特大单卖出金额（万元）
+net_mf_vol	int			False	False		净流入量（手）
+net_mf_amount	decimal	12	4	False	False		净流入额（万元）
+trade_count	int			False	False		交易笔数
+"""
 class money_flow(tspro_data):
     """
     专门处理资金流向的类
@@ -165,6 +199,7 @@ class money_flow(tspro_data):
             #输出EXCEL
             df.to_excel(f'.\\data\\测试数据\\资金流向{self.code}.xlsx', sheet_name = f'sheet1' ,  header=True, index=False)
         return df
+    
     def get_cal_k(self , rolling_list = [3,5,10,20,30,60,120] , to_csv = False):
         """
         获取计算后的K线数据
