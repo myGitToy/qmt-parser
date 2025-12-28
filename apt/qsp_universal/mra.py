@@ -269,7 +269,7 @@ class MRA(base):
         返回DateFrame和结果字典
         """
         # 获取数据并合并
-        df, basic_results = self.compare_with_market(benchmark)
+        df, basic_results = self.compare_with_market()
         
         # 计算日化无风险利率
         # TODO 注意可能后续会更改无风险收益的数据公式和获取来源
@@ -525,10 +525,10 @@ if __name__ == "__main__":
     mra = MRA()
     mra.vendor = base.vendor.akshare
     mra.fq = base.复权.动态复权
-    mra.start_date = datetime(2024, 1, 1)
-    mra.end_date = datetime(2024, 12, 6)
+    mra.start_date = datetime(2025, 1, 1)
+    mra.end_date = datetime(2025, 12, 6)
     mra.ktype = '1d'
-    mra.code = '300347.sz'
+    mra.code = '688256.SH'
     #计算各项指标
     mra.compare_with_market()
     # 输出alpha和beta

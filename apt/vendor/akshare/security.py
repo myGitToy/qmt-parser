@@ -77,7 +77,7 @@ class security(base , stock):
             dataframe:code|symbol|name|market|list_date
         """
         #继承tspro同名方法
-        return tspro_sec.get_all_code(self)
+        return tspro_sec.get_all_code(self, market , day , type)
 
     def get_security(self , code = None):
         '''
