@@ -2,9 +2,10 @@
  * 路由配置
  */
 
-import { createBrowserRouter, Navigate } from "react-router-dom";
+import { createBrowserRouter } from "react-router-dom";
 import { MainLayout } from "./components/layout/MainLayout";
 import { Dashboard } from "./pages/dashboard/Dashboard";
+import { MarketTest } from "./pages/MarketTest";
 
 export const router = createBrowserRouter([
     {
@@ -18,6 +19,10 @@ export const router = createBrowserRouter([
             {
                 path: "market",
                 element: <Dashboard />,
+            },
+            {
+                path: "test",
+                element: <MarketTest />,
             },
             {
                 path: "portfolio",

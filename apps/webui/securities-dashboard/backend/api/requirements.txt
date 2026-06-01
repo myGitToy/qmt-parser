@@ -16,8 +16,8 @@ redis==5.0.1
 celery==5.3.6
 
 # Data providers
-tushare==1.2.90
-akshare==1.12.60
+tushare==1.4.29
+akshare==1.18.64
 
 # Data processing
 pandas==2.2.0
