@@ -1,0 +1,76 @@
+# 证券看板 Docker Compose 配置
+
+services:
+  # Nginx 反向代理
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - securities-net
+
+  # FastAPI 后端
+  backend:
+    build:
+      context: ../backend/api
+      dockerfile: Dockerfile
+    environment:
+      - TUSHARE_TOKEN=${TUSHARE_TOKEN}
+      - DATABASE_URL=postgresql+asyncpg://securities_user:securities_pass@postgres:5432/securities_db
+      - REDIS_URL=redis://redis:6379/0
+      - DEBUG=True
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - securities-net
+    volumes:
+      - ../backend/api:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  # React 前端（开发模式）
+  frontend:
+    build:
+      context: ../frontend/client-web
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ../frontend/client-web:/app
+      - /app/node_modules
+    networks:
+      - securities-net
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8080/api/v1
+
+  # PostgreSQL + TimescaleDB
+  postgres:
+    image: timescale/timescaledb:latest-pg16
+    environment:
+      - POSTGRES_DB=securities_db
+      - POSTGRES_USER=securities_user
+      - POSTGRES_PASSWORD=securities_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - securities-net
+
+  # Redis
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - securities-net
+
+volumes:
+  postgres_data:
+
+networks:
+  securities-net:
+    driver: bridge
