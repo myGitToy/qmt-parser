@@ -1,0 +1,52 @@
+[project]
+name = "securities-dashboard-api"
+version = "0.1.0"
+description = "Securities Dashboard Backend API"
+authors = [
+    {name = "Hui Qiao", email = "george@example.com"}
+]
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.109.0",
+    "uvicorn[standard]>=0.27.0",
+    "pydantic>=2.5.3",
+    "pydantic-settings>=2.1.0",
+    "python-dotenv>=1.0.0",
+    "sqlalchemy>=2.0.25",
+    "psycopg2-binary>=2.9.9",
+    "asyncpg>=0.29.0",
+    "alembic>=1.13.1",
+    "redis>=5.0.1",
+    "celery>=5.3.6",
+    "tushare>=1.2.90",
+    "akshare>=1.12.60",
+    "pandas>=2.2.0",
+    "numpy>=1.26.3",
+    "websockets>=12.0",
+    "python-socketio>=5.11.0",
+    "aiohttp>=3.9.3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.4",
+    "pytest-asyncio>=0.23.3",
+    "httpx>=0.26.0",
+    "python-json-logger>=2.0.7",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
