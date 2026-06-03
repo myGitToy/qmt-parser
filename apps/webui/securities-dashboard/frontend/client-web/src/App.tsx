@@ -4,7 +4,7 @@
 
 import { ConfigProvider } from "antd";
 import { RouterProvider } from "react-router-dom";
-import router from "./router";
+import { router } from "./router";
 import { darkTheme } from "./theme/darkTheme";
 
 function App() {

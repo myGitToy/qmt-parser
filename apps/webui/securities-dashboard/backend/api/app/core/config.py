@@ -10,7 +10,10 @@ class Settings(BaseSettings):
     """Application settings"""
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=[
+            ".env",  # 当前目录
+            "../../../.env",  # apps/webui/.env
+        ],
         env_file_encoding="utf-8",
         case_sensitive=False,
         extra="ignore",
@@ -29,14 +32,16 @@ class Settings(BaseSettings):
 
     # CORS Settings
     cors_origins: list[str] = [
+        "http://localhost:5073",
         "http://localhost:5173",
         "http://localhost:8080",
+        "http://127.0.0.1:5073",
         "http://127.0.0.1:5173",
         "http://127.0.0.1:8080",
     ]
 
     # Data Provider Settings
-    tushare_token: str
+    tushare_token: str = ""  # 留空时使用 AKShare 作为备用
     tushare_enabled: bool = True
     akshare_enabled: bool = True  # 作为备用
 

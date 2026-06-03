@@ -12,6 +12,33 @@ import type {
 } from "../../types/market";
 
 /**
+ * 健康检查
+ * 检查后端服务和数据源配置状态
+ */
+export const getHealthCheck = (): Promise<{
+    status: string;
+    timestamp: string;
+    providers: {
+        tushare: {
+            enabled: boolean;
+            configured: boolean;
+            token_preview?: string;
+        };
+        akshare: {
+            enabled: boolean;
+            available: boolean;
+        };
+    };
+    warnings: Array<{
+        type: string;
+        message: string;
+        solution: string;
+    }>;
+}> => {
+    return client.get("/market/health");
+};
+
+/**
  * 获取市场概览
  */
 export const getMarketOverview = (): Promise<MarketOverview> => {

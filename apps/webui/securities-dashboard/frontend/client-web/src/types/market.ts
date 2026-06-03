@@ -23,8 +23,8 @@ export interface Quote {
 export interface Bar {
     symbol: string;
     timeframe: string;
-    datetime: string;
-    open: number;
+    datetime: string;  // 后端使用 alias "datetime" 映射到 "dt" 字段
+    open: number;      // 后端使用 alias "open" 映射到 "open_price" 字段
     high: number;
     low: number;
     close: number;

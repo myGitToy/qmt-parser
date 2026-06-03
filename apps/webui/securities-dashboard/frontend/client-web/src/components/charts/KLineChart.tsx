@@ -4,8 +4,12 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import { createChart, IChartApi, ISeriesApi, ColorType } from "lightweight-charts";
+import { createChart, ColorType } from "lightweight-charts";
 import type { Bar } from "../../types/market";
+
+// 使用类型推断替代直接导入类型（lightweight-charts v5.x 不再导出这些类型）
+type ChartApi = ReturnType<typeof createChart>;
+type SeriesApi = ReturnType<ChartApi["addCandlestickSeries"]>;
 
 interface KLineChartProps {
     symbol: string;
@@ -15,8 +19,8 @@ interface KLineChartProps {
 
 export const KLineChart = ({ symbol, bars, height = 400 }: KLineChartProps) => {
     const chartContainerRef = useRef<HTMLDivElement>(null);
-    const chartRef = useRef<IChartApi | null>(null);
-    const seriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
+    const chartRef = useRef<ChartApi | null>(null);
+    const seriesRef = useRef<SeriesApi | null>(null);
     const [chartReady, setChartReady] = useState(false);
 
     // 初始化图表

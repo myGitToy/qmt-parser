@@ -71,7 +71,7 @@ class TushareProvider(MarketDataProvider):
             amount=Decimal(str(row["amount"])) * 1000,  # Tushare 的单位是千元
             high=Decimal(str(row["high"])),
             low=Decimal(str(row["low"])),
-            open=Decimal(str(row["open"])),
+            open_price=Decimal(str(row["open"])),
             close_prev=Decimal(str(close_prev)),
             timestamp=datetime.now(),
             market="SH" if symbol.endswith(".SH") else "SZ",
@@ -119,7 +119,7 @@ class TushareProvider(MarketDataProvider):
                     symbol=row["ts_code"],
                     timeframe=timeframe,
                     datetime=datetime.strptime(row["trade_date"], "%Y%m%d"),
-                    open=Decimal(str(row["open"])),
+                    open_price=Decimal(str(row["open"])),
                     high=Decimal(str(row["high"])),
                     low=Decimal(str(row["low"])),
                     close=Decimal(str(row["close"])),
@@ -180,7 +180,7 @@ class TushareProvider(MarketDataProvider):
                             amount=Decimal(str(row["amount"])) * 1000 if "amount" in row else None,
                             high=Decimal(str(row["high"])) if "high" in row else None,
                             low=Decimal(str(row["low"])) if "low" in row else None,
-                            open=Decimal(str(row["open"])) if "open" in row else None,
+                            open_price=Decimal(str(row["open"])) if "open" in row else None,
                             close_prev=Decimal(str(close_prev)),
                             timestamp=datetime.now(),
                             market="SH" if code.endswith(".SH") else "SZ",
@@ -202,11 +202,11 @@ class TushareProvider(MarketDataProvider):
         Returns:
             list[dict]: 股票列表，包含 ts_code 和 name 字段
         """
-        # Tushare 股票列表接口
-        df = await self._run_sync(self.pro.stock_basic, ts_code=keyword, name=keyword)
+        # 先尝试按代码精确搜索
+        df = await self._run_sync(self.pro.stock_basic, ts_code=keyword, list_status="L")
 
         if df.empty:
-            # 模糊搜索
+            # 如果没有结果，再按名称模糊搜索
             df = await self._run_sync(
                 self.pro.stock_basic,
                 name=keyword,
