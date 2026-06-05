@@ -1,15 +1,14 @@
 /**
  * K线图组件
- * 使用 TradingView Lightweight Charts
+ * 使用 TradingView Lightweight Charts v5.x
  */
 
 import { useEffect, useRef, useState } from "react";
-import { createChart, ColorType } from "lightweight-charts";
+import { createChart, ColorType, CandlestickSeries } from "lightweight-charts";
 import type { Bar } from "../../types/market";
 
-// 使用类型推断替代直接导入类型（lightweight-charts v5.x 不再导出这些类型）
+// lightweight-charts v5.x 类型推断
 type ChartApi = ReturnType<typeof createChart>;
-type SeriesApi = ReturnType<ChartApi["addCandlestickSeries"]>;
 
 interface KLineChartProps {
     symbol: string;
@@ -20,7 +19,7 @@ interface KLineChartProps {
 export const KLineChart = ({ symbol, bars, height = 400 }: KLineChartProps) => {
     const chartContainerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<ChartApi | null>(null);
-    const seriesRef = useRef<SeriesApi | null>(null);
+    const seriesRef = useRef<any>(null);
     const [chartReady, setChartReady] = useState(false);
 
     // 初始化图表
@@ -52,8 +51,8 @@ export const KLineChart = ({ symbol, bars, height = 400 }: KLineChartProps) => {
             },
         });
 
-        // 创建K线系列
-        const candlestickSeries = chart.addCandlestickSeries({
+        // 创建K线系列（v5.0+ 使用统一 API）
+        const candlestickSeries = chart.addSeries(CandlestickSeries, {
             upColor: "#f85149", // 涨（红）
             downColor: "#3fb950", // 跌（绿）
             borderVisible: false,
