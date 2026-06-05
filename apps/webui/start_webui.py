@@ -3,6 +3,10 @@
 """
 证券看板一键启动脚本
 启动前端和后端服务
+功能：
+- 端口占用检测并强制终止占用进程
+- 自动重启进程（崩溃时）
+- 监听进程状态
 """
 
 import os
@@ -11,6 +15,7 @@ import subprocess
 import threading
 import time
 import signal
+import psutil
 from pathlib import Path
 
 # 修复 Windows 控制台编码问题
@@ -78,6 +83,65 @@ def find_python_with_uvicorn():
 PYTHON_EXE = find_python_with_uvicorn()
 
 
+def kill_process_on_port(port: int) -> bool:
+    """
+    查找并终止占用指定端口的进程
+
+    Args:
+        port: 端口号
+
+    Returns:
+        bool: 是否成功终止进程
+    """
+    killed = False
+    try:
+        for conn in psutil.net_connections():
+            if conn.laddr.port == port and conn.status == 'LISTEN':
+                try:
+                    process = psutil.Process(conn.pid)
+                    print(f"  🗑️  发现端口 {port} 被进程 {conn.pid} 占用: {process.name()}")
+                    process.terminate()
+                    process.wait(timeout=5)
+                    print(f"  ✅ 已终止进程 {conn.pid}")
+                    killed = True
+                except psutil.NoSuchProcess:
+                    print(f"  ⚠️  进程 {conn.pid} 不存在")
+                except psutil.AccessDenied:
+                    print(f"  ⚠️  无权限终止进程 {conn.pid}，尝试强制终止...")
+                    try:
+                        process.kill()
+                        killed = True
+                        print(f"  ✅ 已强制终止进程 {conn.pid}")
+                    except:
+                        print(f"  ❌ 无法终止进程 {conn.pid}")
+                except subprocess.TimeoutExpired:
+                    print(f"  ⚠️  进程 {conn.pid} 超时未退出，尝试强制终止...")
+                    try:
+                        process.kill()
+                        killed = True
+                        print(f"  ✅ 已强制终止进程 {conn.pid}")
+                    except:
+                        print(f"  ❌ 无法强制终止进程 {conn.pid}")
+    except Exception as e:
+        print(f"  ❌ 检测端口时出错: {e}")
+    return killed
+
+
+def check_and_clear_ports():
+    """检查并清理被占用的端口"""
+    print("🔍 检查端口占用...")
+
+    ports_to_check = [FRONTEND_PORT, BACKEND_PORT]
+    for port in ports_to_check:
+        if kill_process_on_port(port):
+            print(f"  ✅ 端口 {port} 已清理")
+        else:
+            print(f"  ✓ 端口 {port} 空闲")
+
+    # 等待端口完全释放
+    time.sleep(1)
+
+
 def print_banner():
     """打印启动横幅"""
     banner = """
@@ -94,6 +158,19 @@ def print_banner():
 def check_dependencies():
     """检查依赖是否安装"""
     print("🔍 检查依赖...")
+
+    # 检查 psutil
+    try:
+        import psutil
+        print(f"  ✓ psutil {psutil.__version__}")
+    except ImportError:
+        print("  ✗ psutil 未安装")
+        print("  📦 正在安装 psutil...")
+        subprocess.run(
+            [sys.executable, "-m", "pip", "install", "psutil"],
+            check=True,
+        )
+        print("  ✓ psutil 安装完成")
 
     # 检查 Node.js
     try:
@@ -293,6 +370,9 @@ def main():
     # 切换到项目目录
     os.chdir(PROJECT_DIR)
 
+    # 检查并清理端口占用
+    check_and_clear_ports()
+
     # 检查依赖
     if not check_dependencies():
         print("\n❌ 依赖检查失败，请安装缺失的依赖后重试")
@@ -321,17 +401,40 @@ def main():
     print(f"\n✅ 所有服务已启动！")
     print(f"   前端: http://localhost:{FRONTEND_PORT}")
     print(f"   后端: http://localhost:{BACKEND_PORT}/docs")
+    print(f"\n🔄 启用自动重启：如果服务崩溃将自动重启")
     print(f"\n按 Ctrl+C 停止所有服务\n")
 
-    # 等待进程
+    # 等待进程并实现自动重启
     try:
         while True:
             # 检查进程状态
-            for name, proc in processes[:]:
+            for i, (name, proc) in enumerate(processes[:]):
                 if proc.poll() is not None:
-                    print(f"⚠️  {name} 已意外停止，退出码: {proc.returncode}")
-                    stop_all()
-                    return 1
+                    exit_code = proc.returncode
+                    print(f"\n⚠️  {name} 已意外停止，退出码: {exit_code}")
+                    print(f"🔄 正在尝试重启 {name}...")
+
+                    # 移除旧进程
+                    processes.pop(i)
+
+                    # 重启对应服务
+                    if name == "Backend":
+                        time.sleep(2)  # 等待端口释放
+                        new_proc = start_backend()
+                        processes.append(("Backend", new_proc))
+                        threading.Thread(
+                            target=monitor_process, args=("Backend", new_proc), daemon=True
+                        ).start()
+                        print(f"✅ 后端服务已重启")
+                    elif name == "Frontend":
+                        time.sleep(2)
+                        new_proc = start_frontend()
+                        processes.append(("Frontend", new_proc))
+                        threading.Thread(
+                            target=monitor_process, args=("Frontend", new_proc), daemon=True
+                        ).start()
+                        print(f"✅ 前端服务已重启")
+
             time.sleep(1)
     except KeyboardInterrupt:
         signal_handler(None, None)
