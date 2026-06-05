@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from datetime import datetime, timedelta
-from typing import Dict
+from typing import Dict, Any
 
 from app.models.market import Bar, Quote, MarketOverview
 from app.providers.base import MarketDataProvider
@@ -32,7 +32,7 @@ async def get_market_provider() -> MarketDataProvider:
 
 
 @router.get("/health")
-async def health_check() -> Dict[str, any]:
+async def health_check() -> Dict[str, Any]:
     """
     健康检查端点
 
