@@ -69,6 +69,9 @@ class Settings(BaseSettings):
     # Backtest Settings (future)
     backtest_enabled: bool = False
 
+    # QMT Settings
+    qmt_client_path: str = ""  # QMT客户端安装路径 (如: D:\方正证券FQT交易客户端)
+
 
 @lru_cache
 def get_settings() -> Settings:

@@ -1,0 +1,3 @@
+[submodule "apps/webui/securities-dashboard/libs/qmt-parser"]
+	path = apps/webui/securities-dashboard/libs/qmt-parser
+	url = https://github.com/sunnysab/qmt-parser.git
