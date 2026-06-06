@@ -16,13 +16,17 @@ import threading
 import time
 import signal
 import psutil
+import warnings
 from pathlib import Path
+
+# 抑制 requests 库的依赖版本警告（可选）
+warnings.filterwarnings("ignore", message=".*doesn't match a supported version.*")
 
 # 修复 Windows 控制台编码问题
 if sys.platform == "win32":
     import io
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace', line_buffering=True)
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace', line_buffering=True)
 
 # 加载环境变量
 WEBUI_DIR = Path(__file__).parent
@@ -36,6 +40,9 @@ if ENV_FILE.exists():
 PROJECT_DIR = WEBUI_DIR / "securities-dashboard"
 FRONTEND_DIR = PROJECT_DIR / "frontend" / "client-web"
 BACKEND_DIR = PROJECT_DIR / "backend" / "api"
+
+# 平台适配：Windows 用 npm.cmd，Unix 用 npm
+NPM_CMD = "npm.cmd" if sys.platform == "win32" else "npm"
 
 # 端口配置
 FRONTEND_PORT = 5073
@@ -152,7 +159,7 @@ def print_banner():
     ║  后端 API: http://localhost:{}                             ║
     ╚══════════════════════════════════════════════════════════╝
     """.format(FRONTEND_PORT, BACKEND_PORT)
-    print(banner)
+    print(banner, flush=True)
 
 
 def check_dependencies():
@@ -192,7 +199,7 @@ def check_dependencies():
     # 检查 npm
     try:
         result = subprocess.run(
-            ["npm", "--version"],
+            [NPM_CMD, "--version"],
             capture_output=True,
             text=True,
             check=False,
@@ -222,11 +229,8 @@ def check_dependencies():
         return False
 
     # 检查前端 node_modules
-    if (FRONTEND_DIR / "node_modules").exists():
-        print("  ✓ 前端依赖已安装")
-    else:
-        print("  ⚠ 前端依赖未安装，正在安装...")
-        install_frontend()
+    ensure_npm_deps()
+    print("  ✓ 前端依赖已安装")
 
     # 检查后端 Python 包
     try:
@@ -250,14 +254,19 @@ def check_dependencies():
     return True
 
 
-def install_frontend():
-    """安装前端依赖"""
-    print("  📦 正在安装前端依赖...")
-    subprocess.run(
-        ["npm", "install"],
-        cwd=FRONTEND_DIR,
-        check=False,
+def ensure_npm_deps() -> None:
+    """确保前端依赖已安装，缺失则自动安装（参考 HMU start_all.py）"""
+    node_modules = FRONTEND_DIR / "node_modules"
+    if node_modules.exists():
+        return
+    print(f"  📦 检测到缺少 node_modules，正在安装前端依赖...")
+    result = subprocess.run(
+        [NPM_CMD, "install"],
+        cwd=str(FRONTEND_DIR),
     )
+    if result.returncode != 0:
+        print("  ❌ 前端依赖安装失败")
+        sys.exit(1)
     print("  ✓ 前端依赖安装完成")
 
 
@@ -317,7 +326,7 @@ def start_frontend():
     else:
         # 使用 npm run dev
         proc = subprocess.Popen(
-            ["npm", "run", "dev"],
+            [NPM_CMD, "run", "dev"],
             cwd=FRONTEND_DIR,
             env=env,
             stdout=subprocess.PIPE,
