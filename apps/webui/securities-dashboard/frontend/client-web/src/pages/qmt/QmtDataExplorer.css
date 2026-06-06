@@ -1,0 +1,19 @@
+/**
+ * QMT数据校验页面样式
+ */
+
+.qmt-data-explorer {
+    padding: 8px;
+}
+
+.qmt-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.qmt-header h2 {
+    margin: 0;
+    color: #c9d1d9;
+}
