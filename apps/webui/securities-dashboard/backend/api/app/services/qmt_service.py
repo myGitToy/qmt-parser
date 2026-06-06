@@ -441,6 +441,410 @@ class QmtDataService:
 
         return "unknown"
 
+    def list_finance_types(self) -> List[Dict[str, Any]]:
+        """
+        列出所有财务数据类型及其文件统计
+
+        Returns:
+            财务数据类型列表，包含文件数量和总大小
+        """
+        if not self.datadir or not self.datadir.exists():
+            return []
+
+        qmt_root = self.datadir.parent
+        finance_types: List[Dict[str, Any]] = []
+
+        for type_code, type_info in FINANCE_TYPE_MAP.items():
+            total_files = 0
+            total_size = 0
+            file_suffix = type_info["file_suffix"]
+
+            # 扫描各市场目录下的财务数据文件
+            for market_dir in self.datadir.iterdir():
+                if not market_dir.is_dir():
+                    continue
+                market_code = market_dir.name
+                if market_code not in MARKET_MAP:
+                    continue
+
+                # 查找匹配后缀的文件（如 _7001.DAT）
+                pattern = f"*{file_suffix}"
+                for dat_file in market_dir.glob(pattern):
+                    if dat_file.is_file():
+                        total_files += 1
+                        total_size += dat_file.stat().st_size
+
+            # 也扫描 finance 目录
+            finance_dir = qmt_root / "finance"
+            if finance_dir.exists():
+                for dat_file in finance_dir.glob(f"*{file_suffix}"):
+                    if dat_file.is_file():
+                        total_files += 1
+                        total_size += dat_file.stat().st_size
+
+            finance_types.append({
+                "code": type_code,
+                "name": type_info["name"],
+                "file_suffix": file_suffix,
+                "files": total_files,
+                "size": total_size,
+                "size_human": self._format_size(total_size),
+            })
+
+        return finance_types
+
+    def list_finance_files(
+        self,
+        finance_type: str,
+        market: str,
+        page: int = 1,
+        page_size: int = 100,
+    ) -> Dict[str, Any]:
+        """
+        列出指定财务类型和市场的文件
+
+        Args:
+            finance_type: 财务类型代码 (7001-7008)
+            market: 市场代码 (SH/SZ/BJ等)
+            page: 页码
+            page_size: 每页大小
+
+        Returns:
+            文件列表及分页信息
+        """
+        if not self.datadir or not self.datadir.exists():
+            return {"valid": False, "error": "datadir 不可用"}
+
+        if finance_type not in FINANCE_TYPE_MAP:
+            return {"valid": False, "error": f"未知财务类型: {finance_type}"}
+
+        file_suffix = FINANCE_TYPE_MAP[finance_type]["file_suffix"]
+        files: List[Dict[str, Any]] = []
+
+        # 在 datadir/{market}/ 下查找匹配后缀的文件
+        market_path = self.datadir / market
+        if market_path.exists() and market_path.is_dir():
+            pattern = f"*{file_suffix}"
+            for dat_file in market_path.glob(pattern):
+                if dat_file.is_file():
+                    file_info = self._get_file_info(dat_file, f"{market}/{dat_file.name}")
+                    # 从文件名提取股票代码 (如 000001_7001.DAT -> 000001)
+                    stem = dat_file.stem
+                    stock_code = stem.replace(f"_{finance_type}", "")
+                    file_info["stock_code"] = stock_code
+                    file_info["finance_type"] = finance_type
+                    files.append(file_info)
+
+        # 也在 finance 目录查找
+        qmt_root = self.datadir.parent
+        finance_dir = qmt_root / "finance"
+        if finance_dir.exists():
+            for dat_file in finance_dir.glob(f"*{file_suffix}"):
+                if dat_file.is_file():
+                    file_info = self._get_file_info(dat_file, f"finance/{dat_file.name}")
+                    stem = dat_file.stem
+                    stock_code = stem.replace(f"_{finance_type}", "")
+                    file_info["stock_code"] = stock_code
+                    file_info["finance_type"] = finance_type
+                    files.append(file_info)
+
+        files.sort(key=lambda x: x["name"])
+
+        total = len(files)
+        start = (page - 1) * page_size
+        end = start + page_size
+        page_files = files[start:end]
+
+        return {
+            "valid": True,
+            "files": page_files,
+            "pagination": {
+                "page": page,
+                "page_size": page_size,
+                "total": total,
+                "total_pages": (total + page_size - 1) // page_size if total > 0 else 0,
+            },
+        }
+
+    def list_tick_stocks(self, market: str) -> List[Dict[str, Any]]:
+        """
+        列出指定市场下有Tick分笔数据的股票代码
+
+        Args:
+            market: 市场代码
+
+        Returns:
+            股票代码列表，包含文件数量和大小
+        """
+        if not self.datadir or not self.datadir.exists():
+            return []
+
+        tick_path = self.datadir / market / "0"
+        if not tick_path.exists() or not tick_path.is_dir():
+            return []
+
+        stocks: List[Dict[str, Any]] = []
+        for stock_dir in tick_path.iterdir():
+            if not stock_dir.is_dir():
+                continue
+
+            stock_code = stock_dir.name
+            dat_files = list(stock_dir.glob("*.dat"))
+            file_count = len(dat_files)
+            total_size = sum(f.stat().st_size for f in dat_files if f.is_file())
+
+            if file_count > 0:
+                stocks.append({
+                    "code": stock_code,
+                    "market": market,
+                    "files": file_count,
+                    "size": total_size,
+                    "size_human": self._format_size(total_size),
+                })
+
+        return sorted(stocks, key=lambda x: x["code"])
+
+    def list_dividend_files(
+        self,
+        market: str,
+        page: int = 1,
+        page_size: int = 100,
+    ) -> Dict[str, Any]:
+        """
+        列出除权数据文件
+
+        Args:
+            market: 市场代码
+            page: 页码
+            page_size: 每页大小
+
+        Returns:
+            除权文件列表及分页信息
+        """
+        if not self.datadir or not self.datadir.exists():
+            return {"valid": False, "error": "datadir 不可用"}
+
+        qmt_root = self.datadir.parent
+
+        # DividData 是 LevelDB 数据库目录
+        dividend_dir = qmt_root / "DividData"
+        if not dividend_dir.exists():
+            return {
+                "valid": True,
+                "files": [],
+                "pagination": {
+                    "page": page,
+                    "page_size": page_size,
+                    "total": 0,
+                    "total_pages": 0,
+                },
+                "note": "DividData目录不存在",
+            }
+
+        files: List[Dict[str, Any]] = []
+
+        # LevelDB 目录包含 .ldb, .log, .manifest 等文件
+        for f in dividend_dir.iterdir():
+            if f.is_file():
+                stat_info = f.stat()
+                files.append({
+                    "name": f.name,
+                    "path": f"DividData/{f.name}",
+                    "size": stat_info.st_size,
+                    "size_human": self._format_size(stat_info.st_size),
+                    "modified": datetime.fromtimestamp(stat_info.st_mtime).isoformat(),
+                    "modified_timestamp": stat_info.st_mtime,
+                    "file_type": "leveldb",
+                })
+
+        # 也扫描 datadir 下可能的除权相关文件
+        for suffix in ["*divid*", "*exright*", "*xr*"]:
+            for f in self.datadir.rglob(suffix):
+                if f.is_file():
+                    stat_info = f.stat()
+                    files.append({
+                        "name": f.name,
+                        "path": str(f.relative_to(self.datadir)),
+                        "size": stat_info.st_size,
+                        "size_human": self._format_size(stat_info.st_size),
+                        "modified": datetime.fromtimestamp(stat_info.st_mtime).isoformat(),
+                        "modified_timestamp": stat_info.st_mtime,
+                        "file_type": "dividend_data",
+                    })
+
+        files.sort(key=lambda x: x["name"])
+
+        total = len(files)
+        start = (page - 1) * page_size
+        end = start + page_size
+        page_files = files[start:end]
+
+        return {
+            "valid": True,
+            "files": page_files,
+            "pagination": {
+                "page": page,
+                "page_size": page_size,
+                "total": total,
+                "total_pages": (total + page_size - 1) // page_size if total > 0 else 0,
+            },
+        }
+
+    def list_etf_codes(self, market: str) -> List[Dict[str, Any]]:
+        """
+        列出指定市场下有ETF申赎数据的代码
+
+        Args:
+            market: 市场代码
+
+        Returns:
+            ETF代码列表
+        """
+        if not self.datadir or not self.datadir.exists():
+            return []
+
+        qmt_root = self.datadir.parent
+        etf_codes: List[Dict[str, Any]] = []
+
+        # 尝试多种可能的ETF数据路径
+        possible_paths = [
+            self.datadir / market / "etf",
+            self.datadir / market / "ETF",
+            qmt_root / "etf" / market,
+            qmt_root / "ETF" / market,
+        ]
+
+        scanned_dirs: List[Path] = []
+        for etf_path in possible_paths:
+            if etf_path.exists() and etf_path.is_dir():
+                scanned_dirs.append(etf_path)
+
+        # 如果没有专门的ETF目录，尝试在日线数据中识别ETF代码
+        # ETF代码通常以 51xxxx(SH) 或 15xxxx(SZ) 开头
+        if not scanned_dirs:
+            daily_path = self.datadir / market / "86400"
+            if daily_path.exists() and daily_path.is_dir():
+                suffix = MARKET_MAP.get(market, {}).get("suffix", "")
+                etf_prefixes = self._get_etf_prefixes(market)
+
+                for dat_file in daily_path.glob("*.DAT"):
+                    if not dat_file.is_file():
+                        continue
+                    stem = dat_file.stem
+                    if any(stem.startswith(p) for p in etf_prefixes):
+                        stat_info = dat_file.stat()
+                        etf_codes.append({
+                            "code": stem.replace(suffix, "") if suffix else stem,
+                            "market": market,
+                            "size": stat_info.st_size,
+                            "size_human": self._format_size(stat_info.st_size),
+                            "source": "daily_kline",
+                        })
+
+        # 扫描专门的ETF目录
+        for etf_dir in scanned_dirs:
+            for item in etf_dir.iterdir():
+                if item.is_dir():
+                    dat_files = list(item.glob("*.dat")) + list(item.glob("*.DAT"))
+                    file_count = len(dat_files)
+                    total_size = sum(f.stat().st_size for f in dat_files if f.is_file())
+                    if file_count > 0:
+                        etf_codes.append({
+                            "code": item.name,
+                            "market": market,
+                            "files": file_count,
+                            "size": total_size,
+                            "size_human": self._format_size(total_size),
+                            "source": "etf_directory",
+                        })
+                elif item.is_file():
+                    stat_info = item.stat()
+                    etf_codes.append({
+                        "code": item.stem,
+                        "market": market,
+                        "size": stat_info.st_size,
+                        "size_human": self._format_size(stat_info.st_size),
+                        "source": "etf_directory",
+                    })
+
+        return sorted(etf_codes, key=lambda x: x["code"])
+
+    def list_etf_files(
+        self,
+        market: str,
+        etf_code: str,
+        page: int = 1,
+        page_size: int = 100,
+    ) -> Dict[str, Any]:
+        """
+        列出指定ETF的申赎清单文件
+
+        Args:
+            market: 市场代码
+            etf_code: ETF代码
+            page: 页码
+            page_size: 每页大小
+
+        Returns:
+            ETF文件列表及分页信息
+        """
+        if not self.datadir or not self.datadir.exists():
+            return {"valid": False, "error": "datadir 不可用"}
+
+        qmt_root = self.datadir.parent
+        files: List[Dict[str, Any]] = []
+
+        # 搜索多种可能的路径
+        possible_paths = [
+            self.datadir / market / "etf" / etf_code,
+            self.datadir / market / "ETF" / etf_code,
+            qmt_root / "etf" / market / etf_code,
+            qmt_root / "ETF" / market / etf_code,
+        ]
+
+        for etf_path in possible_paths:
+            if etf_path.exists() and etf_path.is_dir():
+                for dat_file in etf_path.iterdir():
+                    if dat_file.is_file():
+                        files.append(self._get_file_info(dat_file, str(dat_file.relative_to(self.datadir))))
+
+        # 如果ETF数据在日线K线中
+        if not files:
+            suffix = MARKET_MAP.get(market, {}).get("suffix", "")
+            daily_path = self.datadir / market / "86400"
+            if daily_path.exists():
+                target_name = f"{etf_code}{suffix}.DAT" if suffix else f"{etf_code}.DAT"
+                target_file = daily_path / target_name
+                if target_file.exists() and target_file.is_file():
+                    files.append(self._get_file_info(target_file, f"{market}/86400/{target_name}"))
+
+        files.sort(key=lambda x: x["name"])
+
+        total = len(files)
+        start = (page - 1) * page_size
+        end = start + page_size
+        page_files = files[start:end]
+
+        return {
+            "valid": True,
+            "files": page_files,
+            "pagination": {
+                "page": page,
+                "page_size": page_size,
+                "total": total,
+                "total_pages": (total + page_size - 1) // page_size if total > 0 else 0,
+            },
+        }
+
+    def _get_etf_prefixes(self, market: str) -> List[str]:
+        """获取指定市场的ETF代码前缀"""
+        etf_prefix_map = {
+            "SH": ["51", "56", "58", "59", "50"],  # 上交所ETF
+            "SZ": ["15", "16"],                      # 深交所ETF
+            "BJ": [],                                 # 北交所暂无ETF
+        }
+        return etf_prefix_map.get(market, [])
+
     def _format_size(self, size_bytes: int) -> str:
         """格式化文件大小"""
         for unit in ["B", "KB", "MB", "GB", "TB"]:
