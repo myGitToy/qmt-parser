@@ -1,19 +1,159 @@
 /**
  * QMT数据校验页面样式
+ * 金融终端暗色风格
  */
 
 .qmt-data-explorer {
     padding: 8px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 }
+
+/* === 标题栏 === */
 
 .qmt-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 16px;
+    margin-bottom: 8px;
 }
 
 .qmt-header h2 {
     margin: 0;
     color: #c9d1d9;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* === 功能区切换 (Segmented) === */
+
+.qmt-segmented {
+    margin-bottom: 0;
+}
+
+.qmt-segmented .ant-segmented {
+    background: #161b22;
+}
+
+/* === 统计卡片 === */
+
+.qmt-stat-cards .ant-card {
+    background: #161b22;
+    border-color: #30363d;
+}
+
+.qmt-stat-cards .ant-statistic-title {
+    font-size: 11px;
+    color: #8b949e;
+}
+
+.qmt-stat-cards .ant-statistic-content-value {
+    font-size: 16px;
+    color: #c9d1d9;
+}
+
+/* === 左侧导航卡片 === */
+
+.qmt-nav-card {
+    background: #161b22;
+    border-color: #30363d;
+}
+
+.qmt-nav-card .ant-card-head {
+    min-height: 32px;
+    padding: 0 8px;
+    font-size: 12px;
+}
+
+.qmt-nav-card .ant-card-head-title {
+    padding: 6px 0;
+    font-size: 12px;
+}
+
+.qmt-nav-card .ant-card-body {
+    padding: 4px 8px;
+    overflow-y: auto;
+    max-height: calc(100vh - 320px);
+}
+
+/* === 右侧数据面板 === */
+
+.qmt-data-card {
+    background: #161b22;
+    border-color: #30363d;
+}
+
+.qmt-data-card .ant-card-head {
+    min-height: 32px;
+    padding: 0 12px;
+    font-size: 12px;
+}
+
+.qmt-data-card .ant-card-head-title {
+    padding: 6px 0;
+    font-size: 12px;
+}
+
+.qmt-data-card .ant-card-body {
+    padding: 8px;
+}
+
+/* === 空状态提示 === */
+
+.qmt-empty-hint {
+    text-align: center;
+    color: #8b949e;
+    padding: 40px 0;
+    font-size: 13px;
+}
+
+/* === 底部状态栏 === */
+
+.qmt-status-bar {
+    margin-top: 8px;
+    padding: 4px 12px;
+    font-size: 11px;
+    color: #8b949e;
+    background: #161b22;
+    border-radius: 4px;
+    border: 1px solid #30363d;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+/* === 表格紧凑化 === */
+
+.qmt-data-card .ant-table {
+    font-size: 12px;
+}
+
+.qmt-data-card .ant-table-thead > tr > th {
+    padding: 6px 8px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.qmt-data-card .ant-table-tbody > tr > td {
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+/* === 树组件紧凑化 === */
+
+.qmt-nav-card .ant-tree {
+    font-size: 12px;
+}
+
+.qmt-nav-card .ant-tree .ant-tree-node-content-wrapper {
+    padding: 0 4px;
+    min-height: 24px;
+    line-height: 24px;
+}
+
+.qmt-nav-card .ant-tree .ant-tree-treenode {
+    padding: 0;
+    height: auto;
 }
