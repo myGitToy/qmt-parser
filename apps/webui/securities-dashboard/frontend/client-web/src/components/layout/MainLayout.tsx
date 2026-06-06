@@ -4,13 +4,14 @@
  */
 
 import { Layout, Menu, Row, Col } from "antd";
-import { Outlet } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import {
     LineChartOutlined,
     PieChartOutlined,
     BarChartOutlined,
     ToolOutlined,
     BellOutlined,
+    DatabaseOutlined,
 } from "@ant-design/icons";
 import { useAppStore } from "../../stores/appStore";
 import { darkTheme } from "../../theme/darkTheme";
@@ -20,12 +21,14 @@ const { Sider, Content, Header, Footer } = Layout;
 export const MainLayout = () => {
     const { sidebarCollapsed, setSidebarCollapsed, selectedFunction, setSelectedFunction } =
         useAppStore();
+    const navigate = useNavigate();
 
     // 功能菜单配置
     const functionMenuItems = [
         { key: "market", icon: <LineChartOutlined />, label: "行情" },
         { key: "portfolio", icon: <PieChartOutlined />, label: "组合" },
         { key: "analysis", icon: <BarChartOutlined />, label: "分析" },
+        { key: "qmt", icon: <DatabaseOutlined />, label: "QMT数据校验" },
         { key: "tools", icon: <ToolOutlined />, label: "工具" },
         { key: "alerts", icon: <BellOutlined />, label: "预警" },
     ];
@@ -69,7 +72,10 @@ export const MainLayout = () => {
                         mode="inline"
                         selectedKeys={selectedFunction ? [selectedFunction] : []}
                         items={functionMenuItems}
-                        onClick={({ key }) => setSelectedFunction(key)}
+                        onClick={({ key }) => {
+                            setSelectedFunction(key);
+                            navigate(`/${key}`);
+                        }}
                         style={{ background: "transparent" }}
                     />
                 </Sider>

@@ -32,6 +32,10 @@ export const router = createBrowserRouter([
                 path: "analysis",
                 lazy: () => import("./pages/analysis/Analysis"),
             },
+            {
+                path: "qmt",
+                lazy: () => import("./pages/qmt/QmtDataExplorer"),
+            },
         ],
     },
 ]);
