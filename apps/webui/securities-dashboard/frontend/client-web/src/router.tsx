@@ -34,7 +34,7 @@ export const router = createBrowserRouter([
             },
             {
                 path: "qmt",
-                lazy: () => import("./pages/qmt/QmtDataExplorer"),
+                lazy: () => import("./pages/qmt/QmtDataExplorer").then(m => ({ Component: m.QmtDataExplorer })),
             },
         ],
     },

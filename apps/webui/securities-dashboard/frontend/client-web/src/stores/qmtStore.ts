@@ -5,7 +5,8 @@
 
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import { qmtApi, MarketInfo, PeriodInfo, FileInfo, QmtSummary, QmtStatus } from "../api/qmt";
+import { qmtApi } from "../api/qmt";
+import type { MarketInfo, PeriodInfo, FileInfo, QmtSummary, QmtStatus } from "../api/qmt";
 
 interface QmtState {
     // 数据状态

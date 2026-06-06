@@ -5,29 +5,29 @@
 import client from "./client";
 
 // 类型定义
-export interface QmtStatus {
+export type QmtStatus = {
     qmt_client_path: string;
     datadir: string | null;
     valid: boolean;
     error: string | null;
-}
+};
 
-export interface MarketInfo {
+export type MarketInfo = {
     code: string;
     name: string;
     short: string;
     suffix: string;
-}
+};
 
-export interface PeriodInfo {
+export type PeriodInfo = {
     code: string;
     name: string;
     unit: string;
     desc: string;
     files: number;
-}
+};
 
-export interface FileInfo {
+export type FileInfo = {
     name: string;
     path: string;
     size: number;
@@ -37,9 +37,9 @@ export interface FileInfo {
     stock_code?: string;
     estimated_records?: number;
     file_type?: string;
-}
+};
 
-export interface QmtSummary {
+export type QmtSummary = {
     valid: boolean;
     summary?: {
         total_markets: number;
@@ -62,7 +62,7 @@ export interface QmtSummary {
             size_human: string;
         }>;
     }>;
-}
+};
 
 export const qmtApi = {
     // 获取QMT状态
