@@ -16,6 +16,7 @@ import {
     ScissorOutlined,
     ThunderboltOutlined,
     SwapOutlined,
+    AppstoreOutlined,
 } from "@ant-design/icons";
 import { useQmtStore } from "../../stores/qmtStore";
 import type { DataType } from "../../api/qmt";
@@ -34,6 +35,7 @@ const DATA_TYPE_OPTIONS = [
     { label: "除权数据", value: "dividend" as DataType, icon: <ScissorOutlined /> },
     { label: "分笔成交", value: "tick" as DataType, icon: <ThunderboltOutlined /> },
     { label: "ETF申赎", value: "etf" as DataType, icon: <SwapOutlined /> },
+    { label: "板块分类", value: "sector" as DataType, icon: <AppstoreOutlined /> },
 ];
 
 // ============================================================
@@ -142,12 +144,37 @@ const etfColumns: ColumnsType = [
     { title: "修改时间", dataIndex: "modified", key: "modified", width: 140 },
 ];
 
+const sectorColumns: ColumnsType = [
+    {
+        title: "板块名称",
+        dataIndex: "name",
+        key: "name",
+        width: 160,
+        render: (text: string) => (
+            <span>
+                <FolderOutlined style={{ marginRight: 8 }} />
+                {text}
+            </span>
+        ),
+    },
+    {
+        title: "成分股数",
+        dataIndex: "stock_count",
+        key: "stock_count",
+        width: 100,
+        render: (count: number) => (count ? count.toLocaleString() : "-"),
+    },
+    { title: "大小", dataIndex: "size_human", key: "size", width: 80 },
+    { title: "修改时间", dataIndex: "modified", key: "modified", width: 140 },
+];
+
 const TABLE_COLUMNS: Record<DataType, ColumnsType> = {
     kline: klineColumns,
     finance: financeColumns,
     dividend: dividendColumns,
     tick: tickColumns,
     etf: etfColumns,
+    sector: sectorColumns,
 };
 
 // ============================================================
@@ -164,6 +191,8 @@ export const QmtDataExplorer = () => {
         financeTypes,
         tickStocks,
         etfList,
+        sectorCategories,
+        selectedSectorCategory,
         files,
         activeDataType,
         selectedMarket,
@@ -192,6 +221,9 @@ export const QmtDataExplorer = () => {
         fetchTickFiles,
         fetchEtfFiles,
         fetchDividendFiles,
+        fetchSectorCategories,
+        fetchSectorFiles,
+        selectSectorCategory,
     } = store;
 
     // --- 初始化 ---
@@ -200,6 +232,13 @@ export const QmtDataExplorer = () => {
         fetchSummary();
         fetchMarkets();
     }, []);
+
+    // --- 板块分类：切换时自动加载类别 ---
+    useEffect(() => {
+        if (activeDataType === "sector" && sectorCategories.length === 0) {
+            fetchSectorCategories();
+        }
+    }, [activeDataType, sectorCategories.length, fetchSectorCategories]);
 
     // --- Segmented 选项（带图标） ---
     const segmentedOptions = useMemo(
@@ -289,6 +328,25 @@ export const QmtDataExplorer = () => {
             }));
     }, [markets, etfList]);
 
+    const buildSectorTree = useCallback((): DataNode[] => {
+        if (sectorCategories.length === 0) {
+            return [];
+        }
+        return [
+            {
+                title: "板块分类",
+                key: "sectorRoot",
+                icon: <FolderOutlined />,
+                children: sectorCategories.map((cat) => ({
+                    title: `${cat.name} (${cat.sector_count}个板块)`,
+                    key: `sectorCat:${cat.code}`,
+                    icon: <FolderOutlined />,
+                    isLeaf: true,
+                })),
+            },
+        ];
+    }, [sectorCategories]);
+
     const treeBuilders: Record<DataType, () => DataNode[]> = useMemo(
         () => ({
             kline: buildKlineTree,
@@ -296,8 +354,9 @@ export const QmtDataExplorer = () => {
             dividend: buildDividendTree,
             tick: buildTickTree,
             etf: buildEtfTree,
+            sector: buildSectorTree,
         }),
-        [buildKlineTree, buildFinanceTree, buildDividendTree, buildTickTree, buildEtfTree]
+        [buildKlineTree, buildFinanceTree, buildDividendTree, buildTickTree, buildEtfTree, buildSectorTree]
     );
 
     const treeData = useMemo(
@@ -376,10 +435,18 @@ export const QmtDataExplorer = () => {
                     fetchEtfFiles(mkt, code);
                     break;
                 }
+                // 板块分类
+                case "sectorCat": {
+                    const catCode = parts[1];
+                    selectSectorCategory(catCode);
+                    fetchSectorFiles(catCode);
+                    break;
+                }
             }
         },
         [selectedMarket, selectMarket, selectPeriod, selectFinanceType, selectTickStock, selectEtf,
-            fetchFinanceFiles, fetchDividendFiles, fetchTickStocks, fetchTickFiles, fetchEtfList, fetchEtfFiles]
+            fetchFinanceFiles, fetchDividendFiles, fetchTickStocks, fetchTickFiles, fetchEtfList, fetchEtfFiles,
+            selectSectorCategory, fetchSectorFiles]
     );
 
     // ============================================================
@@ -415,11 +482,16 @@ export const QmtDataExplorer = () => {
                         fetchDividendFiles(selectedMarket, page);
                     }
                     break;
+                case "sector":
+                    if (selectedSectorCategory) {
+                        fetchSectorFiles(selectedSectorCategory, page);
+                    }
+                    break;
             }
         },
         [activeDataType, selectedMarket, selectedPeriod, selectedFinanceType,
-            selectedTickStock, selectedEtf, fetchFiles, fetchFinanceFiles,
-            fetchTickFiles, fetchEtfFiles, fetchDividendFiles]
+            selectedTickStock, selectedEtf, selectedSectorCategory, fetchFiles, fetchFinanceFiles,
+            fetchTickFiles, fetchEtfFiles, fetchDividendFiles, fetchSectorFiles]
     );
 
     // ============================================================
@@ -456,11 +528,15 @@ export const QmtDataExplorer = () => {
                 return selectedEtf
                     ? `${selectedEtf} ETF申赎清单`
                     : "请选择市场和ETF代码";
+            case "sector":
+                return selectedSectorCategory
+                    ? `${sectorCategories.find((c) => c.code === selectedSectorCategory)?.name || selectedSectorCategory} 板块列表`
+                    : "请选择板块分类";
             default:
                 return "请选择目录";
         }
     }, [activeDataType, selectedPeriod, selectedFinanceType, selectedTickStock, selectedEtf,
-        periods, financeTypes]);
+        selectedSectorCategory, periods, financeTypes, sectorCategories]);
 
     // ============================================================
     // 状态栏文本
@@ -481,10 +557,15 @@ export const QmtDataExplorer = () => {
         }
         if (selectedTickStock) parts.push(selectedTickStock);
         if (selectedEtf) parts.push(selectedEtf);
+        if (selectedSectorCategory) {
+            const cat = sectorCategories.find((c) => c.code === selectedSectorCategory);
+            if (cat) parts.push(cat.name);
+        }
         if (pagination) parts.push(`第${pagination.page}页`);
         return parts.length > 0 ? parts.join(" / ") : "就绪";
     }, [activeDataType, selectedMarket, selectedPeriod, selectedFinanceType,
-        selectedTickStock, selectedEtf, pagination, periods, financeTypes]);
+        selectedTickStock, selectedEtf, selectedSectorCategory, pagination, periods, financeTypes,
+        sectorCategories]);
 
     // ============================================================
     // 渲染：错误状态

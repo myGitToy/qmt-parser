@@ -16,6 +16,8 @@ import type {
     FinanceTypeInfo,
     TickStockInfo,
     EtfInfo,
+    SectorCategory,
+    SectorFileInfo,
 } from "../api/qmt";
 
 interface QmtState {
@@ -45,6 +47,11 @@ interface QmtState {
     // === ETF申赎 ===
     etfList: EtfInfo[];
     selectedEtf: string | null;
+
+    // === 板块分类 ===
+    sectorCategories: SectorCategory[];
+    sectorFiles: SectorFileInfo[];
+    selectedSectorCategory: string | null;
 
     // === 通用文件列表 ===
     files: FileInfo[];
@@ -92,6 +99,11 @@ interface QmtState {
     // 除权数据
     fetchDividendFiles: (market: string, page?: number) => Promise<void>;
 
+    // 板块分类
+    fetchSectorCategories: () => Promise<void>;
+    fetchSectorFiles: (category: string, page?: number) => Promise<void>;
+    selectSectorCategory: (category: string) => void;
+
     // 通用
     selectFile: (file: FileInfo) => void;
     clearSelection: () => void;
@@ -121,6 +133,10 @@ export const useQmtStore = create<QmtState>()(
 
             etfList: [],
             selectedEtf: null,
+
+            sectorCategories: [],
+            sectorFiles: [],
+            selectedSectorCategory: null,
 
             files: [],
             selectedFile: null,
@@ -356,6 +372,51 @@ export const useQmtStore = create<QmtState>()(
                 }
             },
 
+            // --- 板块分类 ---
+            fetchSectorCategories: async () => {
+                set({ loading: true, error: null });
+                try {
+                    const response = await qmtApi.getSectorCategories();
+                    set({ sectorCategories: response.categories, loading: false });
+                } catch (error: any) {
+                    set({
+                        error: error?.userMessage || "获取板块分类列表失败",
+                        loading: false,
+                    });
+                }
+            },
+
+            fetchSectorFiles: async (category: string, page = 1) => {
+                set({ loading: true, error: null });
+                try {
+                    const response = await qmtApi.getSectorFiles(category, page, 100);
+                    set({
+                        sectorFiles: response.files,
+                        files: response.files.map((f) => ({
+                            name: f.name,
+                            path: f.path,
+                            size: f.size,
+                            size_human: f.size_human,
+                            modified: f.modified,
+                            modified_timestamp: f.modified_timestamp,
+                            stock_count: f.stock_count,
+                            category: f.category,
+                        })),
+                        pagination: response.pagination,
+                        loading: false,
+                    });
+                } catch (error: any) {
+                    set({
+                        error: error?.userMessage || "获取板块文件列表失败",
+                        loading: false,
+                    });
+                }
+            },
+
+            selectSectorCategory: (category: string) => {
+                set({ selectedSectorCategory: category, files: [], pagination: null });
+            },
+
             // --- 通用 ---
             selectFile: (file: FileInfo) => {
                 set({ selectedFile: file });
@@ -368,8 +429,10 @@ export const useQmtStore = create<QmtState>()(
                     selectedFinanceType: null,
                     selectedTickStock: null,
                     selectedEtf: null,
+                    selectedSectorCategory: null,
                     selectedFile: null,
                     files: [],
+                    sectorFiles: [],
                     pagination: null,
                 });
             },

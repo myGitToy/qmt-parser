@@ -8,7 +8,7 @@ import client from "./client";
 // 数据类别枚举
 // ============================================================
 
-export type DataType = "kline" | "finance" | "dividend" | "tick" | "etf";
+export type DataType = "kline" | "finance" | "dividend" | "tick" | "etf" | "sector";
 
 // ============================================================
 // 基础类型定义
@@ -47,6 +47,8 @@ export type FileInfo = {
     estimated_records?: number;
     file_type?: string;
     finance_type?: string;
+    stock_count?: number;
+    category?: string;
 };
 
 export type QmtSummary = {
@@ -110,6 +112,29 @@ export type EtfInfo = {
     size: number;
     size_human: string;
     source: string;
+};
+
+// ============================================================
+// 板块分类数据
+// ============================================================
+
+export type SectorCategory = {
+    code: string;
+    name: string;
+    sector_count: number;
+    size: number;
+    size_human: string;
+};
+
+export type SectorFileInfo = {
+    name: string;
+    path: string;
+    stock_count: number;
+    size: number;
+    size_human: string;
+    modified: string;
+    modified_timestamp: number;
+    category: string;
 };
 
 // ============================================================
@@ -213,6 +238,21 @@ export const qmtApi = {
     getDividendFiles: (market: string, page = 1, pageSize = 100) =>
         client.get<PaginatedResponse<FileInfo>>(
             `/qmt/dividend/markets/${market}/files`,
+            { params: { page, page_size: pageSize } }
+        ),
+
+    // ============================================================
+    // 板块分类数据 API
+    // ============================================================
+
+    // 列出板块分类类别
+    getSectorCategories: () =>
+        client.get<{ categories: SectorCategory[]; total: number }>("/qmt/sector/categories"),
+
+    // 列出板块文件
+    getSectorFiles: (category: string, page = 1, pageSize = 100) =>
+        client.get<PaginatedResponse<SectorFileInfo>>(
+            `/qmt/sector/categories/${category}/files`,
             { params: { page, page_size: pageSize } }
         ),
 };
