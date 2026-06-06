@@ -253,3 +253,43 @@ async def list_dividend_files(
     if not result.get("valid"):
         raise HTTPException(status_code=404, detail=result.get("error"))
     return result
+
+
+# ============================================================
+# 板块分类数据 API
+# ============================================================
+
+@router.get("/sector/categories")
+async def list_sector_categories(
+    service: QmtDataService = Depends(get_qmt_service),
+) -> Dict[str, Any]:
+    """
+    列出所有板块分类类别
+
+    返回 Sector/ 下的子目录列表，如申万行业、证监会行业、概念板块等
+    """
+    categories = service.list_sector_categories()
+    return {
+        "categories": categories,
+        "total": len(categories),
+    }
+
+
+@router.get("/sector/categories/{category}/files")
+async def list_sector_files(
+    category: str,
+    page: int = Query(1, ge=1, description="页码"),
+    page_size: int = Query(100, ge=1, le=1000, description="每页大小"),
+    service: QmtDataService = Depends(get_qmt_service),
+) -> Dict[str, Any]:
+    """
+    列出指定板块分类下的板块文件
+
+    - **category**: 板块分类目录名（如 申万一级行业板块、D概念）
+    """
+    if "/" in category or "\\" in category or ".." in category:
+        raise HTTPException(status_code=400, detail="无效的板块分类名")
+    result = service.list_sector_files(category, page, page_size)
+    if not result.get("valid"):
+        raise HTTPException(status_code=404, detail=result.get("error"))
+    return result

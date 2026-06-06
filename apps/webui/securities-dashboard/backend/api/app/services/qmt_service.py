@@ -624,10 +624,8 @@ class QmtDataService:
         if not self.datadir or not self.datadir.exists():
             return {"valid": False, "error": "datadir 不可用"}
 
-        qmt_root = self.datadir.parent
-
-        # DividData 是 LevelDB 数据库目录
-        dividend_dir = qmt_root / "DividData"
+        # DividData 是 LevelDB 数据库目录，位于 datadir/DividData
+        dividend_dir = self.datadir / "DividData"
         if not dividend_dir.exists():
             return {
                 "valid": True,
@@ -845,6 +843,130 @@ class QmtDataService:
         }
         return etf_prefix_map.get(market, [])
 
+    # ============================================================
+    # 板块分类数据
+    # ============================================================
+
+    def list_sector_categories(self) -> List[Dict[str, Any]]:
+        """
+        列出所有板块分类类别
+
+        扫描 datadir/Sector/ 下的子目录，每个子目录代表一种板块分类
+
+        Returns:
+            板块分类列表，包含板块数量和总大小
+        """
+        if not self.datadir or not self.datadir.exists():
+            return []
+
+        sector_root = self.datadir / "Sector"
+        if not sector_root.exists() or not sector_root.is_dir():
+            return []
+
+        categories: List[Dict[str, Any]] = []
+        for cat_dir in sector_root.iterdir():
+            if not cat_dir.is_dir():
+                continue
+
+            # 统计板块文件（排除 sectorConfig.xml）
+            file_count = 0
+            total_size = 0
+            for f in cat_dir.iterdir():
+                if f.is_file() and f.name != "sectorConfig.xml":
+                    file_count += 1
+                    total_size += f.stat().st_size
+
+            # 跳过空目录
+            if file_count == 0:
+                continue
+
+            categories.append({
+                "code": cat_dir.name,
+                "name": cat_dir.name,
+                "sector_count": file_count,
+                "size": total_size,
+                "size_human": self._format_size(total_size),
+            })
+
+        return sorted(categories, key=lambda x: x["sector_count"], reverse=True)
+
+    def list_sector_files(
+        self,
+        category: str,
+        page: int = 1,
+        page_size: int = 100,
+    ) -> Dict[str, Any]:
+        """
+        列出指定板块分类下的板块文件
+
+        Args:
+            category: 板块分类目录名（如 申万一级行业板块、D概念）
+            page: 页码
+            page_size: 每页大小
+
+        Returns:
+            板块文件列表及分页信息
+        """
+        if not self.datadir or not self.datadir.exists():
+            return {"valid": False, "error": "datadir 不可用"}
+
+        sector_root = self.datadir / "Sector"
+        if not sector_root.exists():
+            return {"valid": False, "error": "Sector目录不存在"}
+
+        cat_dir = sector_root / category
+        if not cat_dir.exists() or not cat_dir.is_dir():
+            return {"valid": False, "error": f"板块分类不存在: {category}"}
+
+        files: List[Dict[str, Any]] = []
+        for sector_file in cat_dir.iterdir():
+            if not sector_file.is_file() or sector_file.name == "sectorConfig.xml":
+                continue
+
+            stat_info = sector_file.stat()
+            stock_count = self._count_sector_stocks(sector_file)
+
+            files.append({
+                "name": sector_file.name,
+                "path": f"Sector/{category}/{sector_file.name}",
+                "stock_count": stock_count,
+                "size": stat_info.st_size,
+                "size_human": self._format_size(stat_info.st_size),
+                "modified": datetime.fromtimestamp(stat_info.st_mtime).isoformat(),
+                "modified_timestamp": stat_info.st_mtime,
+                "category": category,
+            })
+
+        files.sort(key=lambda x: x["name"])
+
+        total = len(files)
+        start = (page - 1) * page_size
+        end = start + page_size
+        page_files = files[start:end]
+
+        return {
+            "valid": True,
+            "files": page_files,
+            "pagination": {
+                "page": page,
+                "page_size": page_size,
+                "total": total,
+                "total_pages": (total + page_size - 1) // page_size if total > 0 else 0,
+            },
+        }
+
+    def _count_sector_stocks(self, file_path: Path) -> int:
+        """统计板块文件中的成分股数量"""
+        try:
+            with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                content = f.read().strip()
+            if not content:
+                return 0
+            # 格式: "000635.SZ,000837.SZ,600114.SH,..."
+            return len([s for s in content.split(",") if s.strip()])
+        except Exception:
+            return 0
+
     def _format_size(self, size_bytes: int) -> str:
         """格式化文件大小"""
         for unit in ["B", "KB", "MB", "GB", "TB"]:
@@ -892,8 +1014,8 @@ class QmtDataService:
                         "items": finance_files
             })
 
-        # 检查分红数据目录
-        dividend_dir = qmt_root / "DividData"
+        # 检查分红数据目录（位于 datadir/DividData）
+        dividend_dir = self.datadir / "DividData"
         if dividend_dir.exists():
             result["files"].append({
                 "category": "分红送股",
