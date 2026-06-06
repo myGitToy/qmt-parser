@@ -350,3 +350,15 @@ trade/
 
 # conda环境文件
 .conda
+
+# Python virtual environment
+env_myfund/
+
+# Unsloth ML compiled cache
+unsloth_compiled_cache/
+
+# Claude Code working directory
+.claude/
+
+# Stray pip artifact
+=4.0
