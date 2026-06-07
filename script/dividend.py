@@ -107,7 +107,7 @@ def list_dividend_codes(db_path: str, market: str) -> List[str]:
     prefix = f"{market}|".encode("utf-8")
 
     try:
-        db = plyvel.DB(str(db_dir), create_if_missing=False, read_only=True)
+        db = plyvel.DB(str(db_dir), create_if_missing=False)
     except Exception as e:
         raise RuntimeError(f"无法打开 LevelDB: {e}") from e
 
@@ -156,7 +156,7 @@ def parse_dividend_records(
     prefix = f"{market}|{code}|".encode("utf-8")
 
     try:
-        db = plyvel.DB(str(db_dir), create_if_missing=False, read_only=True)
+        db = plyvel.DB(str(db_dir), create_if_missing=False)
     except Exception as e:
         raise RuntimeError(f"无法打开 LevelDB: {e}") from e
 
