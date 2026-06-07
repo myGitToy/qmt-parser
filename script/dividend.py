@@ -25,7 +25,9 @@ LevelDB Value 格式: 96 字节 little-endian 二进制结构
 """
 
 import logging
+import os
 import struct
+import sys
 from datetime import datetime, date
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -38,6 +40,69 @@ except ImportError:
     plyvel = None  # type: ignore[assignment]
 
 logger = logging.getLogger(__name__)
+
+
+def _ensure_ascii_path(path: str) -> str:
+    """
+    确保 LevelDB 路径只包含 ASCII 字符。
+
+    plyvel-ci (Windows) 的 C 扩展无法处理包含非 ASCII 字符的路径（如中文）。
+    此函数尝试以下策略：
+    1. 若路径已是纯 ASCII，直接返回
+    2. 尝试获取 Windows 8.3 短路径名
+    3. 创建 junction 链接到纯 ASCII 临时目录
+    """
+    if sys.platform != "win32":
+        return path
+
+    # 策略 1：路径已是纯 ASCII
+    try:
+        path.encode("ascii")
+        return path
+    except UnicodeEncodeError:
+        pass
+
+    # 策略 2：尝试 Windows 8.3 短路径名
+    try:
+        import ctypes
+        buf = ctypes.create_unicode_buffer(512)
+        ctypes.windll.kernel32.GetShortPathNameW(path, buf, 512)
+        result = buf.value
+        if result:
+            try:
+                result.encode("ascii")
+                logger.info("使用短路径: %s -> %s", path, result)
+                return result
+            except UnicodeEncodeError:
+                pass  # 短路径仍含非 ASCII，尝试策略 3
+    except Exception:
+        pass
+
+    # 策略 3：创建 junction 到纯 ASCII 临时目录
+    try:
+        import tempfile
+        import uuid
+        junction_dir = os.path.join(
+            tempfile.gettempdir(), f"qmt_leveldb_{uuid.uuid4().hex[:8]}"
+        )
+        os.makedirs(junction_dir, exist_ok=True)
+        junction_path = os.path.join(junction_dir, os.path.basename(path))
+
+        if not os.path.exists(junction_path):
+            import subprocess
+
+            subprocess.run(
+                ["cmd", "/c", "mklink", "/J", junction_path, path],
+                check=True,
+                capture_output=True,
+            )
+            logger.info("创建 junction: %s -> %s", junction_path, path)
+
+        return junction_path
+    except Exception as e:
+        logger.warning("创建 junction 失败: %s，使用原始路径", e)
+        return path
+
 
 # 二进制值结构大小 (字节)
 VALUE_SIZE = 96
@@ -107,7 +172,7 @@ def list_dividend_codes(db_path: str, market: str) -> List[str]:
     prefix = f"{market}|".encode("utf-8")
 
     try:
-        db = plyvel.DB(str(db_dir), create_if_missing=False)
+        db = plyvel.DB(_ensure_ascii_path(str(db_dir)), create_if_missing=False)
     except Exception as e:
         raise RuntimeError(f"无法打开 LevelDB: {e}") from e
 
@@ -156,7 +221,7 @@ def parse_dividend_records(
     prefix = f"{market}|{code}|".encode("utf-8")
 
     try:
-        db = plyvel.DB(str(db_dir), create_if_missing=False)
+        db = plyvel.DB(_ensure_ascii_path(str(db_dir)), create_if_missing=False)
     except Exception as e:
         raise RuntimeError(f"无法打开 LevelDB: {e}") from e
 
