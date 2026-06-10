@@ -151,7 +151,7 @@ def parse_daily_kline(path: str, start: str, end: str) -> Optional[pd.DataFrame]
     
     # 重新索引并前向填充缺失数据
     df_final: pd.DataFrame = df_raw.reindex(date_range)
-    df_final.fillna(method='ffill', inplace=True)
+    df_final.ffill(inplace=True)
     df_final.dropna(inplace=True)
 
     # 业务逻辑1: 根据成交量和成交额判断是否停牌
