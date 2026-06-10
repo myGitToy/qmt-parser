@@ -4,24 +4,26 @@ QMT 除权数据 LevelDB 解析器
 读取 QMT 客户端本地 DividData 目录中的 LevelDB 数据库，
 解析除权除息记录。
 
-LevelDB Key 格式: {market}|{code}|{timestamp_ms}  (如 SH|600000|1640995200000)
-LevelDB Value 格式: 96 字节 little-endian 二进制结构
+LevelDB Key 格式: {market}|{code}|{type}|{timestamp_ms}
+  (如 SH|600519|4000|1027526400000)
 
-二进制布局 (96 bytes):
-  Offset  0-7:   unknown (跳过)
-  Offset  8-15:  timestamp_raw (i64, 毫秒时间戳)
+LevelDB Value 格式: 80 字节 little-endian 二进制结构
+
+二进制布局 (80 bytes):
+  Offset  0-7:   unknown (i64, 跳过)
+  Offset  8-15:  timestamp_raw (i64, 毫秒时间戳, 北京时间)
   Offset 16-23:  interest (f64, 每股现金红利)
   Offset 24-31:  stock_bonus (f64, 每股送股)
   Offset 32-39:  stock_gift (f64, 每股转赠)
   Offset 40-47:  allot_num (f64, 配股数量)
   Offset 48-55:  allot_price (f64, 配股价格)
   Offset 56-63:  gugai (f64, 股改值)
-  Offset 64-71:  unknown64_raw (f64, 保留)
-  Offset 72-79:  adjust_factor (f64, 复权系数)
-  Offset 80-83:  record_date (u32, YYYYMMDD)
-  Offset 84-87:  padding
-  Offset 88-91:  ex_dividend_date (u32, YYYYMMDD)
-  Offset 92-95:  padding
+  Offset 64-71:  adjust_factor (f64, 单次复权系数)
+  Offset 72-75:  record_date (u32, YYYYMMDD, 股权登记日)
+  Offset 76-79:  reserved (u32, 保留)
+
+注意: adjust_factor 是单次除权事件系数 (如 1.014), 不是累积因子。
+      复权计算时需先按日期升序做 cumprod 得到累积因子。
 """
 
 import logging
@@ -105,11 +107,11 @@ def _ensure_ascii_path(path: str) -> str:
 
 
 # 二进制值结构大小 (字节)
-VALUE_SIZE = 96
+VALUE_SIZE = 80
 
-# struct 格式字符串: little-endian, 96 字节
-# 1q (unknown) + 1q (timestamp) + 8d (f64 fields) + 4I (u32 fields)
-VALUE_STRUCT = struct.Struct("<qq8d4I")
+# struct 格式字符串: little-endian, 80 字节
+# 1q (unknown) + 1q (timestamp) + 7d (f64 fields) + 2I (u32 fields)
+VALUE_STRUCT = struct.Struct("<qq7d2I")
 
 # Key 中时间戳的有效范围 (毫秒)
 MIN_TIMESTAMP = 0
@@ -260,7 +262,7 @@ def parse_dividend_records(
 
 
 def _parse_value(data: bytes) -> Optional[Dict[str, object]]:
-    """解析单条 96 字节的 LevelDB Value 为字典"""
+    """解析单条 80 字节的 LevelDB Value 为字典"""
     try:
         fields = VALUE_STRUCT.unpack(data[:VALUE_SIZE])
     except struct.error:
@@ -275,21 +277,16 @@ def _parse_value(data: bytes) -> Optional[Dict[str, object]]:
         allot_num,      # 40-47: f64
         allot_price,    # 48-55: f64
         gugai,          # 56-63: f64
-        _unknown64,     # 64-71: f64 skip
-        adjust_factor,  # 72-79: f64
-        record_date_raw,  # 80-83: u32 YYYYMMDD
-        _pad1,          # 84-87
-        ex_div_date_raw,  # 88-91: u32 YYYYMMDD
-        _pad2,          # 92-95
+        adjust_factor,  # 64-71: f64 单次复权系数
+        record_date_raw,  # 72-75: u32 YYYYMMDD
+        _reserved,      # 76-79: u32 保留
     ) = fields
 
     if timestamp_raw <= 0:
         return None
 
-    # 解析除权除息日 (优先使用 u32 格式，fallback 到时间戳)
-    ex_dividend_date = _parse_yyyymmdd(int(ex_div_date_raw))
-    if ex_dividend_date is None:
-        ex_dividend_date = _date_from_timestamp_ms(int(timestamp_raw))
+    # 解析除权除息日 (从时间戳派生, 80 字节格式无独立 ex_div_date 字段)
+    ex_dividend_date = _date_from_timestamp_ms(int(timestamp_raw))
     if ex_dividend_date is None:
         return None
 
