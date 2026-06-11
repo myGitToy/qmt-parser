@@ -78,6 +78,9 @@ def parse_daily_kline(path: str, start: str, end: str) -> Optional[pd.DataFrame]
         end_date_validated = validate_date_format(end)
     except ValueError as e:
         raise ValueError(f"日期格式错误: {e}")
+
+    if start_date_validated > end_date_validated:
+        raise ValueError(f"开始日期 {start} 不能晚于结束日期 {end}")
     
     if not os.path.exists(path):
         print(f"错误: 文件 {path} 不存在。")
@@ -146,12 +149,12 @@ def parse_daily_kline(path: str, start: str, end: str) -> Optional[pd.DataFrame]
 
     # 直接使用原始数据（不做 reindex/ffill，避免非交易日被前向填充）
     df_final: pd.DataFrame = df_raw
-    df_final.dropna(inplace=True)
 
     # 按 start/end 参数过滤日期范围（替代原先 reindex 的隐式过滤）
     start_dt = pd.Timestamp(f"{start_date_validated[:4]}-{start_date_validated[4:6]}-{start_date_validated[6:8]}")
     end_dt = pd.Timestamp(f"{end_date_validated[:4]}-{end_date_validated[4:6]}-{end_date_validated[6:8]}")
     df_final = df_final[(df_final.index >= start_dt) & (df_final.index <= end_dt)]
+    df_final.dropna(inplace=True)
 
     # 重置索引名称，确保 reset_index 后列名为 'index'（与原始逻辑一致）
     df_final.index.name = None
