@@ -144,15 +144,20 @@ def parse_daily_kline(path: str, start: str, end: str) -> Optional[pd.DataFrame]
     # 去除重复日期，保留第一个记录
     df_raw = df_raw[~df_raw.index.duplicated(keep='first')]
 
-    # 生成工作日日期范围（排除周末）
-    start_date_formatted = f"{start_date_validated[:4]}-{start_date_validated[4:6]}-{start_date_validated[6:8]}"
-    end_date_formatted = f"{end_date_validated[:4]}-{end_date_validated[4:6]}-{end_date_validated[6:8]}"
-    date_range: pd.DatetimeIndex = pd.date_range(start=start_date_formatted, end=end_date_formatted, freq='B')
-    
-    # 重新索引并前向填充缺失数据
-    df_final: pd.DataFrame = df_raw.reindex(date_range)
-    df_final.ffill(inplace=True)
+    # 直接使用原始数据（不做 reindex/ffill，避免非交易日被前向填充）
+    df_final: pd.DataFrame = df_raw
     df_final.dropna(inplace=True)
+
+    # 按 start/end 参数过滤日期范围（替代原先 reindex 的隐式过滤）
+    start_dt = pd.Timestamp(f"{start_date_validated[:4]}-{start_date_validated[4:6]}-{start_date_validated[6:8]}")
+    end_dt = pd.Timestamp(f"{end_date_validated[:4]}-{end_date_validated[4:6]}-{end_date_validated[6:8]}")
+    df_final = df_final[(df_final.index >= start_dt) & (df_final.index <= end_dt)]
+
+    # 重置索引名称，确保 reset_index 后列名为 'index'（与原始逻辑一致）
+    df_final.index.name = None
+
+    if df_final.empty:
+        return pd.DataFrame()
 
     # 业务逻辑1: 根据成交量和成交额判断是否停牌
     # 当成交量为0且成交金额为0时，认为是停牌
